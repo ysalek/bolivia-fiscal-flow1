@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,12 @@ import {
   XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useBackup } from "@/hooks/useBackup";
 
 const ConfiguracionModule = () => {
   const { toast } = useToast();
+  const { crearBackup, restaurarBackup } = useBackup();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Estado para datos de la empresa
   const [empresa, setEmpresa] = useState({
@@ -77,7 +80,28 @@ const ConfiguracionModule = () => {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  useEffect(() => {
+    const savedEmpresa = localStorage.getItem('configuracionEmpresa');
+    if (savedEmpresa) setEmpresa(JSON.parse(savedEmpresa));
+
+    const savedFiscal = localStorage.getItem('configuracionFiscal');
+    if (savedFiscal) setConfigFiscal(JSON.parse(savedFiscal));
+
+    const savedSistema = localStorage.getItem('configuracionSistema');
+    if (savedSistema) setConfigSistema(JSON.parse(savedSistema));
+
+    const savedSin = localStorage.getItem('configSin');
+    if (savedSin) setConfigSin(JSON.parse(savedSin));
+  }, []);
+
   const guardarConfiguracion = (seccion: string) => {
+    if (seccion === 'Empresa') {
+      localStorage.setItem('configuracionEmpresa', JSON.stringify(empresa));
+    } else if (seccion === 'Configuración Fiscal') {
+      localStorage.setItem('configuracionFiscal', JSON.stringify(configFiscal));
+    } else if (seccion === 'Sistema') {
+      localStorage.setItem('configuracionSistema', JSON.stringify(configSistema));
+    }
     toast({
       title: "Configuración guardada",
       description: `Los cambios en ${seccion} han sido guardados correctamente`,
@@ -189,6 +213,17 @@ const ConfiguracionModule = () => {
       title: "Configuración importada",
       description: "La configuración ha sido cargada correctamente",
     });
+  };
+
+  const handleRestoreClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    restaurarBackup(event);
+    if(event.target) {
+        event.target.value = '';
+    }
   };
 
   return (
@@ -702,48 +737,40 @@ const ConfiguracionModule = () => {
                 Backup y Restauración
               </CardTitle>
               <CardDescription>
-                Gestión de respaldos y restauración de datos
+                Gestión de respaldos y restauración de datos del sistema
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button className="h-20 flex flex-col items-center justify-center">
+                <Button onClick={crearBackup} className="h-20 flex flex-col items-center justify-center">
                   <Download className="w-6 h-6 mb-2" />
                   <span>Crear Backup</span>
                   <span className="text-xs text-slate-500">Exportar datos completos</span>
                 </Button>
                 
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                <Button onClick={handleRestoreClick} variant="outline" className="h-20 flex flex-col items-center justify-center">
                   <Upload className="w-6 h-6 mb-2" />
                   <span>Restaurar Backup</span>
                   <span className="text-xs text-slate-500">Importar datos desde archivo</span>
                 </Button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange}
+                  className="hidden" 
+                  accept="application/json"
+                />
               </div>
 
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Backups Recientes</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>backup_2024-06-15_08-00.zip</span>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">Descargar</Button>
-                      <Button size="sm" variant="outline">Restaurar</Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>backup_2024-06-14_08-00.zip</span>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">Descargar</Button>
-                      <Button size="sm" variant="outline">Restaurar</Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>backup_2024-06-13_08-00.zip</span>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">Descargar</Button>
-                      <Button size="sm" variant="outline">Restaurar</Button>
-                    </div>
-                  </div>
+                <h4 className="font-medium mb-3">Información sobre Backups</h4>
+                <div className="text-sm text-slate-600 space-y-2">
+                   <p>
+                    <strong>Crear Backup:</strong> Genera un archivo JSON con todos los datos importantes de la aplicación (asientos, productos, facturas, clientes, configuración, etc.). Guarde este archivo en un lugar seguro.
+                  </p>
+                  <p>
+                    <strong>Restaurar Backup:</strong> Permite importar un archivo de backup previamente guardado. Esta acción sobreescribirá todos los datos actuales con los del archivo de respaldo. Se recomienda crear un backup de los datos actuales antes de restaurar.
+                  </p>
                 </div>
               </div>
             </CardContent>
