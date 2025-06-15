@@ -16,11 +16,13 @@ import {
   FileBarChart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 const ReportesModule = () => {
   const [fechaInicio, setFechaInicio] = useState("2025-06-01");
   const [fechaFin, setFechaFin] = useState("2025-06-30");
   const { toast } = useToast();
+  const { getAsientos, getBalanceSheetData, getIncomeStatementData } = useContabilidadIntegration();
 
   const reportes = [
     {
@@ -97,48 +99,103 @@ const ReportesModule = () => {
     });
   };
 
-  const generarContenidoReporte = (reporteId: string, formato: string) => {
+  const generarContenidoReporte = (reporteId: string, formato: string): string => {
     const reporte = reportes.find(r => r.id === reporteId);
-    const fechaActual = new Date().toLocaleDateString();
-    
-    const datosEjemplo: { [key: string]: string[][] } = {
-      "libro-compras": [
-        ["Fecha", "Proveedor", "NIT", "Factura", "Importe", "IVA"],
-        ["01/06/2025", "Proveedor ABC SRL", "1234567890", "FAC-001", "1000.00", "130.00"],
-        ["05/06/2025", "Distribuidora XYZ", "0987654321", "FAC-002", "2500.00", "325.00"],
-      ],
-      "libro-ventas": [
-        ["Fecha", "Cliente", "NIT", "Factura", "Importe", "IVA"],
-        ["02/06/2025", "Cliente 123 SRL", "2233445566", "0001", "1500.00", "195.00"],
-        ["08/06/2025", "Empresa Beta SA", "3344556677", "0002", "3200.00", "416.00"],
-      ],
-      "balance-general": [
-        ["CUENTA", "CÓDIGO", "SALDO"],
-        ["ACTIVOS", "", ""],
-        ["Caja y Bancos", "1100", "60,000.00"],
-        ["Cuentas por Cobrar", "1200", "55,000.00"],
-        ["PASIVOS", "", ""],
-        ["Cuentas por Pagar", "2100", "45,000.00"],
-        ["PATRIMONIO", "", ""],
-        ["Capital Social", "3100", "70,000.00"],
-      ]
-    };
+    let datos: string[][] = [];
 
-    const datos = datosEjemplo[reporteId] || [
-      ["Campo 1", "Campo 2"], ["Dato 1", "Dato 2"]
-    ];
+    switch(reporteId) {
+      case "libro-compras": {
+        datos.push(["Fecha", "Número", "Concepto", "Referencia", "Total"]);
+        const compras = getAsientos().filter(a => a.numero.startsWith('CMP-'));
+        compras.forEach(a => datos.push([new Date(a.fecha).toLocaleDateString(), a.numero, a.concepto, a.referencia, a.debe.toFixed(2)]));
+        if (compras.length === 0) {
+            toast({ title: "Sin datos", description: "No se encontraron compras en el período." });
+            return "";
+        }
+        break;
+      }
+      case "libro-ventas": {
+        datos.push(["Fecha", "Número", "Concepto", "Referencia", "Total"]);
+        const ventas = getAsientos().filter(a => a.numero.startsWith('VTA-'));
+        ventas.forEach(a => datos.push([new Date(a.fecha).toLocaleDateString(), a.numero, a.concepto, a.referencia, a.debe.toFixed(2)]));
+        if (ventas.length === 0) {
+            toast({ title: "Sin datos", description: "No se encontraron ventas en el período." });
+            return "";
+        }
+        break;
+      }
+      case "balance-general": {
+        const { activos, pasivos, patrimonio, totalPasivoPatrimonio, ecuacionCuadrada } = getBalanceSheetData();
+        if (!ecuacionCuadrada) {
+            toast({ title: "Balance Descuadrado", description: "No se puede generar el reporte.", variant: "destructive" });
+            return "";
+        }
+        datos.push(["Tipo", "Código", "Cuenta", "Saldo (Bs.)"]);
+        datos.push(["ACTIVOS", "", "", ""]);
+        activos.cuentas.forEach(c => datos.push(["", c.codigo, c.nombre, c.saldo.toFixed(2)]));
+        datos.push(["", "Total Activos", "", activos.total.toFixed(2)]);
+        datos.push(["PASIVOS", "", "", ""]);
+        pasivos.cuentas.forEach(c => datos.push(["", c.codigo, c.nombre, c.saldo.toFixed(2)]));
+        datos.push(["", "Total Pasivos", "", pasivos.total.toFixed(2)]);
+        datos.push(["PATRIMONIO", "", "", ""]);
+        patrimonio.cuentas.forEach(c => datos.push(["", c.codigo, c.nombre, c.saldo.toFixed(2)]));
+        datos.push(["", "Total Patrimonio", "", patrimonio.total.toFixed(2)]);
+        datos.push(["", "Total Pasivo + Patrimonio", "", totalPasivoPatrimonio.toFixed(2)]);
+        break;
+      }
+      case "estado-resultados": {
+        const { ingresos, gastos, utilidadNeta } = getIncomeStatementData();
+        datos.push(["Tipo", "Código", "Cuenta", "Saldo (Bs.)"]);
+        datos.push(["INGRESOS", "", "", ""]);
+        ingresos.cuentas.forEach(c => datos.push(["", c.codigo, c.nombre, c.saldo.toFixed(2)]));
+        datos.push(["", "Total Ingresos", "", ingresos.total.toFixed(2)]);
+        datos.push(["GASTOS", "", "", ""]);
+        gastos.cuentas.forEach(c => datos.push(["", c.codigo, c.nombre, c.saldo.toFixed(2)]));
+        datos.push(["", "Total Gastos", "", gastos.total.toFixed(2)]);
+        datos.push(["", "UTILIDAD (O PÉRDIDA) NETA", "", utilidadNeta.toFixed(2)]);
+        break;
+      }
+      default: {
+        const datosEjemplo: { [key: string]: string[][] } = {
+          "flujo-efectivo": [
+            ["Categoría", "Descripción", "Importe"],
+            ["Operativo", "Cobro a clientes", "5000.00"],
+            ["Operativo", "Pago a proveedores", "-2000.00"],
+          ],
+          "patrimonio": [
+            ["Concepto", "Capital", "Reservas", "Resultados Acumulados"],
+            ["Saldo Inicial", "70000.00", "5000.00", "10000.00"],
+            ["Utilidad del Ejercicio", "0.00", "0.00", "15000.00"],
+            ["Saldo Final", "70000.00", "5000.00", "25000.00"],
+          ],
+          "declaracion-iva": [
+            ["Concepto", "Base Imponible", "Crédito Fiscal", "Débito Fiscal"],
+            ["Ventas", "4700.00", "0.00", "611.00"],
+            ["Compras", "3500.00", "455.00", "0.00"],
+            ["Saldo a Favor", "", "", "156.00"],
+          ],
+          "rc-iva": [
+            ["Dependiente", "Sueldo Neto", "Base Imponible", "RC-IVA"],
+            ["Juan Pérez", "6000.00", "0.00", "0.00"],
+            ["María Gómez", "9000.00", "800.00", "104.00"],
+          ]
+        };
+        datos = datosEjemplo[reporteId] || [ ["No implementado"], ["Este reporte aún no está disponible con datos reales."] ];
+        break;
+      }
+    }
 
     if (formato === 'csv') {
       let contenidoCsv = `${reporte?.titulo}\n`;
-      contenidoCsv += `Período: ${fechaInicio} al ${fechaFin}\n\n`;
+      contenidoCsv += `Período: ${new Date(fechaInicio).toLocaleDateString()} al ${new Date(fechaFin).toLocaleDateString()}\n\n`;
       datos.forEach(fila => { contenidoCsv += fila.join(',') + '\n'; });
       return contenidoCsv;
     }
 
     if (formato === 'html') {
       let contenidoHtml = `
-        <html><head><title>${reporte?.titulo}</title><style>body{font-family:sans-serif} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px} th{background-color:#f2f2f2}</style></head>
-        <body><h1>${reporte?.titulo}</h1><p>Período: ${fechaInicio} al ${fechaFin}</p><table>`;
+        <html><head><title>${reporte?.titulo}</title><style>body{font-family:sans-serif} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px} th{background-color:#f2f2f2} tr:last-child{font-weight:bold;}</style></head>
+        <body><h1>${reporte?.titulo}</h1><p>Período: ${new Date(fechaInicio).toLocaleDateString()} al ${new Date(fechaFin).toLocaleDateString()}</p><table>`;
       datos.forEach((fila, index) => {
         const tag = index === 0 ? 'th' : 'td';
         contenidoHtml += `<tr>${fila.map(celda => `<${tag}>${celda}</${tag}>`).join('')}</tr>`;
@@ -168,6 +225,7 @@ const ReportesModule = () => {
     try {
       if (formato === 'pdf') {
         const contenidoHtml = generarContenidoReporte(reporteId, 'html');
+        if (!contenidoHtml) return;
         const ventana = window.open('', '_blank');
         if (ventana) {
           ventana.document.write(contenidoHtml);
@@ -177,6 +235,7 @@ const ReportesModule = () => {
         toast({ title: "Reporte PDF listo", description: "Utilice la función de impresión para guardar como PDF." });
       } else if (formato === 'excel') {
         const contenidoCsv = generarContenidoReporte(reporteId, 'csv');
+        if (!contenidoCsv) return;
         const nombreArchivo = `${reporte.id}_${new Date().toISOString().split('T')[0]}.csv`;
         descargarArchivo(contenidoCsv, nombreArchivo, 'text/csv;charset=utf-8;');
         toast({ title: "Reporte Excel descargado", description: `${nombreArchivo} ha sido descargado.` });

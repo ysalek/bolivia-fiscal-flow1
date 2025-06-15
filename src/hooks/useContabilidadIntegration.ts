@@ -42,6 +42,18 @@ export interface BalanceSheetData {
   ecuacionCuadrada: boolean;
 }
 
+export interface IncomeStatementData {
+  ingresos: {
+    cuentas: { codigo: string; nombre: string; saldo: number }[];
+    total: number;
+  };
+  gastos: {
+    cuentas: { codigo: string; nombre: string; saldo: number }[];
+    total: number;
+  };
+  utilidadNeta: number;
+}
+
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
@@ -55,6 +67,7 @@ export interface ContabilidadIntegrationHook {
   validarTransaccion: (asiento: AsientoContable) => boolean;
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
   getBalanceSheetData: () => BalanceSheetData;
+  getIncomeStatementData: () => IncomeStatementData;
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
@@ -316,6 +329,38 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     };
   };
 
+  const getIncomeStatementData = (): IncomeStatementData => {
+    const { details } = getTrialBalanceData();
+
+    const ingresos = { cuentas: [] as { codigo: string, nombre: string, saldo: number }[], total: 0 };
+    const gastos = { cuentas: [] as { codigo: string, nombre: string, saldo: number }[], total: 0 };
+
+    details.forEach(cuenta => {
+      const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
+
+      if (cuenta.codigo.startsWith('4')) { // Ingresos
+        const saldoAcreedor = -saldo;
+        ingresos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoAcreedor });
+        ingresos.total += saldoAcreedor;
+      } else if (cuenta.codigo.startsWith('5')) { // Gastos
+        const saldoDeudor = saldo;
+        gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
+        gastos.total += saldoDeudor;
+      }
+    });
+
+    const utilidadNeta = ingresos.total - gastos.total;
+
+    ingresos.cuentas.sort((a, b) => a.codigo.localeCompare(b.codigo));
+    gastos.cuentas.sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    return {
+      ingresos,
+      gastos,
+      utilidadNeta
+    };
+  };
+
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
@@ -473,6 +518,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     obtenerProductos,
     validarTransaccion,
     obtenerBalanceGeneral,
-    getBalanceSheetData
+    getBalanceSheetData,
+    getIncomeStatementData
   };
 };
