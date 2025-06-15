@@ -1,10 +1,9 @@
 
-import { useToast } from "@/hooks/use-toast";
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
-import { Producto } from "@/components/contable/products/ProductsData";
 import { useAsientos } from "./useAsientos";
-import { useReportesContables, BalanceSheetData, IncomeStatementData, DeclaracionIVAData, TrialBalanceDetail, TrialBalanceTotals } from "./useReportesContables";
+import { useReportesContables } from "./useReportesContables";
+import { useProductos } from "./useProductos";
 
 // Re-export types to avoid breaking changes in other modules after refactoring
 export type { 
@@ -15,6 +14,7 @@ export type {
   IncomeStatementData, 
   DeclaracionIVAData 
 } from "./useReportesContables";
+export type { Producto } from "@/components/contable/products/ProductsData";
 
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
@@ -25,7 +25,7 @@ export interface ContabilidadIntegrationHook {
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
   getTrialBalanceData: () => { details: TrialBalanceDetail[], totals: TrialBalanceTotals };
   actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
-  obtenerProductos: () => Producto[];
+  obtenerProductos: () => any[]; // Usar any[] para ser compatible con Producto[]
   validarTransaccion: (asiento: AsientoContable) => boolean;
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
   getBalanceSheetData: () => BalanceSheetData;
@@ -34,130 +34,17 @@ export interface ContabilidadIntegrationHook {
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
-  const { toast } = useToast();
-  const { getAsientos: getAsientosFromHook } = useAsientos();
+  const { getAsientos, guardarAsiento, validarTransaccion } = useAsientos();
   const reportesHook = useReportesContables();
-
-  const validarTransaccion = (asiento: AsientoContable): boolean => {
-    const totalDebe = asiento.cuentas.reduce((sum, cuenta) => sum + cuenta.debe, 0);
-    const totalHaber = asiento.cuentas.reduce((sum, cuenta) => sum + cuenta.haber, 0);
-    
-    if (Math.abs(totalDebe - totalHaber) > 0.01) {
-      console.error("Error: El asiento no está balanceado", { totalDebe, totalHaber });
-      return false;
-    }
-    
-    return true;
-  };
-
-  const guardarAsiento = (asiento: AsientoContable) => {
-    if (!validarTransaccion(asiento)) {
-      toast({
-        title: "Error en el asiento contable",
-        description: "El asiento no está balanceado. Debe = Haber",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const asientosExistentes = JSON.parse(localStorage.getItem('asientosContables') || '[]');
-    const nuevosAsientos = [asiento, ...asientosExistentes];
-    localStorage.setItem('asientosContables', JSON.stringify(nuevosAsientos));
-    
-    console.log("Asiento guardado correctamente:", asiento);
-    
-    toast({
-      title: "Asiento contable registrado",
-      description: `Asiento ${asiento.numero} registrado exitosamente`,
-    });
-  };
-
-  const getAsientos = (): AsientoContable[] => {
-    return getAsientosFromHook();
-  };
-
-  const obtenerProductos = (): Producto[] => {
-    return JSON.parse(localStorage.getItem('productos') || '[]');
-  };
-
-  const actualizarStockProducto = (productoId: string, cantidad: number, tipo: 'entrada' | 'salida'): boolean => {
-    try {
-      const productos = obtenerProductos();
-      const productoIndex = productos.findIndex(p => p.id === productoId);
-      
-      if (productoIndex === -1) {
-        toast({
-          title: "Error",
-          description: "Producto no encontrado",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      const producto = productos[productoIndex];
-      const nuevaCantidad = tipo === 'entrada' 
-        ? producto.stockActual + cantidad 
-        : producto.stockActual - cantidad;
-      
-      // Evitar stock negativo
-      if (nuevaCantidad < 0) {
-        toast({
-          title: "Error de stock",
-          description: `No hay suficiente stock para ${producto.nombre}. Stock actual: ${producto.stockActual}`,
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      productos[productoIndex] = {
-        ...producto,
-        stockActual: nuevaCantidad,
-        fechaActualizacion: new Date().toISOString().slice(0, 10)
-      };
-      
-      localStorage.setItem('productos', JSON.stringify(productos));
-      
-      // Alerta de stock bajo
-      if (nuevaCantidad <= producto.stockMinimo && nuevaCantidad > 0) {
-        toast({
-          title: "Stock bajo",
-          description: `El producto ${producto.nombre} tiene stock bajo (${nuevaCantidad} unidades)`,
-          variant: "destructive"
-        });
-      }
-
-      console.log(`Stock actualizado: ${producto.nombre} - ${producto.stockActual} -> ${nuevaCantidad}`);
-      return true;
-    } catch (error) {
-      console.error("Error al actualizar stock:", error);
-      return false;
-    }
-  };
+  const { obtenerProductos, actualizarStockProducto } = useProductos();
 
   const obtenerBalanceGeneral = () => {
-    const asientos = getAsientos();
-    let activos = 0;
-    let pasivos = 0;
-    let patrimonio = 0;
-
-    asientos.forEach(asiento => {
-      if (asiento.estado === 'registrado') {
-        asiento.cuentas.forEach(cuenta => {
-          const codigo = cuenta.codigo;
-          const saldoNeto = cuenta.debe - cuenta.haber;
-          
-          if (codigo.startsWith('1')) { // Activos
-            activos += saldoNeto;
-          } else if (codigo.startsWith('2')) { // Pasivos
-            pasivos += saldoNeto;
-          } else if (codigo.startsWith('3')) { // Patrimonio
-            patrimonio += saldoNeto;
-          }
-        });
-      }
-    });
-
-    return { activos, pasivos, patrimonio };
+    const { activos, pasivos, patrimonio } = reportesHook.getBalanceSheetData();
+    return {
+      activos: activos.total,
+      pasivos: pasivos.total,
+      patrimonio: patrimonio.total,
+    };
   };
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
