@@ -15,6 +15,7 @@ import {
   Scale,
   Landmark,
   ShoppingCart,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -33,6 +34,7 @@ import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/AppSidebar";
+import TutorialModule from "@/components/contable/TutorialModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -139,11 +141,18 @@ const Index = () => {
       component: ConfiguracionModule, 
       permission: "configuracion" 
     },
+    {
+      id: "tutorial",
+      label: "Tutorial",
+      icon: HelpCircle,
+      component: TutorialModule,
+      permission: "tutorial"
+    },
   ];
 
   // Filtrar módulos según permisos del usuario
   const allowedModules = modules.filter(module => 
-    hasPermission(module.permission) || hasPermission('*')
+    module.permission === 'tutorial' || hasPermission(module.permission)
   );
 
   const ActiveComponent = allowedModules.find(m => m.id === activeModule)?.component || Dashboard;
