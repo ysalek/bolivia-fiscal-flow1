@@ -28,9 +28,11 @@ interface ProductoInventario {
   stockMinimo: number;
   stockMaximo: number;
   costoUnitario: number;
+  costoPromedioPonderado: number; // Nuevo campo para promedio ponderado
   precioVenta: number;
   ubicacion: string;
   fechaUltimoMovimiento: string;
+  valorTotalInventario: number; // Stock * Costo promedio ponderado
 }
 
 interface MovimientoInventario {
@@ -41,15 +43,27 @@ interface MovimientoInventario {
   producto: string;
   cantidad: number;
   costoUnitario: number;
+  costoPromedioPonderado: number; // Costo promedio después del movimiento
   motivo: string;
   documento: string;
   usuario: string;
+  stockAnterior: number;
+  stockNuevo: number;
+  valorMovimiento: number;
 }
 
 const InventarioModule = () => {
   const { toast } = useToast();
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [busqueda, setBusqueda] = useState("");
+
+  // Función para calcular promedio ponderado
+  const calcularPromedioPonderado = (stockAnterior: number, costoAnterior: number, cantidadNueva: number, costoNuevo: number): number => {
+    if (stockAnterior + cantidadNueva === 0) return 0;
+    const valorAnterior = stockAnterior * costoAnterior;
+    const valorNuevo = cantidadNueva * costoNuevo;
+    return (valorAnterior + valorNuevo) / (stockAnterior + cantidadNueva);
+  };
 
   const productos: ProductoInventario[] = [
     {
@@ -60,10 +74,12 @@ const InventarioModule = () => {
       stockActual: 15,
       stockMinimo: 5,
       stockMaximo: 50,
-      costoUnitario: 3500,
+      costoUnitario: 3500, // Último costo de compra
+      costoPromedioPonderado: 3480, // Promedio ponderado calculado
       precioVenta: 4200,
       ubicacion: "Almacén A-1",
-      fechaUltimoMovimiento: "2024-06-14"
+      fechaUltimoMovimiento: "2024-06-14",
+      valorTotalInventario: 15 * 3480
     },
     {
       id: "2",
@@ -74,9 +90,11 @@ const InventarioModule = () => {
       stockMinimo: 10,
       stockMaximo: 100,
       costoUnitario: 45,
+      costoPromedioPonderado: 47.5, // Promedio ponderado
       precioVenta: 65,
       ubicacion: "Almacén B-2",
-      fechaUltimoMovimiento: "2024-06-13"
+      fechaUltimoMovimiento: "2024-06-13",
+      valorTotalInventario: 3 * 47.5
     },
     {
       id: "3",
@@ -87,9 +105,11 @@ const InventarioModule = () => {
       stockMinimo: 0,
       stockMaximo: 0,
       costoUnitario: 0,
+      costoPromedioPonderado: 0,
       precioVenta: 150,
       ubicacion: "N/A",
-      fechaUltimoMovimiento: "2024-06-15"
+      fechaUltimoMovimiento: "2024-06-15",
+      valorTotalInventario: 0
     }
   ];
 
@@ -102,9 +122,13 @@ const InventarioModule = () => {
       producto: "Laptop Dell Inspiron 15",
       cantidad: 10,
       costoUnitario: 3500,
+      costoPromedioPonderado: 3480,
       motivo: "Compra a proveedor",
       documento: "FC-001234",
-      usuario: "Admin"
+      usuario: "Admin",
+      stockAnterior: 5,
+      stockNuevo: 15,
+      valorMovimiento: 35000
     },
     {
       id: "2",
@@ -113,10 +137,14 @@ const InventarioModule = () => {
       productoId: "2",
       producto: "Mouse Inalámbrico",
       cantidad: 5,
-      costoUnitario: 45,
+      costoUnitario: 47.5, // Se usa el costo promedio ponderado para salidas
+      costoPromedioPonderado: 47.5,
       motivo: "Venta",
       documento: "FV-000567",
-      usuario: "Vendedor"
+      usuario: "Vendedor",
+      stockAnterior: 8,
+      stockNuevo: 3,
+      valorMovimiento: 237.5
     },
     {
       id: "3",
@@ -125,10 +153,14 @@ const InventarioModule = () => {
       productoId: "1",
       producto: "Laptop Dell Inspiron 15",
       cantidad: -2,
-      costoUnitario: 3500,
-      motivo: "Inventario físico",
+      costoUnitario: 3480, // Ajuste al costo promedio
+      costoPromedioPonderado: 3480,
+      motivo: "Inventario físico - faltante",
       documento: "AJ-000012",
-      usuario: "Contador"
+      usuario: "Contador",
+      stockAnterior: 7,
+      stockNuevo: 5,
+      valorMovimiento: -6960
     }
   ];
 
@@ -165,22 +197,30 @@ const InventarioModule = () => {
   });
 
   const productosConAlertas = productos.filter(p => getStockStatus(p) === "low").length;
-  const valorTotalInventario = productos.reduce((total, p) => total + (p.stockActual * p.costoUnitario), 0);
+  const valorTotalInventario = productos.reduce((total, p) => total + p.valorTotalInventario, 0);
+
+  const simularMovimiento = (tipo: 'entrada' | 'salida') => {
+    const tipoTexto = tipo === 'entrada' ? 'entrada' : 'salida';
+    toast({
+      title: `Registrar ${tipoTexto}`,
+      description: `Funcionalidad de ${tipoTexto} de inventario con promedio ponderado`,
+    });
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Inventario</h2>
-          <p className="text-slate-600">Control de stock y movimientos de inventario</p>
+          <h2 className="text-2xl font-bold">Gestión de Inventario - Promedio Ponderado</h2>
+          <p className="text-slate-600">Control de stock con valuación por promedio ponderado</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => simularMovimiento('entrada')}>
             <Plus className="w-4 h-4 mr-2" />
             Entrada
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => simularMovimiento('salida')}>
             <Minus className="w-4 h-4 mr-2" />
             Salida
           </Button>
@@ -205,7 +245,7 @@ const InventarioModule = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Valor Total</p>
+                <p className="text-sm text-slate-600">Valor Total (Prom. Pond.)</p>
                 <p className="text-2xl font-bold">Bs. {valorTotalInventario.toLocaleString()}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
@@ -243,15 +283,16 @@ const InventarioModule = () => {
           <TabsTrigger value="productos">Productos</TabsTrigger>
           <TabsTrigger value="movimientos">Movimientos</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          <TabsTrigger value="promedio">Cálculo Promedio</TabsTrigger>
         </TabsList>
 
         {/* Lista de Productos */}
         <TabsContent value="productos" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Inventario de Productos</CardTitle>
+              <CardTitle>Inventario de Productos - Promedio Ponderado</CardTitle>
               <CardDescription>
-                Lista completa de productos y servicios con estado de stock
+                Lista de productos con valuación por promedio ponderado
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -290,9 +331,9 @@ const InventarioModule = () => {
                       <th className="text-left p-2">Producto</th>
                       <th className="text-left p-2">Categoría</th>
                       <th className="text-right p-2">Stock Actual</th>
-                      <th className="text-right p-2">Stock Mín.</th>
-                      <th className="text-right p-2">Costo Unit.</th>
-                      <th className="text-right p-2">Precio Venta</th>
+                      <th className="text-right p-2">Costo Último</th>
+                      <th className="text-right p-2">Costo Prom. Pond.</th>
+                      <th className="text-right p-2">Valor Total</th>
                       <th className="text-center p-2">Estado</th>
                       <th className="text-center p-2">Acciones</th>
                     </tr>
@@ -306,9 +347,13 @@ const InventarioModule = () => {
                           <td className="p-2 font-medium">{producto.nombre}</td>
                           <td className="p-2">{producto.categoria}</td>
                           <td className="p-2 text-right">{producto.stockActual}</td>
-                          <td className="p-2 text-right">{producto.stockMinimo}</td>
                           <td className="p-2 text-right">Bs. {producto.costoUnitario.toFixed(2)}</td>
-                          <td className="p-2 text-right">Bs. {producto.precioVenta.toFixed(2)}</td>
+                          <td className="p-2 text-right font-semibold text-blue-600">
+                            Bs. {producto.costoPromedioPonderado.toFixed(2)}
+                          </td>
+                          <td className="p-2 text-right font-semibold">
+                            Bs. {producto.valorTotalInventario.toFixed(2)}
+                          </td>
                           <td className="p-2 text-center">
                             <Badge className={getStatusColor(status)}>
                               {getStatusText(status)}
@@ -334,9 +379,9 @@ const InventarioModule = () => {
         <TabsContent value="movimientos" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Historial de Movimientos</CardTitle>
+              <CardTitle>Historial de Movimientos - Promedio Ponderado</CardTitle>
               <CardDescription>
-                Registro de todas las entradas, salidas y ajustes de inventario
+                Registro de movimientos con cálculo de promedio ponderado
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -349,9 +394,11 @@ const InventarioModule = () => {
                       <th className="text-left p-2">Producto</th>
                       <th className="text-right p-2">Cantidad</th>
                       <th className="text-right p-2">Costo Unit.</th>
-                      <th className="text-left p-2">Motivo</th>
+                      <th className="text-right p-2">Costo Prom.</th>
+                      <th className="text-right p-2">Stock Ant.</th>
+                      <th className="text-right p-2">Stock Nuevo</th>
+                      <th className="text-right p-2">Valor Mov.</th>
                       <th className="text-left p-2">Documento</th>
-                      <th className="text-left p-2">Usuario</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -372,9 +419,13 @@ const InventarioModule = () => {
                         <td className="p-2 font-medium">{movimiento.producto}</td>
                         <td className="p-2 text-right">{movimiento.cantidad}</td>
                         <td className="p-2 text-right">Bs. {movimiento.costoUnitario.toFixed(2)}</td>
-                        <td className="p-2">{movimiento.motivo}</td>
+                        <td className="p-2 text-right font-semibold text-blue-600">
+                          Bs. {movimiento.costoPromedioPonderado.toFixed(2)}
+                        </td>
+                        <td className="p-2 text-right">{movimiento.stockAnterior}</td>
+                        <td className="p-2 text-right">{movimiento.stockNuevo}</td>
+                        <td className="p-2 text-right">Bs. {movimiento.valorMovimiento.toFixed(2)}</td>
                         <td className="p-2 font-mono">{movimiento.documento}</td>
-                        <td className="p-2">{movimiento.usuario}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -404,6 +455,9 @@ const InventarioModule = () => {
                         <p className="text-sm text-slate-600">
                           Stock actual: {producto.stockActual} | Mínimo: {producto.stockMinimo}
                         </p>
+                        <p className="text-xs text-slate-500">
+                          Costo promedio: Bs. {producto.costoPromedioPonderado.toFixed(2)}
+                        </p>
                       </div>
                     </div>
                     <Button size="sm">
@@ -419,6 +473,93 @@ const InventarioModule = () => {
                     <p>No hay alertas de inventario en este momento</p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Nueva pestaña: Cálculo Promedio */}
+        <TabsContent value="promedio" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Simulador de Promedio Ponderado</CardTitle>
+              <CardDescription>
+                Visualiza cómo se calcula el promedio ponderado con cada movimiento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-2">Fórmula del Promedio Ponderado</h3>
+                  <p className="text-blue-700 text-sm">
+                    Nuevo Promedio = (Valor Inventario Anterior + Valor Compra Nueva) / (Stock Anterior + Stock Nuevo)
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Ejemplo práctico */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Ejemplo: Laptop Dell Inspiron 15</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Stock inicial:</span>
+                        <span>5 unidades</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Costo inicial:</span>
+                        <span>Bs. 3,450 c/u</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Valor inicial:</span>
+                        <span>Bs. 17,250</span>
+                      </div>
+                      <hr className="my-2" />
+                      <div className="flex justify-between">
+                        <span>Nueva compra:</span>
+                        <span>10 unidades</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Costo compra:</span>
+                        <span>Bs. 3,500 c/u</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Valor compra:</span>
+                        <span>Bs. 35,000</span>
+                      </div>
+                      <hr className="my-2" />
+                      <div className="flex justify-between font-semibold text-blue-600">
+                        <span>Nuevo promedio:</span>
+                        <span>Bs. 3,480</span>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        (17,250 + 35,000) / (5 + 10) = 3,480
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ventajas del método */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Ventajas del Promedio Ponderado</h4>
+                    <ul className="text-sm space-y-2">
+                      <li className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                        <span>Refleja el costo real del inventario</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                        <span>Suaviza las fluctuaciones de precios</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                        <span>Fácil de calcular y aplicar</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                        <span>Aceptado por normas contables</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
