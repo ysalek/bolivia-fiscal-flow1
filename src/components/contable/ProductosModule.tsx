@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ const ProductosModule = () => {
     unidadMedida: "unidad",
     precioCompra: 0,
     precioVenta: 0,
+    costoUnitario: 0,
     stockMinimo: 0,
     stockActual: 0,
     codigoSIN: "",
@@ -71,6 +71,7 @@ const ProductosModule = () => {
     const producto: Producto = {
       id: Date.now().toString(),
       ...newProduct,
+      costoUnitario: newProduct.precioCompra, // Usar precio de compra como costo unitario
       fechaCreacion: new Date().toISOString().slice(0, 10),
       fechaActualizacion: new Date().toISOString().slice(0, 10)
     };
@@ -90,6 +91,7 @@ const ProductosModule = () => {
       unidadMedida: "unidad",
       precioCompra: 0,
       precioVenta: 0,
+      costoUnitario: 0,
       stockMinimo: 0,
       stockActual: 0,
       codigoSIN: "",
@@ -232,7 +234,11 @@ const ProductosModule = () => {
                   type="number"
                   placeholder="0.00"
                   value={newProduct.precioCompra}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, precioCompra: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setNewProduct(prev => ({ 
+                    ...prev, 
+                    precioCompra: parseFloat(e.target.value) || 0,
+                    costoUnitario: parseFloat(e.target.value) || 0
+                  }))}
                 />
               </div>
               <div className="space-y-2">
@@ -242,7 +248,10 @@ const ProductosModule = () => {
                   type="number"
                   placeholder="0.00"
                   value={newProduct.precioVenta}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, precioVenta: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setNewProduct(prev => ({ 
+                    ...prev, 
+                    precioVenta: parseFloat(e.target.value) || 0
+                  }))}
                 />
               </div>
               <div className="space-y-2">
@@ -252,7 +261,10 @@ const ProductosModule = () => {
                   type="number"
                   placeholder="0"
                   value={newProduct.stockMinimo}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, stockMinimo: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setNewProduct(prev => ({ 
+                    ...prev, 
+                    stockMinimo: parseInt(e.target.value) || 0
+                  }))}
                 />
               </div>
               <div className="space-y-2">
@@ -262,7 +274,10 @@ const ProductosModule = () => {
                   type="number"
                   placeholder="0"
                   value={newProduct.stockActual}
-                  onChange={(e) => setNewProduct(prev => ({ ...prev, stockActual: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setNewProduct(prev => ({ 
+                    ...prev, 
+                    stockActual: parseInt(e.target.value) || 0
+                  }))}
                 />
               </div>
               <div className="space-y-2">
@@ -508,7 +523,11 @@ const ProductosModule = () => {
                 <Input 
                   type="number"
                   value={editingProduct.precioCompra}
-                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, precioCompra: parseFloat(e.target.value) || 0 } : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { 
+                    ...prev, 
+                    precioCompra: parseFloat(e.target.value) || 0,
+                    costoUnitario: parseFloat(e.target.value) || 0
+                  } : null)}
                 />
               </div>
               <div className="space-y-2">

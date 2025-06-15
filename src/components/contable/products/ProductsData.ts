@@ -7,7 +7,10 @@ export interface Producto {
   categoria: string;
   unidadMedida: string;
   precioVenta: number;
+  precioCompra: number;
   costoUnitario: number;
+  stockActual: number;
+  stockMinimo: number;
   codigoSIN: string;
   activo: boolean;
   fechaCreacion: string;
@@ -51,7 +54,10 @@ export const productosIniciales: Producto[] = [
     categoria: "Equipos",
     unidadMedida: "PZA",
     precioVenta: 4200,
+    precioCompra: 3500,
     costoUnitario: 3500,
+    stockActual: 10,
+    stockMinimo: 5,
     codigoSIN: "86173000",
     activo: true,
     fechaCreacion: "2024-06-01",
@@ -65,7 +71,10 @@ export const productosIniciales: Producto[] = [
     categoria: "Accesorios",
     unidadMedida: "PZA",
     precioVenta: 65,
+    precioCompra: 45,
     costoUnitario: 45,
+    stockActual: 25,
+    stockMinimo: 10,
     codigoSIN: "84716070",
     activo: true,
     fechaCreacion: "2024-06-01",
@@ -79,7 +88,10 @@ export const productosIniciales: Producto[] = [
     categoria: "Servicios",
     unidadMedida: "HR",
     precioVenta: 150,
+    precioCompra: 0,
     costoUnitario: 0,
+    stockActual: 0,
+    stockMinimo: 0,
     codigoSIN: "83111100",
     activo: true,
     fechaCreacion: "2024-06-01",
