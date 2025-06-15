@@ -16,13 +16,15 @@ import {
   FileBarChart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useAsientos } from "@/hooks/useAsientos";
+import { useReportesContables } from "@/hooks/useReportesContables";
 
 const ReportesModule = () => {
   const [fechaInicio, setFechaInicio] = useState("2025-06-01");
   const [fechaFin, setFechaFin] = useState("2025-06-30");
   const { toast } = useToast();
-  const { getAsientos, getBalanceSheetData, getIncomeStatementData, getDeclaracionIVAData } = useContabilidadIntegration();
+  const { getAsientos } = useAsientos();
+  const { getBalanceSheetData, getIncomeStatementData, getDeclaracionIVAData } = useReportesContables();
 
   const reportes = [
     {
