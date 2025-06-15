@@ -1,18 +1,14 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, DollarSign, Users, Package, FileText, PieChart as PieChartIcon } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { DollarSign, Users, Package, FileText, TrendingUp } from "lucide-react";
+import { ChartConfig } from "@/components/ui/chart";
 import { Factura } from "./BillingData";
 import { AsientoContable } from "../diary/DiaryData";
 import { Producto } from "../products/ProductsData";
+import MetricCard from "../dashboard/MetricCard";
+import SalesChart from "../dashboard/SalesChart";
+import InvoiceStatusChart from "../dashboard/InvoiceStatusChart";
+import TopProductsChart from "../dashboard/TopProductsChart";
+import SystemAlerts from "../dashboard/SystemAlerts";
 
 interface FinancialDashboardProps {
   facturas: Factura[];
@@ -94,18 +90,7 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
       color: "text-emerald-600"
     }
   ];
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case "up":
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case "down":
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
+  
   // --- Data for Charts ---
 
   // Sales chart data (last 30 days)
@@ -202,165 +187,36 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {metrics.map((metric, index) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {metric.title}
-                </CardTitle>
-                <Icon className={`w-5 h-5 ${metric.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold mb-1">{metric.value}</div>
-                <div className="flex items-center gap-2">
-                  {getTrendIcon(metric.trend)}
-                  <p className="text-xs text-gray-600">{metric.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {metrics.map((metric, index) => (
+          <MetricCard
+            key={index}
+            title={metric.title}
+            value={metric.value}
+            description={metric.description}
+            icon={metric.icon}
+            trend={metric.trend as "up" | "down" | "neutral"}
+            color={metric.color}
+          />
+        ))}
       </div>
       
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Ventas de los Últimos 30 Días</CardTitle>
-            <CardDescription>Análisis de ingresos diarios (Bs.)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={salesChartConfig} className="h-[300px] w-full">
-              <BarChart accessibilityLayer data={salesChartData} margin={{ top: 20, right: 20, left: 10, bottom: 0 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(value) => `Bs ${Number(value) / 1000}k`} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                <Bar dataKey="ventas" fill="var(--color-ventas)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <SalesChart salesChartData={salesChartData} salesChartConfig={salesChartConfig} />
         
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-                <CardTitle>Estado de Facturas</CardTitle>
-                <CardDescription>Distribución del total de facturas</CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center p-4">
-                <ChartContainer config={statusChartConfig} className="h-[250px] w-full aspect-square">
-                    <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent nameKey="name" hideIndicator />} />
-                        <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                          const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                          const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                          if ((percent * 100) < 5) return null;
-                          return (
-                            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-medium">
-                              {`${(percent * 100).toFixed(0)}%`}
-                            </text>
-                          );
-                        }}>
-                          {pieChartData.map((entry) => (
-                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
-                    </PieChart>
-                </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChartIcon className="w-5 h-5" /> Top 5 Productos Vendidos
-                </CardTitle>
-                <CardDescription>Productos con mayores ingresos por ventas (Bs.)</CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center p-4">
-                <ChartContainer config={topProductsChartConfig} className="h-[250px] w-full aspect-square">
-                    <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent nameKey="name" formatter={(value) => `Bs. ${Number(value).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />} />
-                        <Pie data={topProductsChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ percent }) => {
-                              if (percent * 100 < 5) return null;
-                              return `${(percent * 100).toFixed(0)}%`;
-                          }}>
-                          {topProductsChartData.map((entry) => (
-                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
-                    </PieChart>
-                </ChartContainer>
-            </CardContent>
-          </Card>
+          <InvoiceStatusChart pieChartData={pieChartData} statusChartConfig={statusChartConfig} />
+          <TopProductsChart topProductsChartData={topProductsChartData} topProductsChartConfig={topProductsChartConfig} />
         </div>
       </div>
 
       {/* Alertas */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Alertas del Sistema</h3>
-        <div className="grid gap-4">
-          {productosStockBajo > 0 && (
-            <Card className="border-orange-200 bg-orange-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2">
-                  <Package className="w-5 h-5 text-orange-600" />
-                  <div>
-                    <p className="font-medium text-orange-800">
-                      Stock Bajo Detectado
-                    </p>
-                    <p className="text-sm text-orange-600">
-                      {productosStockBajo} producto(s) con stock por debajo del mínimo
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {facturasPendientes > 5 && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-red-600" />
-                  <div>
-                    <p className="font-medium text-red-800">
-                      Muchas Facturas Pendientes
-                    </p>
-                    <p className="text-sm text-red-600">
-                      {facturasPendientes} facturas pendientes de cobro
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {asientosHoy === 0 && ventasHoy > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-yellow-600" />
-                  <div>
-                    <p className="font-medium text-yellow-800">
-                      Verificar Registro Contable
-                    </p>
-                    <p className="text-sm text-yellow-600">
-                      Hay ventas registradas pero sin asientos contables hoy
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+      <SystemAlerts
+        productosStockBajo={productosStockBajo}
+        facturasPendientes={facturasPendientes}
+        asientosHoy={asientosHoy}
+        ventasHoy={ventasHoy}
+      />
     </div>
   );
 };
