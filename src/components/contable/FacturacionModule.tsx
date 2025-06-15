@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,13 +41,17 @@ const FacturacionModule = () => {
         id: Date.now().toString() + Math.random(),
         fecha: nuevaFactura.fecha,
         tipo: 'salida',
+        productoId: item.productoId,
         producto: item.descripcion,
         cantidad: item.cantidad,
-        valorUnitario: item.precioUnitario,
-        valorMovimiento: item.subtotal,
+        costoUnitario: item.precioUnitario,
+        costoPromedioPonderado: item.precioUnitario,
+        motivo: 'Venta',
         documento: `Factura ${nuevaFactura.numero}`,
-        responsable: 'Sistema',
-        observaciones: `Venta registrada automáticamente`
+        usuario: 'Sistema',
+        stockAnterior: 0,
+        stockNuevo: 0,
+        valorMovimiento: item.subtotal
       };
 
       // Generar asiento de inventario por la salida
