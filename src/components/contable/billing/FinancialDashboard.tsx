@@ -1,7 +1,15 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign, Users, Package, FileText } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Factura } from "./BillingData";
 import { AsientoContable } from "../diary/DiaryData";
 import { Producto } from "../products/ProductsData";
@@ -98,6 +106,57 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
     }
   };
 
+  // --- Data for Charts ---
+
+  // Sales chart data (last 30 days)
+  const salesData = Array.from({ length: 30 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (29 - i));
+    return { date: d.toISOString().slice(0, 10), total: 0 };
+  });
+
+  facturas.forEach(f => {
+    if (f.estado !== 'anulada') {
+      const saleDate = salesData.find(d => d.date === f.fecha);
+      if (saleDate) {
+        saleDate.total += f.total;
+      }
+    }
+  });
+  
+  const salesChartData = salesData.map(d => ({
+    date: new Date(d.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+    ventas: d.total,
+  }));
+
+  const salesChartConfig = {
+    ventas: {
+      label: "Ventas",
+      color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig;
+
+  // Invoice status pie chart data
+  const statusChartConfig = {
+    pagada: { label: 'Pagada', color: 'hsl(var(--chart-1))' },
+    enviada: { label: 'Enviada', color: 'hsl(var(--chart-2))' },
+    borrador: { label: 'Borrador', color: 'hsl(var(--chart-4))' },
+    anulada: { label: 'Anulada', color: 'hsl(var(--chart-5))' },
+  } satisfies ChartConfig;
+
+  const statusCounts = facturas.reduce((acc, f) => {
+    acc[f.estado] = (acc[f.estado] || 0) + 1;
+    return acc;
+  }, {} as Record<Factura['estado'], number>)
+
+  const pieChartData = Object.entries(statusCounts)
+    .map(([name, value]) => ({
+      name: name as Factura['estado'],
+      value,
+      fill: statusChartConfig[name as Factura['estado']]?.color || 'hsl(var(--chart-3))',
+    }));
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -126,6 +185,56 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
             </Card>
           );
         })}
+      </div>
+      
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Ventas de los Últimos 30 Días</CardTitle>
+            <CardDescription>Análisis de ingresos diarios (Bs.)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={salesChartConfig} className="h-[250px] w-full">
+              <BarChart accessibilityLayer data={salesChartData} margin={{ top: 20, right: 20, left: 10, bottom: 0 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(value) => `Bs ${value / 1000}k`} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                <Bar dataKey="ventas" fill="var(--color-ventas)" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle>Estado de Facturas</CardTitle>
+                <CardDescription>Distribución del total de facturas emitidas</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center p-4">
+                <ChartContainer config={statusChartConfig} className="h-[250px] w-full aspect-square">
+                    <PieChart>
+                        <ChartTooltip content={<ChartTooltipContent nameKey="name" hideIndicator />} />
+                        <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                          const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                          const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                          if ((percent * 100) < 5) return null;
+                          return (
+                            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-medium">
+                              {`${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}>
+                          {pieChartData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
       </div>
 
       {/* Alertas */}

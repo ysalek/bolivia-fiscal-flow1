@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Calculator,
@@ -167,7 +168,7 @@ const Index = () => {
           </header>
           <main className="p-6 flex-1">
             <div className="animate-in fade-in-50 duration-300">
-              <ActiveComponent />
+              <ActiveComponent key={activeModule} />
             </div>
           </main>
         </div>
