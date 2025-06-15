@@ -1,4 +1,3 @@
-
 import { ItemFactura } from "./BillingData";
 import { Producto } from "../products/ProductsData";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import ProductSearchCombobox from "./ProductSearchCombobox";
 
 interface InvoiceItemRowProps {
   item: ItemFactura;
@@ -21,56 +21,15 @@ interface InvoiceItemRowProps {
 }
 
 const InvoiceItemRow = ({ item, index, productos, updateItem, removeItem, itemCount }: InvoiceItemRowProps) => {
-  const [openProductCombobox, setOpenProductCombobox] = useState(false);
-
   return (
     <div key={item.id} className="grid grid-cols-7 gap-4 p-4 border rounded-lg">
       <div>
         <Label>Producto</Label>
-        <Popover open={openProductCombobox} onOpenChange={setOpenProductCombobox}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              className="w-full justify-between"
-            >
-              {item.productoId
-                ? productos.find((p) => p.id === item.productoId)?.nombre
-                : "Seleccionar"}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-            <Command>
-              <CommandInput placeholder="Buscar producto..." />
-              <CommandList>
-                <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                <CommandGroup>
-                  {productos.map((producto) => (
-                    <CommandItem
-                      key={producto.id}
-                      value={`${producto.nombre} ${producto.codigo}`}
-                      onSelect={() => {
-                        updateItem(index, 'productoId', producto.id);
-                        setOpenProductCombobox(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          item.productoId === producto.id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {producto.nombre}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <ProductSearchCombobox
+          productos={productos}
+          value={item.productoId}
+          onChange={(newId) => updateItem(index, 'productoId', newId)}
+        />
       </div>
       <div>
         <Label>Descripción</Label>
