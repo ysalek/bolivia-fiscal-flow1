@@ -5,10 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Send, Eye, X, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, Send, Eye, X, AlertCircle, Trash2, ChevronsUpDown, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura } from "./BillingData";
 import { Producto } from "../products/ProductsData";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ClienteForm from "../clients/ClienteForm";
 
 interface InvoiceFormProps {
   clientes: Cliente[];
@@ -16,9 +21,10 @@ interface InvoiceFormProps {
   facturas: Factura[];
   onSave: (factura: Factura) => void;
   onCancel: () => void;
+  onAddNewClient: (cliente: Cliente) => void;
 }
 
-const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: InvoiceFormProps) => {
+const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNewClient }: InvoiceFormProps) => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [items, setItems] = useState<ItemFactura[]>([
     {
@@ -36,6 +42,8 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [showNewClientDialog, setShowNewClientDialog] = useState(false);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -50,6 +58,12 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveNewClient = (cliente: Cliente) => {
+    onAddNewClient(cliente);
+    setSelectedCliente(cliente);
+    setShowNewClientDialog(false);
   };
 
   const addItem = () => {
@@ -188,24 +202,55 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Cliente *</Label>
-            <Select 
-              value={selectedCliente?.id || ""} 
-              onValueChange={(value) => {
-                const cliente = clientes.find(c => c.id === value);
-                setSelectedCliente(cliente || null);
-              }}
-            >
-              <SelectTrigger className={errors.cliente ? "border-red-500" : ""}>
-                <SelectValue placeholder="Seleccionar cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes.map(cliente => (
-                  <SelectItem key={cliente.id} value={cliente.id}>
-                    {cliente.nombre} - {cliente.nit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className={`w-full justify-between ${errors.cliente ? "border-red-500" : ""}`}
+                  >
+                    {selectedCliente
+                      ? `${selectedCliente.nombre} - ${selectedCliente.nit}`
+                      : "Seleccionar cliente..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente por nombre o NIT..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                      <CommandGroup>
+                        {clientes.map((cliente) => (
+                          <CommandItem
+                            key={cliente.id}
+                            value={`${cliente.nombre} ${cliente.nit}`}
+                            onSelect={() => {
+                              setSelectedCliente(cliente);
+                              setOpenCombobox(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCliente?.id === cliente.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cliente.nombre} - {cliente.nit}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Button variant="outline" size="sm" onClick={() => setShowNewClientDialog(true)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
             {errors.cliente && (
               <p className="text-sm text-red-500 flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
@@ -213,6 +258,18 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
               </p>
             )}
           </div>
+
+          <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
+              <DialogContent className="sm:max-w-[800px]">
+                  <DialogHeader>
+                      <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+                  </DialogHeader>
+                  <ClienteForm 
+                      onSave={handleSaveNewClient} 
+                      onCancel={() => setShowNewClientDialog(false)} 
+                  />
+              </DialogContent>
+          </Dialog>
 
           {selectedCliente && (
             <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">

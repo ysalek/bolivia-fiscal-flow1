@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -37,6 +38,16 @@ const FacturacionModule = () => {
       setClientes(JSON.parse(clientesGuardados));
     }
   }, []);
+
+  const handleAddNewClient = (nuevoCliente: Cliente) => {
+    const nuevosClientes = [nuevoCliente, ...clientes];
+    setClientes(nuevosClientes);
+    localStorage.setItem('clientes', JSON.stringify(nuevosClientes));
+    toast({
+        title: "Cliente creado",
+        description: `${nuevoCliente.nombre} ha sido agregado exitosamente.`,
+    });
+  };
 
   const handleSaveInvoice = (nuevaFactura: Factura) => {
     try {
@@ -103,6 +114,7 @@ const FacturacionModule = () => {
         facturas={facturas}
         onSave={handleSaveInvoice}
         onCancel={() => setShowNewInvoice(false)}
+        onAddNewClient={handleAddNewClient}
       />
     );
   }
