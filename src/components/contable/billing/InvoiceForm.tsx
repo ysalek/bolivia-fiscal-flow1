@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
   const { toast } = useToast();
   const [openCombobox, setOpenCombobox] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [openProductCombobox, setOpenProductCombobox] = useState<number | null>(null);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -306,21 +308,50 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
               <div key={item.id} className="grid grid-cols-7 gap-4 p-4 border rounded-lg">
                 <div>
                   <Label>Producto</Label>
-                  <Select 
-                    value={item.productoId} 
-                    onValueChange={(value) => updateItem(index, 'productoId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productos.map(producto => (
-                        <SelectItem key={producto.id} value={producto.id}>
-                          {producto.codigo} - {producto.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openProductCombobox === index} onOpenChange={(isOpen) => setOpenProductCombobox(isOpen ? index : null)}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between"
+                      >
+                        {item.productoId
+                          ? productos.find((p) => p.id === item.productoId)?.nombre
+                          : "Seleccionar"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar producto..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                          <CommandGroup>
+                            {productos.map((producto) => (
+                              <CommandItem
+                                key={producto.id}
+                                value={`${producto.nombre} ${producto.codigo}`}
+                                onSelect={() => {
+                                  updateItem(index, 'productoId', producto.id);
+                                  setOpenProductCombobox(null);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    item.productoId === producto.id
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {producto.nombre}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
                   <Label>Descripción</Label>
