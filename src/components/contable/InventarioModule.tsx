@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 const InventarioModule = () => {
   const [productos, setProductos] = useState<ProductoInventario[]>(productosIniciales);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
-  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("all");
   const [busqueda, setBusqueda] = useState("");
   const [showMovementDialog, setShowMovementDialog] = useState<{ open: boolean; tipo: 'entrada' | 'salida' }>({
     open: false,
@@ -77,7 +77,7 @@ const InventarioModule = () => {
   const productosFiltrados = productos.filter(producto => {
     const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                            producto.codigo.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideCategoria = !filtroCategoria || producto.categoria === filtroCategoria;
+    const coincideCategoria = filtroCategoria === "all" || producto.categoria === filtroCategoria;
     return coincideBusqueda && coincideCategoria;
   });
 
@@ -197,7 +197,7 @@ const InventarioModule = () => {
                     <SelectValue placeholder="Filtrar por categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las categorías</SelectItem>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
                     <SelectItem value="Equipos">Equipos</SelectItem>
                     <SelectItem value="Accesorios">Accesorios</SelectItem>
                     <SelectItem value="Servicios">Servicios</SelectItem>
