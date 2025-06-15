@@ -1,4 +1,3 @@
-
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { useAsientos } from "./useAsientos";
@@ -28,7 +27,7 @@ export type { Producto } from "@/components/contable/products/ProductsData";
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
-  generarAsientoCompra: (compra: any) => AsientoContable;
+  generarAsientoCompra: (compra: { numero: string, total: number, subtotal: number, iva: number }) => AsientoContable;
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
@@ -158,23 +157,24 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     return asiento;
   };
 
-  const generarAsientoCompra = (compra: any): AsientoContable => {
+  const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
-    const totalConIVA = compra.total * 1.13;
-    const ivaCompra = totalConIVA - compra.total;
+    const totalCompra = compra.total;
+    const inventarioValor = compra.subtotal;
+    const ivaCreditoFiscal = compra.iva;
 
     cuentas.push({
       codigo: "1141",
       nombre: "Inventarios",
-      debe: compra.total,
+      debe: inventarioValor,
       haber: 0
     });
 
     cuentas.push({
-      codigo: "2114",
+      codigo: "1142",
       nombre: "IVA Crédito Fiscal",
-      debe: ivaCompra,
+      debe: ivaCreditoFiscal,
       haber: 0
     });
 
@@ -182,7 +182,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       codigo: "2111",
       nombre: "Cuentas por Pagar",
       debe: 0,
-      haber: totalConIVA
+      haber: totalCompra
     });
 
     const asiento: AsientoContable = {
@@ -191,8 +191,8 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       fecha,
       concepto: `Compra según factura ${compra.numero}`,
       referencia: compra.numero,
-      debe: totalConIVA,
-      haber: totalConIVA,
+      debe: totalCompra,
+      haber: totalCompra,
       estado: 'registrado',
       cuentas
     };

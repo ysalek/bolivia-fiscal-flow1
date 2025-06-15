@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Compra, Proveedor, comprasIniciales, proveedoresIniciales } from "./purchases/PurchasesData";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { Producto, productosIniciales } from "./products/ProductsData";
-import { MovimientoInventario } from "./inventory/InventoryData";
 import CompraForm from "./purchases/CompraForm";
 import PurchasesList from "./purchases/PurchasesList";
 import ProveedoresList from "./purchases/ProveedoresList";
@@ -18,7 +16,7 @@ const ComprasModule = () => {
   const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewCompraForm, setShowNewCompraForm] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoCompra, generarAsientoInventario } = useContabilidadIntegration();
+  const { generarAsientoCompra, actualizarStockProducto } = useContabilidadIntegration();
 
   useEffect(() => {
     const comprasGuardadas = localStorage.getItem('compras');
@@ -33,35 +31,17 @@ const ComprasModule = () => {
 
   const handleSaveCompra = (nuevaCompra: Compra) => {
     try {
-      // 1. Process inventory and accounting for each item
+      // 1. Update stock for each item
       nuevaCompra.items.forEach(item => {
-        const producto = productos.find(p => p.id === item.productoId);
-        if (producto) {
-          const movimiento: MovimientoInventario = {
-            id: `${Date.now().toString()}-${item.productoId}`,
-            fecha: nuevaCompra.fecha,
-            tipo: 'entrada',
-            productoId: item.productoId,
-            producto: item.descripcion,
-            cantidad: item.cantidad,
-            costoUnitario: item.costoUnitario,
-            costoPromedioPonderado: item.costoUnitario,
-            motivo: 'Compra',
-            documento: `Compra N° ${nuevaCompra.numero}`,
-            usuario: 'Sistema',
-            stockAnterior: producto.stockActual,
-            stockNuevo: producto.stockActual + item.cantidad,
-            valorMovimiento: item.cantidad * item.costoUnitario,
-          };
-          // This generates the inventory accounting entry and updates the stock
-          generarAsientoInventario(movimiento);
-        }
+        actualizarStockProducto(item.productoId, item.cantidad, 'entrada');
       });
       
-      // 2. Generate purchase accounting entry (IVA, etc.)
+      // 2. Generate ONE accounting entry for the entire purchase
       generarAsientoCompra({
         numero: nuevaCompra.numero,
-        total: nuevaCompra.subtotal,
+        total: nuevaCompra.total,
+        subtotal: nuevaCompra.subtotal,
+        iva: nuevaCompra.iva
       });
       
       // 3. Update purchases list and persist
@@ -86,17 +66,25 @@ const ComprasModule = () => {
   };
 
   const handleProcessPurchase = (compra: Compra) => {
-    // Generar asiento contable automáticamente
-    const asientoCompra = generarAsientoCompra({
-      numero: compra.numero,
-      total: compra.subtotal
-    });
+    if (compra.estado !== 'recibida') {
+      toast({
+        title: "Acción no permitida",
+        description: `La compra ya tiene estado "${compra.estado}". Solo se pueden procesar compras en estado "recibida".`,
+        variant: "destructive",
+      });
+      return;
+    }
     
-    console.log("Asiento de compra generado:", asientoCompra);
+    // Update purchase status to 'pagada'
+    const comprasActualizadas = compras.map(c => 
+        c.id === compra.id ? { ...c, estado: 'pagada' } : c
+    );
+    setCompras(comprasActualizadas);
+    localStorage.setItem('compras', JSON.stringify(comprasActualizadas));
     
     toast({
-      title: "Compra procesada",
-      description: `Compra ${compra.numero} procesada y registrada contablemente.`,
+      title: "Compra Procesada",
+      description: `La compra ${compra.numero} ha sido marcada como "pagada".`,
     });
   };
 

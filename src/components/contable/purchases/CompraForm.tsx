@@ -89,6 +89,9 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
   };
 
   const calculateSubtotal = () => items.reduce((total, item) => total + item.subtotal, 0);
+  const subtotal = calculateSubtotal();
+  const iva = subtotal * 0.13;
+  const total = subtotal + iva;
 
   const handleSubmit = () => {
     if (!validateForm()) {
@@ -96,9 +99,6 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
       return;
     }
 
-    const subtotal = calculateSubtotal();
-    const iva = subtotal * 0.13;
-    const total = subtotal + iva;
     const numero = (Math.max(...compras.map(c => parseInt(c.numero.replace('OC-', ''))), 0) + 1).toString().padStart(4, '0');
 
     const nuevaCompra: Compra = {
@@ -112,7 +112,7 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
       descuentoTotal: 0,
       iva,
       total,
-      estado: 'pendiente',
+      estado: 'recibida',
       observaciones: observaciones,
       fechaCreacion: new Date().toISOString().slice(0, 10),
     };
@@ -181,10 +181,18 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
         </div>
 
         <div className="flex justify-end">
-            <div className="w-64 space-y-2 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between font-bold text-lg">
-                    <span>Total (Sin IVA):</span>
-                    <span>Bs. {calculateSubtotal().toFixed(2)}</span>
+            <div className="w-80 space-y-2 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>Bs. {subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>IVA (13%):</span>
+                    <span>Bs. {iva.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                    <span>Total:</span>
+                    <span>Bs. {total.toFixed(2)}</span>
                 </div>
             </div>
         </div>
