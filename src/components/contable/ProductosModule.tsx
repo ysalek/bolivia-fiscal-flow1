@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Producto, productosIniciales } from "./products/ProductsData";
 import ProductoForm from "./products/ProductoForm";
@@ -68,6 +67,24 @@ const ProductosModule = () => {
       toast({
         title: "Producto desactivado",
         description: `${producto.nombre} ha sido desactivado.`,
+      });
+    }
+  };
+
+  const handleReactivateProducto = (productoId: string) => {
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    if (confirm(`¿Está seguro de reactivar el producto ${producto.nombre}?`)) {
+      const nuevosProductos = productos.map(p => 
+        p.id === productoId ? { ...p, activo: true } : p
+      );
+      setProductos(nuevosProductos);
+      localStorage.setItem('productos', JSON.stringify(nuevosProductos));
+      
+      toast({
+        title: "Producto reactivado",
+        description: `${producto.nombre} ha sido reactivado exitosamente.`,
       });
     }
   };
@@ -234,13 +251,23 @@ const ProductosModule = () => {
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    {producto.activo && (
+                    {producto.activo ? (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteProducto(producto.id)}
+                        aria-label="Desactivar producto"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReactivateProducto(producto.id)}
+                        aria-label="Reactivar producto"
+                      >
+                        <Check className="w-4 h-4 text-green-600" />
                       </Button>
                     )}
                   </div>

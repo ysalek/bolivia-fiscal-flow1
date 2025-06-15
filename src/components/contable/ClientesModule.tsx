@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Users, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Users, Phone, Mail, MapPin, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, clientesIniciales } from "./billing/BillingData";
 import ClienteForm from "./clients/ClienteForm";
@@ -69,6 +68,24 @@ const ClientesModule = () => {
       toast({
         title: "Cliente desactivado",
         description: `${cliente.nombre} ha sido desactivado.`,
+      });
+    }
+  };
+
+  const handleReactivateCliente = (clienteId: string) => {
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (!cliente) return;
+
+    if (confirm(`¿Está seguro de reactivar el cliente ${cliente.nombre}?`)) {
+      const nuevosClientes = clientes.map(c => 
+        c.id === clienteId ? { ...c, activo: true } : c
+      );
+      setClientes(nuevosClientes);
+      localStorage.setItem('clientes', JSON.stringify(nuevosClientes));
+      
+      toast({
+        title: "Cliente reactivado",
+        description: `${cliente.nombre} ha sido reactivado exitosamente.`,
       });
     }
   };
@@ -217,13 +234,23 @@ const ClientesModule = () => {
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    {cliente.activo && (
+                    {cliente.activo ? (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteCliente(cliente.id)}
+                        aria-label="Desactivar cliente"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                       <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReactivateCliente(cliente.id)}
+                        aria-label="Reactivar cliente"
+                      >
+                        <Check className="w-4 h-4 text-green-600" />
                       </Button>
                     )}
                   </div>
