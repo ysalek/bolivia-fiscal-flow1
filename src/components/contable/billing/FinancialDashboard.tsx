@@ -117,16 +117,16 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
   const salesChartConfig = {
     ventas: {
       label: "Ventas",
-      color: "hsl(var(--chart-1))",
+      color: "hsl(150, 60%, 50%)",
     },
   } satisfies ChartConfig;
 
   // Invoice status pie chart data
   const statusChartConfig = {
-    pagada: { label: 'Pagada', color: 'hsl(var(--chart-1))' },
-    enviada: { label: 'Enviada', color: 'hsl(var(--chart-2))' },
-    borrador: { label: 'Borrador', color: 'hsl(var(--chart-4))' },
-    anulada: { label: 'Anulada', color: 'hsl(var(--chart-5))' },
+    pagada: { label: 'Pagada', color: 'hsl(142.1, 76.2%, 45.1%)' },
+    enviada: { label: 'Enviada', color: 'hsl(221.2, 83.2%, 53.3%)' },
+    borrador: { label: 'Borrador', color: 'hsl(240, 4.8%, 65.9%)' },
+    anulada: { label: 'Anulada', color: 'hsl(0, 84.2%, 60.2%)' },
   } satisfies ChartConfig;
 
   const statusCounts = facturas.reduce((acc, f) => {
@@ -138,7 +138,7 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
     .map(([name, value]) => ({
       name: name as Factura['estado'],
       value,
-      fill: statusChartConfig[name as Factura['estado']]?.color || 'hsl(var(--chart-3))',
+      fill: `var(--color-${name})`,
     }));
 
   // --- Data for Top Selling Products Chart ---
@@ -162,11 +162,11 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
     .slice(0, 5);
 
   const topProductsColors = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
+    "hsl(221.2, 83.2%, 53.3%)", // blue-600
+    "hsl(142.1, 76.2%, 45.1%)", // green-600
+    "hsl(262.1, 83.3%, 57.8%)", // violet-600
+    "hsl(30, 90%, 55%)",       // orange-ish
+    "hsl(346.8, 77.2%, 49.8%)", // rose-600
   ];
 
   const topProductsChartData = topProductsData.map((entry, index) => ({
