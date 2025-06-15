@@ -3,6 +3,22 @@ import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/Diar
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { Producto } from "@/components/contable/products/ProductsData";
 
+export interface TrialBalanceDetail {
+  codigo: string;
+  nombre: string;
+  sumaDebe: number;
+  sumaHaber: number;
+  saldoDeudor: number;
+  saldoAcreedor: number;
+}
+
+export interface TrialBalanceTotals {
+  sumaDebe: number;
+  sumaHaber: number;
+  saldoDeudor: number;
+  saldoAcreedor: number;
+}
+
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
@@ -10,6 +26,7 @@ export interface ContabilidadIntegrationHook {
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
+  getTrialBalanceData: () => { details: TrialBalanceDetail[], totals: TrialBalanceTotals };
   actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
   obtenerProductos: () => Producto[];
   validarTransaccion: (asiento: AsientoContable) => boolean;
@@ -176,6 +193,51 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     return libroMayor;
   };
 
+  const getTrialBalanceData = (): { details: TrialBalanceDetail[], totals: TrialBalanceTotals } => {
+    const libroMayor = getLibroMayor();
+    const details: TrialBalanceDetail[] = [];
+    const totals: TrialBalanceTotals = {
+        sumaDebe: 0,
+        sumaHaber: 0,
+        saldoDeudor: 0,
+        saldoAcreedor: 0,
+    };
+
+    const sortedAccounts = Object.values(libroMayor).sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    sortedAccounts.forEach(cuenta => {
+        const { codigo, nombre, totalDebe, totalHaber } = cuenta;
+        let saldoDeudor = 0;
+        let saldoAcreedor = 0;
+
+        const saldo = totalDebe - totalHaber;
+        
+        // Simplificado: Saldo deudor si Debe > Haber, sino Acreedor.
+        // Una implementación más rigurosa usaría la naturaleza de la cuenta.
+        if (saldo > 0) {
+            saldoDeudor = saldo;
+        } else {
+            saldoAcreedor = -saldo;
+        }
+        
+        details.push({
+            codigo,
+            nombre,
+            sumaDebe: totalDebe,
+            sumaHaber: totalHaber,
+            saldoDeudor,
+            saldoAcreedor,
+        });
+
+        totals.sumaDebe += totalDebe;
+        totals.sumaHaber += totalHaber;
+        totals.saldoDeudor += saldoDeudor;
+        totals.saldoAcreedor += saldoAcreedor;
+    });
+
+    return { details, totals };
+  };
+
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
@@ -328,6 +390,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     guardarAsiento,
     getAsientos,
     getLibroMayor,
+    getTrialBalanceData,
     actualizarStockProducto,
     obtenerProductos,
     validarTransaccion,

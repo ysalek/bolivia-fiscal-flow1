@@ -14,7 +14,8 @@ import {
   User,
   Settings,
   FolderTree,
-  BookCopy
+  BookCopy,
+  Scale
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -25,7 +26,7 @@ import ProductosModule from "@/components/contable/ProductosModule";
 import InventarioModule from "@/components/contable/InventarioModule";
 import JournalView from "@/components/contable/journal/JournalView";
 import GeneralLedgerView from "@/components/contable/ledger/GeneralLedgerView";
-import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
+import BalanceComprobacionModule from "@/components/contable/BalanceComprobacionModule";
 import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
@@ -98,9 +99,9 @@ const Index = () => {
     },
     { 
       id: "balance", 
-      label: "Balance", 
-      icon: Calculator, 
-      component: BalanceComprobacion, 
+      label: "Balance de Comprobación", 
+      icon: Scale, 
+      component: BalanceComprobacionModule, 
       permission: "balance" 
     },
     { 
