@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,56 +40,60 @@ const FacturacionModule = () => {
   }, []);
 
   const handleSaveInvoice = (nuevaFactura: Factura) => {
-    // Actualizar inventario por cada item vendido
-    nuevaFactura.items.forEach(item => {
-      const movimientoInventario: MovimientoInventario = {
-        id: Date.now().toString() + Math.random(),
-        fecha: nuevaFactura.fecha,
-        tipo: 'salida',
-        productoId: item.productoId,
-        producto: item.descripcion,
-        cantidad: item.cantidad,
-        costoUnitario: item.precioUnitario,
-        costoPromedioPonderado: item.precioUnitario,
-        motivo: 'Venta',
-        documento: `Factura ${nuevaFactura.numero}`,
-        usuario: 'Sistema',
-        stockAnterior: 0,
-        stockNuevo: 0,
-        valorMovimiento: item.subtotal
-      };
+    try {
+      // 1. Procesar inventario y generar asiento de costo de ventas
+      nuevaFactura.items.forEach(item => {
+        const producto = productos.find(p => p.id === item.productoId);
+        if (producto && producto.costoUnitario > 0) {
+          const movimientoInventario: MovimientoInventario = {
+            id: `${Date.now().toString()}-${item.productoId}`,
+            fecha: nuevaFactura.fecha,
+            tipo: 'salida',
+            productoId: item.productoId,
+            producto: item.descripcion,
+            cantidad: item.cantidad,
+            costoUnitario: producto.costoUnitario,
+            costoPromedioPonderado: producto.costoUnitario, // Placeholder, usar costo unitario por ahora
+            motivo: 'Venta',
+            documento: `Factura N° ${nuevaFactura.numero}`,
+            usuario: 'Sistema',
+            stockAnterior: producto.stockActual,
+            stockNuevo: producto.stockActual - item.cantidad,
+            valorMovimiento: item.cantidad * producto.costoUnitario,
+          };
 
-      // Generar asiento de inventario por la salida
-      generarAsientoInventario(movimientoInventario);
+          // Genera el asiento contable de costo y actualiza el stock del producto
+          generarAsientoInventario(movimientoInventario);
 
-      // Guardar movimiento en localStorage
-      const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
-      const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
-      localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
-    });
+          // Guarda el movimiento en localStorage para el historial de inventario
+          const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
+          const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
+          localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
+        }
+      });
 
-    const nuevasFacturas = [nuevaFactura, ...facturas];
-    setFacturas(nuevasFacturas);
-    
-    // Guardar en localStorage
-    localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
-    
-    // Generar asiento contable de venta
-    generarAsientoVenta({
-      numero: nuevaFactura.numero,
-      total: nuevaFactura.total,
-      subtotal: nuevaFactura.subtotal,
-      iva: nuevaFactura.iva
-    });
-    
-    console.log("Factura guardada y asientos generados");
-    
-    toast({
-      title: "Factura creada exitosamente",
-      description: `Factura N° ${nuevaFactura.numero} generada y registrada contablemente. Inventario actualizado.`,
-    });
-    
-    setShowNewInvoice(false);
+      // 2. Generar asiento contable de venta
+      generarAsientoVenta(nuevaFactura);
+      
+      // 3. Actualizar la lista de facturas y persistir
+      const nuevasFacturas = [nuevaFactura, ...facturas];
+      setFacturas(nuevasFacturas);
+      localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
+      
+      toast({
+        title: "Factura creada exitosamente",
+        description: `Factura N° ${nuevaFactura.numero} generada y registrada contablemente. Inventario actualizado.`,
+      });
+      
+      setShowNewInvoice(false);
+    } catch (error) {
+      console.error("Error al guardar y procesar la factura:", error);
+      toast({
+        title: "Error al procesar la factura",
+        description: "Ocurrió un error inesperado durante la integración contable.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
