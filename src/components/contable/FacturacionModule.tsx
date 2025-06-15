@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
-  const [clientes] = useState<Cliente[]>(clientesIniciales);
+  const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
   const [productos] = useState(productosIniciales);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const { toast } = useToast();
@@ -28,6 +27,11 @@ const FacturacionModule = () => {
     });
     
     console.log("Asiento de venta generado:", asientoVenta);
+    
+    toast({
+      title: "Factura creada exitosamente",
+      description: `Factura N° ${nuevaFactura.numero} ha sido generada y registrada contablemente.`,
+    });
     
     setShowNewInvoice(false);
   };

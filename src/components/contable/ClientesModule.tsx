@@ -7,46 +7,91 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Cliente, clientesIniciales } from "./billing/BillingData";
 
 const ClientesModule = () => {
+  const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewClient, setShowNewClient] = useState(false);
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
+  const [newClient, setNewClient] = useState({
+    nombre: "",
+    nit: "",
+    email: "",
+    telefono: "",
+    direccion: ""
+  });
+  const { toast } = useToast();
 
-  const clientes = [
-    {
-      id: 1,
-      nombre: "Empresa ABC S.R.L.",
-      nit: "1234567890",
-      email: "contacto@abc.com",
-      telefono: "+591 2 123456",
-      direccion: "Av. Arce #123, La Paz",
-      tipo: "Empresa",
-      estado: "Activo",
-      ultima_factura: "2024-06-15"
-    },
-    {
-      id: 2,
-      nombre: "Juan Pérez García",
-      nit: "9876543210",
-      email: "juan.perez@email.com",
-      telefono: "+591 7 987654",
-      direccion: "Calle Sucre #456, Santa Cruz",
-      tipo: "Persona",
-      estado: "Activo",
-      ultima_factura: "2024-06-10"
-    },
-    {
-      id: 3,
-      nombre: "Comercial XYZ Ltda.",
-      nit: "5555666677",
-      email: "ventas@xyz.com",
-      telefono: "+591 4 555666",
-      direccion: "Zona Central, Cochabamba",
-      tipo: "Empresa",
-      estado: "Inactivo",
-      ultima_factura: "2024-05-20"
+  const handleSaveClient = () => {
+    if (!newClient.nombre.trim() || !newClient.nit.trim()) {
+      toast({
+        title: "Error",
+        description: "Nombre y NIT son obligatorios",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
+
+    // Verificar si el NIT ya existe
+    if (clientes.some(c => c.nit === newClient.nit)) {
+      toast({
+        title: "Error",
+        description: "Ya existe un cliente con este NIT",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const cliente: Cliente = {
+      id: Date.now().toString(),
+      ...newClient,
+      activo: true,
+      fechaCreacion: new Date().toISOString().slice(0, 10)
+    };
+
+    setClientes(prev => [...prev, cliente]);
+    
+    toast({
+      title: "Cliente creado",
+      description: `Cliente ${cliente.nombre} creado correctamente`,
+    });
+
+    setNewClient({
+      nombre: "",
+      nit: "",
+      email: "",
+      telefono: "",
+      direccion: ""
+    });
+    setShowNewClient(false);
+  };
+
+  const handleUpdateClient = () => {
+    if (!editingClient) return;
+
+    setClientes(prev => prev.map(c => 
+      c.id === editingClient.id ? editingClient : c
+    ));
+
+    toast({
+      title: "Cliente actualizado",
+      description: `Cliente ${editingClient.nombre} actualizado correctamente`,
+    });
+
+    setEditingClient(null);
+  };
+
+  const handleDeleteClient = (id: string) => {
+    const cliente = clientes.find(c => c.id === id);
+    setClientes(prev => prev.filter(c => c.id !== id));
+    
+    toast({
+      title: "Cliente eliminado",
+      description: `Cliente ${cliente?.nombre} eliminado correctamente`,
+    });
+  };
 
   const filteredClientes = clientes.filter(cliente =>
     cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,12 +99,8 @@ const ClientesModule = () => {
     cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    return status === "Activo" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
-  };
-
-  const getTipoColor = (tipo: string) => {
-    return tipo === "Empresa" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800";
+  const getStatusColor = (activo: boolean) => {
+    return activo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
   };
 
   return (
@@ -87,31 +128,57 @@ const ClientesModule = () => {
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="nombre">Razón Social / Nombre Completo</Label>
-                <Input id="nombre" placeholder="Nombre del cliente" />
+                <Label htmlFor="nombre">Razón Social / Nombre Completo *</Label>
+                <Input 
+                  id="nombre" 
+                  placeholder="Nombre del cliente"
+                  value={newClient.nombre}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, nombre: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nit">NIT</Label>
-                <Input id="nit" placeholder="Número de identificación" />
+                <Label htmlFor="nit">NIT *</Label>
+                <Input 
+                  id="nit" 
+                  placeholder="Número de identificación"
+                  value={newClient.nit}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, nit: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="correo@cliente.com" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="correo@cliente.com"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="telefono">Teléfono</Label>
-                <Input id="telefono" placeholder="+591 X XXXXXXX" />
+                <Input 
+                  id="telefono" 
+                  placeholder="+591 X XXXXXXX"
+                  value={newClient.telefono}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, telefono: e.target.value }))}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="direccion">Dirección</Label>
-                <Input id="direccion" placeholder="Dirección completa" />
+                <Input 
+                  id="direccion" 
+                  placeholder="Dirección completa"
+                  value={newClient.direccion}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, direccion: e.target.value }))}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowNewClient(false)}>
                 Cancelar
               </Button>
-              <Button onClick={() => setShowNewClient(false)}>
+              <Button onClick={handleSaveClient}>
                 Guardar Cliente
               </Button>
             </div>
@@ -158,9 +225,8 @@ const ClientesModule = () => {
                   <th className="text-left p-3">Cliente</th>
                   <th className="text-left p-3">NIT</th>
                   <th className="text-left p-3">Contacto</th>
-                  <th className="text-left p-3">Tipo</th>
                   <th className="text-left p-3">Estado</th>
-                  <th className="text-left p-3">Última Factura</th>
+                  <th className="text-left p-3">Fecha Creación</th>
                   <th className="text-left p-3">Acciones</th>
                 </tr>
               </thead>
@@ -181,22 +247,17 @@ const ClientesModule = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      <Badge className={getTipoColor(cliente.tipo)}>
-                        {cliente.tipo}
+                      <Badge className={getStatusColor(cliente.activo)}>
+                        {cliente.activo ? "Activo" : "Inactivo"}
                       </Badge>
                     </td>
-                    <td className="p-3">
-                      <Badge className={getStatusColor(cliente.estado)}>
-                        {cliente.estado}
-                      </Badge>
-                    </td>
-                    <td className="p-3">{cliente.ultima_factura}</td>
+                    <td className="p-3">{cliente.fechaCreacion}</td>
                     <td className="p-3">
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => setEditingClient(cliente)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteClient(cliente.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -231,7 +292,7 @@ const ClientesModule = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {clientes.filter(c => c.estado === "Activo").length}
+                  {clientes.filter(c => c.activo).length}
                 </p>
                 <p className="text-sm text-gray-600">Clientes Activos</p>
               </div>
@@ -247,14 +308,72 @@ const ClientesModule = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {clientes.filter(c => c.tipo === "Empresa").length}
+                  {clientes.filter(c => c.email && c.email.includes('@')).length}
                 </p>
-                <p className="text-sm text-gray-600">Empresas</p>
+                <p className="text-sm text-gray-600">Con Email</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog para editar cliente */}
+      {editingClient && (
+        <Dialog open={!!editingClient} onOpenChange={() => setEditingClient(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Editar Cliente</DialogTitle>
+              <DialogDescription>Modificar información del cliente</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Razón Social / Nombre Completo</Label>
+                <Input 
+                  value={editingClient.nombre}
+                  onChange={(e) => setEditingClient(prev => prev ? { ...prev, nombre: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>NIT</Label>
+                <Input 
+                  value={editingClient.nit}
+                  onChange={(e) => setEditingClient(prev => prev ? { ...prev, nit: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={editingClient.email}
+                  onChange={(e) => setEditingClient(prev => prev ? { ...prev, email: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Teléfono</Label>
+                <Input 
+                  value={editingClient.telefono}
+                  onChange={(e) => setEditingClient(prev => prev ? { ...prev, telefono: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Dirección</Label>
+                <Input 
+                  value={editingClient.direccion}
+                  onChange={(e) => setEditingClient(prev => prev ? { ...prev, direccion: e.target.value } : null)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingClient(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateClient}>
+                Actualizar Cliente
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
