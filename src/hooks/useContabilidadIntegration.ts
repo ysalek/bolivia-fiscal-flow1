@@ -54,6 +54,21 @@ export interface IncomeStatementData {
   utilidadNeta: number;
 }
 
+export interface DeclaracionIVAData {
+  ventas: {
+    baseImponible: number;
+    debitoFiscal: number;
+  };
+  compras: {
+    baseImponible: number;
+    creditoFiscal: number;
+  };
+  saldo: {
+    aFavorFisco: number;
+    aFavorContribuyente: number;
+  };
+}
+
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
@@ -68,6 +83,7 @@ export interface ContabilidadIntegrationHook {
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
   getBalanceSheetData: () => BalanceSheetData;
   getIncomeStatementData: () => IncomeStatementData;
+  getDeclaracionIVAData: (fechas: { fechaInicio: string, fechaFin: string }) => DeclaracionIVAData;
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
@@ -361,6 +377,63 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     };
   };
 
+  const getDeclaracionIVAData = (fechas: { fechaInicio: string, fechaFin: string }): DeclaracionIVAData => {
+    const asientos = getAsientos();
+    const startDate = new Date(fechas.fechaInicio);
+    const endDate = new Date(fechas.fechaFin);
+
+    const asientosEnPeriodo = asientos.filter(a => {
+        if (!a.fecha) return false;
+        const fechaAsiento = new Date(a.fecha);
+        return fechaAsiento >= startDate && fechaAsiento <= endDate && a.estado === 'registrado';
+    });
+
+    let debitoFiscalTotal = 0;
+    let baseImponibleVentas = 0;
+
+    asientosEnPeriodo
+      .filter(a => a.numero.startsWith('VTA-'))
+      .forEach(asiento => {
+        const cuentaVentas = asiento.cuentas.find(c => c.codigo.startsWith('4')); // Ingresos
+        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '2113'); // IVA por Pagar
+
+        if (cuentaVentas) baseImponibleVentas += cuentaVentas.haber;
+        if (cuentaIVA) debitoFiscalTotal += cuentaIVA.haber;
+      });
+
+    let creditoFiscalTotal = 0;
+    let baseImponibleCompras = 0;
+
+    asientosEnPeriodo
+      .filter(a => a.numero.startsWith('CMP-'))
+      .forEach(asiento => {
+        // Base imponible es el valor de la compra antes de IVA. Puede ser inventario, o un gasto.
+        const cuentaCompra = asiento.cuentas.find(c => c.codigo.startsWith('114') || c.codigo.startsWith('5')); 
+        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '2114'); // IVA Crédito Fiscal
+
+        if (cuentaCompra) baseImponibleCompras += cuentaCompra.debe;
+        if (cuentaIVA) creditoFiscalTotal += cuentaIVA.debe;
+      });
+    
+    const diferencia = debitoFiscalTotal - creditoFiscalTotal;
+    const saldo = {
+      aFavorFisco: diferencia > 0 ? diferencia : 0,
+      aFavorContribuyente: diferencia < 0 ? -diferencia : 0
+    };
+
+    return {
+      ventas: {
+        baseImponible: baseImponibleVentas,
+        debitoFiscal: debitoFiscalTotal
+      },
+      compras: {
+        baseImponible: baseImponibleCompras,
+        creditoFiscal: creditoFiscalTotal
+      },
+      saldo
+    };
+  };
+
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
@@ -519,6 +592,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     validarTransaccion,
     obtenerBalanceGeneral,
     getBalanceSheetData,
-    getIncomeStatementData
+    getIncomeStatementData,
+    getDeclaracionIVAData
   };
 };

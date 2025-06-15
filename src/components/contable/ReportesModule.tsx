@@ -22,7 +22,7 @@ const ReportesModule = () => {
   const [fechaInicio, setFechaInicio] = useState("2025-06-01");
   const [fechaFin, setFechaFin] = useState("2025-06-30");
   const { toast } = useToast();
-  const { getAsientos, getBalanceSheetData, getIncomeStatementData } = useContabilidadIntegration();
+  const { getAsientos, getBalanceSheetData, getIncomeStatementData, getDeclaracionIVAData } = useContabilidadIntegration();
 
   const reportes = [
     {
@@ -155,29 +155,45 @@ const ReportesModule = () => {
         datos.push(["", "UTILIDAD (O PÉRDIDA) NETA", "", utilidadNeta.toFixed(2)]);
         break;
       }
+      case "declaracion-iva": {
+        const { ventas, compras, saldo } = getDeclaracionIVAData({ fechaInicio, fechaFin });
+        
+        if (ventas.baseImponible === 0 && compras.baseImponible === 0) {
+           toast({ title: "Sin datos", description: "No se encontraron ventas ni compras en el período." });
+           return "";
+        }
+
+        datos.push(["Concepto", "Base Imponible (Bs.)", "Débito / Crédito Fiscal (Bs.)"]);
+        datos.push(["Total Ventas (genera Débito Fiscal)", ventas.baseImponible.toFixed(2), ventas.debitoFiscal.toFixed(2)]);
+        datos.push(["Total Compras (genera Crédito Fiscal)", compras.baseImponible.toFixed(2), compras.creditoFiscal.toFixed(2)]);
+        datos.push(["", "", ""]);
+        if (saldo.aFavorFisco > 0) {
+            datos.push(["Saldo a favor del Fisco", "", saldo.aFavorFisco.toFixed(2)]);
+        } else {
+            datos.push(["Saldo a favor del Contribuyente", "", saldo.aFavorContribuyente.toFixed(2)]);
+        }
+        break;
+      }
       default: {
         const datosEjemplo: { [key: string]: string[][] } = {
           "flujo-efectivo": [
             ["Categoría", "Descripción", "Importe"],
             ["Operativo", "Cobro a clientes", "5000.00"],
             ["Operativo", "Pago a proveedores", "-2000.00"],
+            ["NOTA: Reporte con datos de demostración.", "", ""],
           ],
           "patrimonio": [
             ["Concepto", "Capital", "Reservas", "Resultados Acumulados"],
             ["Saldo Inicial", "70000.00", "5000.00", "10000.00"],
             ["Utilidad del Ejercicio", "0.00", "0.00", "15000.00"],
             ["Saldo Final", "70000.00", "5000.00", "25000.00"],
-          ],
-          "declaracion-iva": [
-            ["Concepto", "Base Imponible", "Crédito Fiscal", "Débito Fiscal"],
-            ["Ventas", "4700.00", "0.00", "611.00"],
-            ["Compras", "3500.00", "455.00", "0.00"],
-            ["Saldo a Favor", "", "", "156.00"],
+            ["NOTA: Reporte con datos de demostración.", "", ""],
           ],
           "rc-iva": [
             ["Dependiente", "Sueldo Neto", "Base Imponible", "RC-IVA"],
             ["Juan Pérez", "6000.00", "0.00", "0.00"],
             ["María Gómez", "9000.00", "800.00", "104.00"],
+            ["NOTA: Módulo de sueldos no implementado.", "", ""],
           ]
         };
         datos = datosEjemplo[reporteId] || [ ["No implementado"], ["Este reporte aún no está disponible con datos reales."] ];
