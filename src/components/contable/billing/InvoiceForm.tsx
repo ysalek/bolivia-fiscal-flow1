@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura } from "./BillingData";
+import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura, generarCUF } from "./BillingData";
 import { Producto } from "../products/ProductsData";
 import InvoiceClientSelector from "./InvoiceClientSelector";
 import InvoiceItems from "./InvoiceItems";
@@ -144,7 +144,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       total,
       estado: 'enviada',
       estadoSIN: 'pendiente',
-      cuf: `CUF${Date.now()}`,
+      cuf: generarCUF(),
       codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
       observaciones,
       fechaCreacion: new Date().toISOString().slice(0, 10)

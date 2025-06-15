@@ -99,7 +99,7 @@ export const facturasIniciales: Factura[] = [
     total: 4746,
     estado: 'enviada',
     estadoSIN: 'aceptado',
-    cuf: "ABC123DEF456GHI789",
+    cuf: "E0D5C1B9A8F7E6D5C4B3A2F1E0D9C8B7A6F5E4D3C2B1A0F9E8D7C6B5A4F3E2D1",
     codigoControl: "12-34-56",
     observaciones: "",
     fechaCreacion: "2024-06-15"
@@ -109,6 +109,17 @@ export const facturasIniciales: Factura[] = [
 export const generarNumeroFactura = (ultimaFactura: string): string => {
   const numero = parseInt(ultimaFactura) + 1;
   return numero.toString().padStart(6, '0');
+};
+
+export const generarCUF = (): string => {
+  // Simula un CUF (Código Único de Facturación) de 64 caracteres hexadecimales.
+  // El CUF real se genera con un algoritmo complejo basado en los datos de la factura.
+  const chars = '0123456789ABCDEF';
+  let cuf = '';
+  for (let i = 0; i < 64; i++) {
+    cuf += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return cuf;
 };
 
 export const calcularIVA = (subtotal: number): number => {

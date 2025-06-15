@@ -88,6 +88,13 @@ const InvoicePreview = ({ invoice }: InvoicePreviewProps) => {
                 <p className="text-sm text-muted-foreground">{invoice.observaciones}</p>
             </div>
         )}
+        <div className="mt-6 pt-4 border-t">
+          <p className="text-xs text-muted-foreground break-all"><span className="font-semibold">CUF:</span> {invoice.cuf}</p>
+          <p className="text-xs text-muted-foreground"><span className="font-semibold">Código de Control:</span> {invoice.codigoControl}</p>
+        </div>
+        <div className="mt-4 text-center">
+            <p className="text-xs text-muted-foreground font-semibold">"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS. EL USO ILÍCITO DE ÉSTA SERÁ SANCIONADO DE ACUERDO A LEY"</p>
+        </div>
       </CardContent>
     </Card>
   );
