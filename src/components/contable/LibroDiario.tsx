@@ -1,16 +1,18 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, FileText, Calculator } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { AsientoContable, CuentaAsiento, planCuentas, asientosIniciales, generarNumeroAsiento } from "./diary/DiaryData";
 
 const LibroDiario = () => {
+  const [asientos, setAsientos] = useState<AsientoContable[]>(asientosIniciales);
   const [showNewEntry, setShowNewEntry] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("mes-actual");
@@ -21,97 +23,9 @@ const LibroDiario = () => {
     cuentas: [
       { codigo: "", nombre: "", debe: 0, haber: 0 },
       { codigo: "", nombre: "", debe: 0, haber: 0 }
-    ]
+    ] as CuentaAsiento[]
   });
   const { toast } = useToast();
-
-  // Plan de cuentas completo y estructurado
-  const planCuentas = [
-    // ACTIVOS
-    { codigo: "1111", nombre: "Caja" },
-    { codigo: "1112", nombre: "Caja Chica" },
-    { codigo: "1121", nombre: "Bancos" },
-    { codigo: "1131", nombre: "Cuentas por Cobrar" },
-    { codigo: "1132", nombre: "Documentos por Cobrar" },
-    { codigo: "1141", nombre: "Inventarios" },
-    { codigo: "1211", nombre: "Muebles y Enseres" },
-    { codigo: "1212", nombre: "Equipos de Computación" },
-    { codigo: "1213", nombre: "Vehículos" },
-    
-    // PASIVOS
-    { codigo: "2111", nombre: "Cuentas por Pagar" },
-    { codigo: "2112", nombre: "Documentos por Pagar" },
-    { codigo: "2113", nombre: "IVA por Pagar" },
-    { codigo: "2114", nombre: "IVA Crédito Fiscal" },
-    { codigo: "2211", nombre: "Préstamos Bancarios LP" },
-    
-    // PATRIMONIO
-    { codigo: "3111", nombre: "Capital Social" },
-    { codigo: "3211", nombre: "Utilidades del Ejercicio" },
-    { codigo: "3212", nombre: "Utilidades Retenidas" },
-    
-    // INGRESOS
-    { codigo: "4111", nombre: "Ventas de Productos" },
-    { codigo: "4112", nombre: "Ventas de Servicios" },
-    { codigo: "4211", nombre: "Otros Ingresos" },
-    
-    // GASTOS
-    { codigo: "5111", nombre: "Costo de Productos Vendidos" },
-    { codigo: "5211", nombre: "Sueldos y Salarios" },
-    { codigo: "5212", nombre: "Servicios Básicos" },
-    { codigo: "5213", nombre: "Alquileres" },
-    { codigo: "5214", nombre: "Seguros" },
-    { codigo: "5221", nombre: "Gastos de Ventas" },
-    { codigo: "5222", nombre: "Publicidad" },
-    { codigo: "5223", nombre: "Comisiones" }
-  ];
-
-  const asientos = [
-    {
-      id: 1,
-      numero: "AST-001",
-      fecha: "2024-06-15",
-      concepto: "Venta de productos según factura 001234",
-      referencia: "FAC-001234",
-      debe: 1412.50,
-      haber: 1412.50,
-      estado: "registrado",
-      cuentas: [
-        { codigo: "1102", nombre: "Bancos", debe: 1412.50, haber: 0 },
-        { codigo: "4101", nombre: "Ventas", debe: 0, haber: 1250.00 },
-        { codigo: "2201", nombre: "IVA por Pagar", debe: 0, haber: 162.50 }
-      ]
-    },
-    {
-      id: 2,
-      numero: "AST-002",
-      fecha: "2024-06-14",
-      concepto: "Compra de inventario según factura C-456",
-      referencia: "COMP-456",
-      debe: 2825.00,
-      haber: 2825.00,
-      estado: "registrado",
-      cuentas: [
-        { codigo: "1301", nombre: "Inventarios", debe: 2500.00, haber: 0 },
-        { codigo: "1102", nombre: "IVA Crédito Fiscal", debe: 325.00, haber: 0 },
-        { codigo: "2101", nombre: "Cuentas por Pagar", debe: 0, haber: 2825.00 }
-      ]
-    },
-    {
-      id: 3,
-      numero: "AST-003",
-      fecha: "2024-06-13",
-      concepto: "Pago de servicios básicos",
-      referencia: "REC-789",
-      debe: 850.00,
-      haber: 850.00,
-      estado: "registrado",
-      cuentas: [
-        { codigo: "6101", nombre: "Gastos Administrativos", debe: 850.00, haber: 0 },
-        { codigo: "1101", nombre: "Caja", debe: 0, haber: 850.00 }
-      ]
-    }
-  ];
 
   const addCuenta = () => {
     setNewAsiento(prev => ({
@@ -176,9 +90,26 @@ const LibroDiario = () => {
       return;
     }
 
+    const { debe, haber } = calculateTotals();
+    const ultimoNumero = asientos.length > 0 ? parseInt(asientos[0].numero.split('-')[1]) : 0;
+    
+    const nuevoAsiento: AsientoContable = {
+      id: Date.now().toString(),
+      numero: generarNumeroAsiento(ultimoNumero),
+      fecha: newAsiento.fecha,
+      concepto: newAsiento.concepto,
+      referencia: newAsiento.referencia,
+      debe,
+      haber,
+      estado: 'registrado',
+      cuentas: newAsiento.cuentas.filter(c => c.codigo && (c.debe > 0 || c.haber > 0))
+    };
+
+    setAsientos(prev => [nuevoAsiento, ...prev]);
+
     toast({
       title: "Asiento guardado",
-      description: "El asiento contable ha sido registrado correctamente.",
+      description: `Asiento ${nuevoAsiento.numero} registrado correctamente.`,
     });
     
     setShowNewEntry(false);

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,154 +14,24 @@ import {
   Plus,
   Minus,
   Search,
-  Filter
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface ProductoInventario {
-  id: string;
-  codigo: string;
-  nombre: string;
-  categoria: string;
-  stockActual: number;
-  stockMinimo: number;
-  stockMaximo: number;
-  costoUnitario: number;
-  costoPromedioPonderado: number; // Nuevo campo para promedio ponderado
-  precioVenta: number;
-  ubicacion: string;
-  fechaUltimoMovimiento: string;
-  valorTotalInventario: number; // Stock * Costo promedio ponderado
-}
-
-interface MovimientoInventario {
-  id: string;
-  fecha: string;
-  tipo: 'entrada' | 'salida' | 'ajuste';
-  productoId: string;
-  producto: string;
-  cantidad: number;
-  costoUnitario: number;
-  costoPromedioPonderado: number; // Costo promedio después del movimiento
-  motivo: string;
-  documento: string;
-  usuario: string;
-  stockAnterior: number;
-  stockNuevo: number;
-  valorMovimiento: number;
-}
+import { ProductoInventario, MovimientoInventario, productosIniciales, movimientosIniciales } from "./inventory/InventoryData";
+import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 
 const InventarioModule = () => {
-  const { toast } = useToast();
+  const [productos, setProductos] = useState<ProductoInventario[]>(productosIniciales);
+  const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [showMovementDialog, setShowMovementDialog] = useState<{ open: boolean; tipo: 'entrada' | 'salida' }>({
+    open: false,
+    tipo: 'entrada'
+  });
 
-  // Función para calcular promedio ponderado
-  const calcularPromedioPonderado = (stockAnterior: number, costoAnterior: number, cantidadNueva: number, costoNuevo: number): number => {
-    if (stockAnterior + cantidadNueva === 0) return 0;
-    const valorAnterior = stockAnterior * costoAnterior;
-    const valorNuevo = cantidadNueva * costoNuevo;
-    return (valorAnterior + valorNuevo) / (stockAnterior + cantidadNueva);
+  const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoActualizado: ProductoInventario) => {
+    setMovimientos(prev => [nuevoMovimiento, ...prev]);
+    setProductos(prev => prev.map(p => p.id === productoActualizado.id ? productoActualizado : p));
   };
-
-  const productos: ProductoInventario[] = [
-    {
-      id: "1",
-      codigo: "PROD001",
-      nombre: "Laptop Dell Inspiron 15",
-      categoria: "Equipos",
-      stockActual: 15,
-      stockMinimo: 5,
-      stockMaximo: 50,
-      costoUnitario: 3500, // Último costo de compra
-      costoPromedioPonderado: 3480, // Promedio ponderado calculado
-      precioVenta: 4200,
-      ubicacion: "Almacén A-1",
-      fechaUltimoMovimiento: "2024-06-14",
-      valorTotalInventario: 15 * 3480
-    },
-    {
-      id: "2",
-      codigo: "PROD002",
-      nombre: "Mouse Inalámbrico",
-      categoria: "Accesorios",
-      stockActual: 3,
-      stockMinimo: 10,
-      stockMaximo: 100,
-      costoUnitario: 45,
-      costoPromedioPonderado: 47.5, // Promedio ponderado
-      precioVenta: 65,
-      ubicacion: "Almacén B-2",
-      fechaUltimoMovimiento: "2024-06-13",
-      valorTotalInventario: 3 * 47.5
-    },
-    {
-      id: "3",
-      codigo: "SERV001",
-      nombre: "Consultoría IT",
-      categoria: "Servicios",
-      stockActual: 0,
-      stockMinimo: 0,
-      stockMaximo: 0,
-      costoUnitario: 0,
-      costoPromedioPonderado: 0,
-      precioVenta: 150,
-      ubicacion: "N/A",
-      fechaUltimoMovimiento: "2024-06-15",
-      valorTotalInventario: 0
-    }
-  ];
-
-  const movimientos: MovimientoInventario[] = [
-    {
-      id: "1",
-      fecha: "2024-06-15",
-      tipo: "entrada",
-      productoId: "1",
-      producto: "Laptop Dell Inspiron 15",
-      cantidad: 10,
-      costoUnitario: 3500,
-      costoPromedioPonderado: 3480,
-      motivo: "Compra a proveedor",
-      documento: "FC-001234",
-      usuario: "Admin",
-      stockAnterior: 5,
-      stockNuevo: 15,
-      valorMovimiento: 35000
-    },
-    {
-      id: "2",
-      fecha: "2024-06-14",
-      tipo: "salida",
-      productoId: "2",
-      producto: "Mouse Inalámbrico",
-      cantidad: 5,
-      costoUnitario: 47.5, // Se usa el costo promedio ponderado para salidas
-      costoPromedioPonderado: 47.5,
-      motivo: "Venta",
-      documento: "FV-000567",
-      usuario: "Vendedor",
-      stockAnterior: 8,
-      stockNuevo: 3,
-      valorMovimiento: 237.5
-    },
-    {
-      id: "3",
-      fecha: "2024-06-13",
-      tipo: "ajuste",
-      productoId: "1",
-      producto: "Laptop Dell Inspiron 15",
-      cantidad: -2,
-      costoUnitario: 3480, // Ajuste al costo promedio
-      costoPromedioPonderado: 3480,
-      motivo: "Inventario físico - faltante",
-      documento: "AJ-000012",
-      usuario: "Contador",
-      stockAnterior: 7,
-      stockNuevo: 5,
-      valorMovimiento: -6960
-    }
-  ];
 
   const getStockStatus = (producto: ProductoInventario) => {
     if (producto.categoria === "Servicios") return "service";
@@ -199,14 +68,6 @@ const InventarioModule = () => {
   const productosConAlertas = productos.filter(p => getStockStatus(p) === "low").length;
   const valorTotalInventario = productos.reduce((total, p) => total + p.valorTotalInventario, 0);
 
-  const simularMovimiento = (tipo: 'entrada' | 'salida') => {
-    const tipoTexto = tipo === 'entrada' ? 'entrada' : 'salida';
-    toast({
-      title: `Registrar ${tipoTexto}`,
-      description: `Funcionalidad de ${tipoTexto} de inventario con promedio ponderado`,
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -216,11 +77,17 @@ const InventarioModule = () => {
           <p className="text-slate-600">Control de stock con valuación por promedio ponderado</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => simularMovimiento('entrada')}>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowMovementDialog({ open: true, tipo: 'entrada' })}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Entrada
           </Button>
-          <Button variant="outline" onClick={() => simularMovimiento('salida')}>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowMovementDialog({ open: true, tipo: 'salida' })}
+          >
             <Minus className="w-4 h-4 mr-2" />
             Salida
           </Button>
@@ -270,7 +137,7 @@ const InventarioModule = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600">Movimientos Hoy</p>
-                <p className="text-2xl font-bold">{movimientos.filter(m => m.fecha === "2024-06-15").length}</p>
+                <p className="text-2xl font-bold">{movimientos.filter(m => m.fecha === new Date().toISOString().slice(0, 10)).length}</p>
               </div>
               <TrendingDown className="w-8 h-8 text-orange-600" />
             </div>
@@ -283,7 +150,6 @@ const InventarioModule = () => {
           <TabsTrigger value="productos">Productos</TabsTrigger>
           <TabsTrigger value="movimientos">Movimientos</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
-          <TabsTrigger value="promedio">Cálculo Promedio</TabsTrigger>
         </TabsList>
 
         {/* Lista de Productos */}
@@ -335,7 +201,6 @@ const InventarioModule = () => {
                       <th className="text-right p-2">Costo Prom. Pond.</th>
                       <th className="text-right p-2">Valor Total</th>
                       <th className="text-center p-2">Estado</th>
-                      <th className="text-center p-2">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -358,12 +223,6 @@ const InventarioModule = () => {
                             <Badge className={getStatusColor(status)}>
                               {getStatusText(status)}
                             </Badge>
-                          </td>
-                          <td className="p-2 text-center">
-                            <div className="flex gap-1 justify-center">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm" variant="outline">Editar</Button>
-                            </div>
                           </td>
                         </tr>
                       );
@@ -460,7 +319,10 @@ const InventarioModule = () => {
                         </p>
                       </div>
                     </div>
-                    <Button size="sm">
+                    <Button 
+                      size="sm"
+                      onClick={() => setShowMovementDialog({ open: true, tipo: 'entrada' })}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Reabastecer
                     </Button>
@@ -477,94 +339,15 @@ const InventarioModule = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Nueva pestaña: Cálculo Promedio */}
-        <TabsContent value="promedio" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Simulador de Promedio Ponderado</CardTitle>
-              <CardDescription>
-                Visualiza cómo se calcula el promedio ponderado con cada movimiento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-800 mb-2">Fórmula del Promedio Ponderado</h3>
-                  <p className="text-blue-700 text-sm">
-                    Nuevo Promedio = (Valor Inventario Anterior + Valor Compra Nueva) / (Stock Anterior + Stock Nuevo)
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Ejemplo práctico */}
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Ejemplo: Laptop Dell Inspiron 15</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Stock inicial:</span>
-                        <span>5 unidades</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Costo inicial:</span>
-                        <span>Bs. 3,450 c/u</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Valor inicial:</span>
-                        <span>Bs. 17,250</span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="flex justify-between">
-                        <span>Nueva compra:</span>
-                        <span>10 unidades</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Costo compra:</span>
-                        <span>Bs. 3,500 c/u</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Valor compra:</span>
-                        <span>Bs. 35,000</span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="flex justify-between font-semibold text-blue-600">
-                        <span>Nuevo promedio:</span>
-                        <span>Bs. 3,480</span>
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        (17,250 + 35,000) / (5 + 10) = 3,480
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Ventajas del método */}
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Ventajas del Promedio Ponderado</h4>
-                    <ul className="text-sm space-y-2">
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                        <span>Refleja el costo real del inventario</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                        <span>Suaviza las fluctuaciones de precios</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                        <span>Fácil de calcular y aplicar</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                        <span>Aceptado por normas contables</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+
+      <InventoryMovementDialog
+        open={showMovementDialog.open}
+        onOpenChange={(open) => setShowMovementDialog(prev => ({ ...prev, open }))}
+        tipo={showMovementDialog.tipo}
+        productos={productos}
+        onMovimiento={handleMovimiento}
+      />
     </div>
   );
 };
