@@ -1,36 +1,80 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Receipt, Eye, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales } from "./billing/BillingData";
-import { productosIniciales } from "./products/ProductsData";
+import { Producto } from "./products/ProductsData";
+import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
-  const [productos] = useState(productosIniciales);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoVenta } = useContabilidadIntegration();
+  const { generarAsientoVenta, generarAsientoInventario } = useContabilidadIntegration();
+
+  // Cargar productos desde localStorage
+  useEffect(() => {
+    const productosGuardados = localStorage.getItem('productos');
+    if (productosGuardados) {
+      setProductos(JSON.parse(productosGuardados));
+    }
+  }, []);
+
+  // Cargar clientes desde localStorage
+  useEffect(() => {
+    const clientesGuardados = localStorage.getItem('clientes');
+    if (clientesGuardados) {
+      setClientes(JSON.parse(clientesGuardados));
+    }
+  }, []);
 
   const handleSaveInvoice = (nuevaFactura: Factura) => {
+    // Actualizar inventario por cada item vendido
+    nuevaFactura.items.forEach(item => {
+      const movimientoInventario: MovimientoInventario = {
+        id: Date.now().toString() + Math.random(),
+        fecha: nuevaFactura.fecha,
+        tipo: 'salida',
+        producto: item.descripcion,
+        cantidad: item.cantidad,
+        valorUnitario: item.precioUnitario,
+        valorMovimiento: item.subtotal,
+        documento: `Factura ${nuevaFactura.numero}`,
+        responsable: 'Sistema',
+        observaciones: `Venta registrada automáticamente`
+      };
+
+      // Generar asiento de inventario por la salida
+      generarAsientoInventario(movimientoInventario);
+
+      // Guardar movimiento en localStorage
+      const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
+      const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
+      localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
+    });
+
     setFacturas(prev => [nuevaFactura, ...prev]);
     
-    // Generar asiento contable automáticamente
+    // Generar asiento contable de venta
     const asientoVenta = generarAsientoVenta({
       numero: nuevaFactura.numero,
-      total: nuevaFactura.subtotal
+      total: nuevaFactura.total,
+      subtotal: nuevaFactura.subtotal,
+      iva: nuevaFactura.iva
     });
     
     console.log("Asiento de venta generado:", asientoVenta);
     
     toast({
       title: "Factura creada exitosamente",
-      description: `Factura N° ${nuevaFactura.numero} ha sido generada y registrada contablemente.`,
+      description: `Factura N° ${nuevaFactura.numero} generada y registrada contablemente. Inventario actualizado.`,
     });
     
     setShowNewInvoice(false);
@@ -73,7 +117,7 @@ const FacturacionModule = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Facturación Electrónica</h2>
-          <p className="text-slate-600">Gestión de facturas y documentos fiscales con integración contable</p>
+          <p className="text-slate-600">Gestión de facturas con integración contable e inventario automática</p>
         </div>
         <Button onClick={() => setShowNewInvoice(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -128,7 +172,7 @@ const FacturacionModule = () => {
         <CardHeader>
           <CardTitle>Facturas Emitidas</CardTitle>
           <CardDescription>
-            Historial completo de facturas electrónicas con integración contable automática
+            Historial completo con actualización automática de inventario y contabilidad
           </CardDescription>
         </CardHeader>
         <CardContent>

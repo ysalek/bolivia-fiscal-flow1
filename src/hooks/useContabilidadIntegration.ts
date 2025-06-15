@@ -7,10 +7,24 @@ export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
   generarAsientoCompra: (compra: any) => AsientoContable;
+  guardarAsiento: (asiento: AsientoContable) => void;
+  getAsientos: () => AsientoContable[];
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
   const { toast } = useToast();
+
+  const guardarAsiento = (asiento: AsientoContable) => {
+    const asientosExistentes = JSON.parse(localStorage.getItem('asientosContables') || '[]');
+    const nuevosAsientos = [asiento, ...asientosExistentes];
+    localStorage.setItem('asientosContables', JSON.stringify(nuevosAsientos));
+    
+    console.log("Asiento guardado en localStorage:", asiento);
+  };
+
+  const getAsientos = (): AsientoContable[] => {
+    return JSON.parse(localStorage.getItem('asientosContables') || '[]');
+  };
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
@@ -52,7 +66,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
 
     const asiento: AsientoContable = {
       id: Date.now().toString(),
-      numero: `AST-${Date.now().toString().slice(-3)}`,
+      numero: `AST-${Date.now().toString().slice(-6)}`,
       fecha,
       concepto: `${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} de inventario - ${movimiento.producto}`,
       referencia: movimiento.documento,
@@ -62,14 +76,16 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       cuentas
     };
 
+    guardarAsiento(asiento);
     return asiento;
   };
 
   const generarAsientoVenta = (factura: any): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
-    const totalConIVA = factura.total * 1.13; // IVA 13%
-    const ivaVenta = totalConIVA - factura.total;
+    const totalConIVA = factura.total;
+    const subtotal = factura.subtotal;
+    const ivaVenta = factura.iva;
 
     // Débito: Cuentas por Cobrar o Caja
     cuentas.push({
@@ -84,7 +100,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       codigo: "4111",
       nombre: "Ventas de Productos",
       debe: 0,
-      haber: factura.total
+      haber: subtotal
     });
 
     // Crédito: IVA por Pagar
@@ -97,7 +113,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
 
     const asiento: AsientoContable = {
       id: Date.now().toString(),
-      numero: `AST-${Date.now().toString().slice(-3)}`,
+      numero: `VTA-${Date.now().toString().slice(-6)}`,
       fecha,
       concepto: `Venta según factura ${factura.numero}`,
       referencia: factura.numero,
@@ -107,6 +123,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       cuentas
     };
 
+    guardarAsiento(asiento);
     return asiento;
   };
 
@@ -142,7 +159,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
 
     const asiento: AsientoContable = {
       id: Date.now().toString(),
-      numero: `AST-${Date.now().toString().slice(-3)}`,
+      numero: `CMP-${Date.now().toString().slice(-6)}`,
       fecha,
       concepto: `Compra según factura ${compra.numero}`,
       referencia: compra.numero,
@@ -152,12 +169,15 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       cuentas
     };
 
+    guardarAsiento(asiento);
     return asiento;
   };
 
   return {
     generarAsientoInventario,
     generarAsientoVenta,
-    generarAsientoCompra
+    generarAsientoCompra,
+    guardarAsiento,
+    getAsientos
   };
 };
