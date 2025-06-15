@@ -109,9 +109,12 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
       fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       items: items.filter(item => item.productoId),
       subtotal,
+      descuentoTotal: 0,
       iva,
       total,
       estado: 'pendiente',
+      observaciones: observaciones,
+      fechaCreacion: new Date().toISOString().slice(0, 10),
     };
 
     onSave(nuevaCompra);
@@ -167,6 +170,16 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
           <Button onClick={addItem} size="sm"><Plus className="w-4 h-4 mr-2" />Agregar Item</Button>
         </div>
         
+        <div>
+          <Label htmlFor="observaciones">Observaciones</Label>
+          <Textarea
+            id="observaciones"
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            placeholder="Observaciones adicionales sobre la compra..."
+          />
+        </div>
+
         <div className="flex justify-end">
             <div className="w-64 space-y-2 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between font-bold text-lg">

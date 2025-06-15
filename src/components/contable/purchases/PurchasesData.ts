@@ -1,4 +1,3 @@
-
 export interface Proveedor {
   id: string;
   nombre: string;
@@ -13,11 +12,9 @@ export interface Proveedor {
 export interface ItemCompra {
   id: string;
   productoId: string;
-  codigo: string;
   descripcion: string;
   cantidad: number;
-  precioUnitario: number;
-  descuento: number;
+  costoUnitario: number;
   subtotal: number;
 }
 
@@ -71,11 +68,9 @@ export const comprasIniciales: Compra[] = [
       {
         id: "1",
         productoId: "1",
-        codigo: "PROD001",
         descripcion: "Laptop Dell Inspiron 15",
         cantidad: 5,
-        precioUnitario: 3500,
-        descuento: 0,
+        costoUnitario: 3500,
         subtotal: 17500
       }
     ],
