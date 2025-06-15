@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,8 +71,18 @@ const ProductosModule = () => {
 
     const producto: Producto = {
       id: Date.now().toString(),
-      ...newProduct,
+      codigo: newProduct.codigo,
+      nombre: newProduct.nombre,
+      descripcion: newProduct.descripcion,
+      categoria: newProduct.categoria,
+      unidadMedida: newProduct.unidadMedida,
+      precioCompra: newProduct.precioCompra,
+      precioVenta: newProduct.precioVenta,
       costoUnitario: newProduct.precioCompra, // Usar precio de compra como costo unitario
+      stockActual: newProduct.stockActual,
+      stockMinimo: newProduct.stockMinimo,
+      codigoSIN: newProduct.codigoSIN,
+      activo: newProduct.activo,
       fechaCreacion: new Date().toISOString().slice(0, 10),
       fechaActualizacion: new Date().toISOString().slice(0, 10)
     };
