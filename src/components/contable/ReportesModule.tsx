@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -99,12 +98,161 @@ const ReportesModule = () => {
     });
   };
 
+  const generarContenidoReporte = (reporteId: string, formato: string) => {
+    const reporte = reportes.find(r => r.id === reporteId);
+    const fechaActual = new Date().toLocaleDateString();
+    
+    // Datos de ejemplo para diferentes tipos de reportes
+    const datosEjemplo = {
+      "libro-compras": [
+        ["Fecha", "Proveedor", "NIT", "Factura", "Importe", "IVA"],
+        ["01/06/2024", "Proveedor ABC SRL", "1234567890", "FAC-001", "1000.00", "130.00"],
+        ["05/06/2024", "Distribuidora XYZ", "0987654321", "FAC-002", "2500.00", "325.00"],
+        ["10/06/2024", "Servicios DEF LTDA", "1122334455", "FAC-003", "850.00", "110.50"]
+      ],
+      "libro-ventas": [
+        ["Fecha", "Cliente", "NIT", "Factura", "Importe", "IVA"],
+        ["02/06/2024", "Cliente 123 SRL", "2233445566", "0001", "1500.00", "195.00"],
+        ["08/06/2024", "Empresa Beta SA", "3344556677", "0002", "3200.00", "416.00"],
+        ["15/06/2024", "Comercial Gamma", "4455667788", "0003", "2100.00", "273.00"]
+      ],
+      "balance-general": [
+        ["CUENTA", "CÓDIGO", "SALDO DEUDOR", "SALDO ACREEDOR"],
+        ["ACTIVOS", "", "", ""],
+        ["Caja y Bancos", "1100", "60,000.00", ""],
+        ["Cuentas por Cobrar", "1200", "55,000.00", ""],
+        ["Inventarios", "1300", "105,000.00", ""],
+        ["PASIVOS", "", "", ""],
+        ["Cuentas por Pagar", "2100", "", "45,000.00"],
+        ["PATRIMONIO", "", "", ""],
+        ["Capital Social", "3100", "", "100,000.00"]
+      ]
+    };
+
+    const datos = datosEjemplo[reporteId as keyof typeof datosEjemplo] || [
+      ["Campo 1", "Campo 2", "Campo 3"],
+      ["Dato 1", "Dato 2", "Dato 3"]
+    ];
+
+    if (formato === 'csv') {
+      let contenidoCsv = `${reporte?.titulo}\n`;
+      contenidoCsv += `Período: ${fechaInicio} al ${fechaFin}\n`;
+      contenidoCsv += `Generado el: ${fechaActual}\n\n`;
+      
+      datos.forEach(fila => {
+        contenidoCsv += fila.join(',') + '\n';
+      });
+      
+      return contenidoCsv;
+    }
+
+    if (formato === 'html') {
+      let contenidoHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${reporte?.titulo}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .header { margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${reporte?.titulo}</h1>
+            <p><strong>Período:</strong> ${fechaInicio} al ${fechaFin}</p>
+            <p><strong>Generado el:</strong> ${fechaActual}</p>
+          </div>
+          <table>
+      `;
+      
+      datos.forEach((fila, index) => {
+        if (index === 0) {
+          contenidoHtml += '<thead><tr>';
+          fila.forEach(celda => {
+            contenidoHtml += `<th>${celda}</th>`;
+          });
+          contenidoHtml += '</tr></thead><tbody>';
+        } else {
+          contenidoHtml += '<tr>';
+          fila.forEach(celda => {
+            contenidoHtml += `<td>${celda}</td>`;
+          });
+          contenidoHtml += '</tr>';
+        }
+      });
+      
+      contenidoHtml += `
+          </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+      
+      return contenidoHtml;
+    }
+
+    return '';
+  };
+
+  const descargarArchivo = (contenido: string, nombreArchivo: string, tipoMime: string) => {
+    const blob = new Blob([contenido], { type: tipoMime });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   const exportarReporte = (reporteId: string, formato: string) => {
     const reporte = reportes.find(r => r.id === reporteId);
-    toast({
-      title: "Reporte exportado",
-      description: `${reporte?.titulo} exportado en formato ${formato.toUpperCase()}`,
-    });
+    const fechaFormateada = new Date().toISOString().split('T')[0];
+    
+    try {
+      if (formato === 'pdf') {
+        // Para PDF, generamos HTML y abrimos en nueva ventana para imprimir
+        const contenidoHtml = generarContenidoReporte(reporteId, 'html');
+        const ventana = window.open('', '_blank');
+        if (ventana) {
+          ventana.document.write(contenidoHtml);
+          ventana.document.close();
+          setTimeout(() => {
+            ventana.print();
+          }, 500);
+        }
+        
+        toast({
+          title: "Reporte PDF generado",
+          description: `${reporte?.titulo} abierto para imprimir/guardar como PDF`,
+        });
+      } else if (formato === 'excel') {
+        // Para Excel, generamos CSV que puede ser abierto por Excel
+        const contenidoCsv = generarContenidoReporte(reporteId, 'csv');
+        const nombreArchivo = `${reporte?.titulo.replace(/\s+/g, '_')}_${fechaFormateada}.csv`;
+        
+        descargarArchivo(contenidoCsv, nombreArchivo, 'text/csv;charset=utf-8;');
+        
+        toast({
+          title: "Reporte Excel descargado",
+          description: `${reporte?.titulo} descargado como ${nombreArchivo}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error al exportar",
+        description: "Hubo un problema al generar el reporte. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+      console.error('Error al exportar reporte:', error);
+    }
   };
 
   const categorias = [...new Set(reportes.map(r => r.categoria))];
