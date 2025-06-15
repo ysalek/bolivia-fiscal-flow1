@@ -19,6 +19,29 @@ export interface TrialBalanceTotals {
   saldoAcreedor: number;
 }
 
+export interface BalanceSheetAccount {
+  codigo: string;
+  nombre: string;
+  saldo: number;
+}
+
+export interface BalanceSheetData {
+  activos: {
+    cuentas: BalanceSheetAccount[];
+    total: number;
+  };
+  pasivos: {
+    cuentas: BalanceSheetAccount[];
+    total: number;
+  };
+  patrimonio: {
+    cuentas: BalanceSheetAccount[];
+    total: number;
+  };
+  totalPasivoPatrimonio: number;
+  ecuacionCuadrada: boolean;
+}
+
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
@@ -31,6 +54,7 @@ export interface ContabilidadIntegrationHook {
   obtenerProductos: () => Producto[];
   validarTransaccion: (asiento: AsientoContable) => boolean;
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
+  getBalanceSheetData: () => BalanceSheetData;
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
@@ -238,6 +262,60 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     return { details, totals };
   };
 
+  const getBalanceSheetData = (): BalanceSheetData => {
+    const { details } = getTrialBalanceData();
+
+    const activos = { cuentas: [] as BalanceSheetAccount[], total: 0 };
+    const pasivos = { cuentas: [] as BalanceSheetAccount[], total: 0 };
+    const patrimonio = { cuentas: [] as BalanceSheetAccount[], total: 0 };
+    const ingresos = { total: 0 };
+    const gastos = { total: 0 };
+
+    details.forEach(cuenta => {
+      const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
+
+      if (cuenta.codigo.startsWith('1')) { // Activos
+        activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldo });
+        activos.total += saldo;
+      } else if (cuenta.codigo.startsWith('2')) { // Pasivos
+        pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
+        pasivos.total -= saldo;
+      } else if (cuenta.codigo.startsWith('3')) { // Patrimonio
+        patrimonio.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
+        patrimonio.total -= saldo;
+      } else if (cuenta.codigo.startsWith('4')) { // Ingresos
+        ingresos.total -= saldo; // Ingresos son acreedores
+      } else if (cuenta.codigo.startsWith('5')) { // Gastos
+        gastos.total += saldo; // Gastos son deudores
+      }
+    });
+
+    const utilidadPeriodo = ingresos.total - gastos.total;
+    if (Math.abs(utilidadPeriodo) > 0.01) {
+        patrimonio.cuentas.push({
+            codigo: '3211',
+            nombre: 'Utilidad (o Pérdida) del Ejercicio',
+            saldo: utilidadPeriodo
+        });
+        patrimonio.total += utilidadPeriodo;
+    }
+
+    const totalPasivoPatrimonio = pasivos.total + patrimonio.total;
+    const ecuacionCuadrada = Math.abs(activos.total - totalPasivoPatrimonio) < 0.01;
+
+    activos.cuentas.sort((a, b) => a.codigo.localeCompare(b.codigo));
+    pasivos.cuentas.sort((a, b) => a.codigo.localeCompare(b.codigo));
+    patrimonio.cuentas.sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    return {
+      activos,
+      pasivos,
+      patrimonio,
+      totalPasivoPatrimonio,
+      ecuacionCuadrada
+    };
+  };
+
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
@@ -394,6 +472,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     actualizarStockProducto,
     obtenerProductos,
     validarTransaccion,
-    obtenerBalanceGeneral
+    obtenerBalanceGeneral,
+    getBalanceSheetData
   };
 };
