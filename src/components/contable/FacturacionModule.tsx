@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Receipt, Send, Eye, X } from "lucide-react";
+import { Plus, Receipt, Send, Eye, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const FacturacionModule = () => {
@@ -17,9 +17,18 @@ const FacturacionModule = () => {
     nit: "",
     email: "",
     direccion: "",
-    productos: [{ descripcion: "", cantidad: 1, precio: 0, subtotal: 0 }]
+    productos: [{ descripcion: "", cantidad: 1, precio: 0, subtotal: 0, codigo: "" }]
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
+
+  // Productos disponibles (simulando una base de datos)
+  const productosDisponibles = [
+    { codigo: "PROD001", nombre: "Servicio de Consultoría", precio: 500.00 },
+    { codigo: "PROD002", nombre: "Laptop Dell Inspiron", precio: 4200.00 },
+    { codigo: "PROD003", nombre: "Software de Gestión", precio: 1200.00 },
+    { codigo: "PROD004", nombre: "Capacitación Empresarial", precio: 800.00 }
+  ];
 
   const facturas = [
     {
@@ -54,20 +63,56 @@ const FacturacionModule = () => {
     }
   ];
 
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (!invoiceData.cliente.trim()) newErrors.cliente = "La razón social es obligatoria";
+    if (!invoiceData.nit.trim()) newErrors.nit = "El NIT es obligatorio";
+    if (!invoiceData.email.trim()) newErrors.email = "El email es obligatorio";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invoiceData.email)) {
+      newErrors.email = "El email no tiene un formato válido";
+    }
+    
+    if (invoiceData.productos.some(p => !p.descripcion.trim())) {
+      newErrors.productos = "Todos los productos deben tener descripción";
+    }
+    
+    if (calculateTotal() <= 0) {
+      newErrors.total = "El total debe ser mayor a 0";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const addProduct = () => {
     setInvoiceData(prev => ({
       ...prev,
-      productos: [...prev.productos, { descripcion: "", cantidad: 1, precio: 0, subtotal: 0 }]
+      productos: [...prev.productos, { descripcion: "", cantidad: 1, precio: 0, subtotal: 0, codigo: "" }]
     }));
   };
 
   const updateProduct = (index: number, field: string, value: any) => {
     setInvoiceData(prev => {
       const newProducts = [...prev.productos];
-      newProducts[index] = { ...newProducts[index], [field]: value };
       
-      if (field === 'cantidad' || field === 'precio') {
-        newProducts[index].subtotal = newProducts[index].cantidad * newProducts[index].precio;
+      if (field === 'codigo' && value) {
+        const producto = productosDisponibles.find(p => p.codigo === value);
+        if (producto) {
+          newProducts[index] = {
+            ...newProducts[index],
+            codigo: value,
+            descripcion: producto.nombre,
+            precio: producto.precio,
+            subtotal: newProducts[index].cantidad * producto.precio
+          };
+        }
+      } else {
+        newProducts[index] = { ...newProducts[index], [field]: value };
+        
+        if (field === 'cantidad' || field === 'precio') {
+          newProducts[index].subtotal = newProducts[index].cantidad * newProducts[index].precio;
+        }
       }
       
       return { ...prev, productos: newProducts };
@@ -81,23 +126,48 @@ const FacturacionModule = () => {
     }));
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return invoiceData.productos.reduce((total, producto) => total + producto.subtotal, 0);
   };
 
+  const calculateIVA = () => {
+    return calculateSubtotal() * 0.13;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateIVA();
+  };
+
+  const generateInvoiceNumber = () => {
+    const lastInvoice = Math.max(...facturas.map(f => parseInt(f.id)));
+    return String(lastInvoice + 1).padStart(6, '0');
+  };
+
   const handleSubmitInvoice = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Error en la validación",
+        description: "Por favor corrija los errores en el formulario.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const numeroFactura = generateInvoiceNumber();
     toast({
-      title: "Factura creada",
-      description: "La factura ha sido generada y enviada al SIN correctamente.",
+      title: "Factura creada exitosamente",
+      description: `Factura N° ${numeroFactura} ha sido generada y enviada al SIN correctamente.`,
     });
+    
     setShowNewInvoice(false);
     setInvoiceData({
       cliente: "",
       nit: "",
       email: "",
       direccion: "",
-      productos: [{ descripcion: "", cantidad: 1, precio: 0, subtotal: 0 }]
+      productos: [{ descripcion: "", cantidad: 1, precio: 0, subtotal: 0, codigo: "" }]
     });
+    setErrors({});
   };
 
   const getStatusColor = (status: string) => {
@@ -122,7 +192,10 @@ const FacturacionModule = () => {
             </div>
             <Button 
               variant="outline" 
-              onClick={() => setShowNewInvoice(false)}
+              onClick={() => {
+                setShowNewInvoice(false);
+                setErrors({});
+              }}
             >
               <X className="w-4 h-4 mr-2" />
               Cancelar
@@ -133,32 +206,53 @@ const FacturacionModule = () => {
           {/* Datos del cliente */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="cliente">Razón Social / Nombre</Label>
+              <Label htmlFor="cliente">Razón Social / Nombre *</Label>
               <Input
                 id="cliente"
                 value={invoiceData.cliente}
                 onChange={(e) => setInvoiceData(prev => ({ ...prev, cliente: e.target.value }))}
                 placeholder="Nombre del cliente"
+                className={errors.cliente ? "border-red-500" : ""}
               />
+              {errors.cliente && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.cliente}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nit">NIT</Label>
+              <Label htmlFor="nit">NIT *</Label>
               <Input
                 id="nit"
                 value={invoiceData.nit}
                 onChange={(e) => setInvoiceData(prev => ({ ...prev, nit: e.target.value }))}
                 placeholder="Número de identificación tributaria"
+                className={errors.nit ? "border-red-500" : ""}
               />
+              {errors.nit && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.nit}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={invoiceData.email}
                 onChange={(e) => setInvoiceData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="correo@cliente.com"
+                className={errors.email ? "border-red-500" : ""}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.email}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="direccion">Dirección</Label>
@@ -181,9 +275,34 @@ const FacturacionModule = () => {
               </Button>
             </div>
 
+            {errors.productos && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.productos}
+              </p>
+            )}
+
             {invoiceData.productos.map((producto, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg">
-                <div className="md:col-span-2">
+              <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg">
+                <div>
+                  <Label>Código</Label>
+                  <Select 
+                    value={producto.codigo} 
+                    onValueChange={(value) => updateProduct(index, 'codigo', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {productosDisponibles.map(p => (
+                        <SelectItem key={p.codigo} value={p.codigo}>
+                          {p.codigo} - {p.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Descripción</Label>
                   <Textarea
                     value={producto.descripcion}
@@ -211,15 +330,15 @@ const FacturacionModule = () => {
                     step="0.01"
                   />
                 </div>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Label>Subtotal</Label>
-                    <Input
-                      value={producto.subtotal.toFixed(2)}
-                      readOnly
-                      className="bg-gray-50"
-                    />
-                  </div>
+                <div>
+                  <Label>Subtotal</Label>
+                  <Input
+                    value={`Bs. ${producto.subtotal.toFixed(2)}`}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
+                <div className="flex items-end">
                   {invoiceData.productos.length > 1 && (
                     <Button
                       variant="outline"
@@ -237,19 +356,25 @@ const FacturacionModule = () => {
 
           {/* Total */}
           <div className="flex justify-end">
-            <div className="w-64 space-y-2">
+            <div className="w-64 space-y-2 p-4 bg-gray-50 rounded-lg">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>Bs. {calculateTotal().toFixed(2)}</span>
+                <span>Bs. {calculateSubtotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>IVA (13%):</span>
-                <span>Bs. {(calculateTotal() * 0.13).toFixed(2)}</span>
+                <span>Bs. {calculateIVA().toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>Total:</span>
-                <span>Bs. {(calculateTotal() * 1.13).toFixed(2)}</span>
+                <span>Bs. {calculateTotal().toFixed(2)}</span>
               </div>
+              {errors.total && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.total}
+                </p>
+              )}
             </div>
           </div>
 
@@ -281,6 +406,48 @@ const FacturacionModule = () => {
           <Plus className="w-4 h-4 mr-2" />
           Nueva Factura
         </Button>
+      </div>
+
+      {/* Resumen rápido */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {facturas.filter(f => f.sin_status === 'aceptado').length}
+              </div>
+              <div className="text-sm text-gray-600">Facturas Aceptadas</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-600">
+                {facturas.filter(f => f.sin_status === 'pendiente').length}
+              </div>
+              <div className="text-sm text-gray-600">Pendientes SIN</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                Bs. {facturas.reduce((sum, f) => sum + f.monto, 0).toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-600">Total Facturado</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{facturas.length}</div>
+              <div className="text-sm text-gray-600">Total Facturas</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Lista de facturas */}

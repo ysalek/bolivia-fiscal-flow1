@@ -5,107 +5,176 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, FileText, Calendar, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Edit, Trash2, FileText, Calculator } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const LibroDiario = () => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [showNewEntry, setShowNewEntry] = useState(false);
-  const [filterPeriod, setFilterPeriod] = useState("2024-06");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPeriod, setFilterPeriod] = useState("mes-actual");
+  const [newAsiento, setNewAsiento] = useState({
+    fecha: new Date().toISOString().slice(0, 10),
+    concepto: "",
+    referencia: "",
+    cuentas: [
+      { codigo: "", nombre: "", debe: 0, haber: 0 },
+      { codigo: "", nombre: "", debe: 0, haber: 0 }
+    ]
+  });
   const { toast } = useToast();
+
+  // Plan de cuentas simplificado
+  const planCuentas = [
+    { codigo: "1101", nombre: "Caja" },
+    { codigo: "1102", nombre: "Bancos" },
+    { codigo: "1201", nombre: "Cuentas por Cobrar" },
+    { codigo: "1301", nombre: "Inventarios" },
+    { codigo: "1501", nombre: "Muebles y Enseres" },
+    { codigo: "2101", nombre: "Cuentas por Pagar" },
+    { codigo: "2201", nombre: "IVA por Pagar" },
+    { codigo: "3101", nombre: "Capital Social" },
+    { codigo: "4101", nombre: "Ventas" },
+    { codigo: "5101", nombre: "Costo de Ventas" },
+    { codigo: "6101", nombre: "Gastos Administrativos" },
+    { codigo: "6201", nombre: "Gastos de Ventas" }
+  ];
 
   const asientos = [
     {
       id: 1,
-      numero: "001",
+      numero: "AST-001",
       fecha: "2024-06-15",
-      concepto: "Venta de productos a Cliente ABC",
+      concepto: "Venta de productos según factura 001234",
       referencia: "FAC-001234",
-      total_debe: 1412.50,
-      total_haber: 1412.50,
-      estado: "Confirmado",
-      detalles: [
-        { cuenta: "1.1.01 - Caja", debe: 1412.50, haber: 0 },
-        { cuenta: "4.1.01 - Ventas", debe: 0, haber: 1250.00 },
-        { cuenta: "2.1.05 - IVA por Pagar", debe: 0, haber: 162.50 }
+      debe: 1412.50,
+      haber: 1412.50,
+      estado: "registrado",
+      cuentas: [
+        { codigo: "1102", nombre: "Bancos", debe: 1412.50, haber: 0 },
+        { codigo: "4101", nombre: "Ventas", debe: 0, haber: 1250.00 },
+        { codigo: "2201", nombre: "IVA por Pagar", debe: 0, haber: 162.50 }
       ]
     },
     {
       id: 2,
-      numero: "002",
+      numero: "AST-002",
       fecha: "2024-06-14",
-      concepto: "Pago de servicios básicos",
-      referencia: "REC-4567",
-      total_debe: 850.00,
-      total_haber: 850.00,
-      estado: "Confirmado",
-      detalles: [
-        { cuenta: "5.2.01 - Gastos de Oficina", debe: 850.00, haber: 0 },
-        { cuenta: "1.1.02 - Bancos", debe: 0, haber: 850.00 }
+      concepto: "Compra de inventario según factura C-456",
+      referencia: "COMP-456",
+      debe: 2825.00,
+      haber: 2825.00,
+      estado: "registrado",
+      cuentas: [
+        { codigo: "1301", nombre: "Inventarios", debe: 2500.00, haber: 0 },
+        { codigo: "1102", nombre: "IVA Crédito Fiscal", debe: 325.00, haber: 0 },
+        { codigo: "2101", nombre: "Cuentas por Pagar", debe: 0, haber: 2825.00 }
       ]
     },
     {
       id: 3,
-      numero: "003",
+      numero: "AST-003",
       fecha: "2024-06-13",
-      concepto: "Compra de suministros de oficina",
-      referencia: "FAC-PROV-789",
-      total_debe: 565.00,
-      total_haber: 565.00,
-      estado: "Borrador",
-      detalles: [
-        { cuenta: "5.2.01 - Gastos de Oficina", debe: 500.00, haber: 0 },
-        { cuenta: "1.1.06 - IVA Crédito Fiscal", debe: 65.00, haber: 0 },
-        { cuenta: "2.1.01 - Cuentas por Pagar", debe: 0, haber: 565.00 }
+      concepto: "Pago de servicios básicos",
+      referencia: "REC-789",
+      debe: 850.00,
+      haber: 850.00,
+      estado: "registrado",
+      cuentas: [
+        { codigo: "6101", nombre: "Gastos Administrativos", debe: 850.00, haber: 0 },
+        { codigo: "1101", nombre: "Caja", debe: 0, haber: 850.00 }
       ]
     }
   ];
 
-  const cuentasContables = [
-    { codigo: "1.1.01", nombre: "Caja", tipo: "Activo" },
-    { codigo: "1.1.02", nombre: "Bancos", tipo: "Activo" },
-    { codigo: "1.1.06", nombre: "IVA Crédito Fiscal", tipo: "Activo" },
-    { codigo: "1.2.01", nombre: "Cuentas por Cobrar", tipo: "Activo" },
-    { codigo: "2.1.01", nombre: "Cuentas por Pagar", tipo: "Pasivo" },
-    { codigo: "2.1.05", nombre: "IVA por Pagar", tipo: "Pasivo" },
-    { codigo: "3.1.01", nombre: "Capital Social", tipo: "Patrimonio" },
-    { codigo: "4.1.01", nombre: "Ventas", tipo: "Ingresos" },
-    { codigo: "5.1.01", nombre: "Sueldos y Salarios", tipo: "Gastos" },
-    { codigo: "5.2.01", nombre: "Gastos de Oficina", tipo: "Gastos" }
-  ];
+  const addCuenta = () => {
+    setNewAsiento(prev => ({
+      ...prev,
+      cuentas: [...prev.cuentas, { codigo: "", nombre: "", debe: 0, haber: 0 }]
+    }));
+  };
 
-  const filteredAsientos = asientos.filter(asiento =>
-    asiento.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asiento.numero.includes(searchTerm) ||
-    asiento.referencia.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const updateCuenta = (index: number, field: string, value: any) => {
+    setNewAsiento(prev => {
+      const newCuentas = [...prev.cuentas];
+      
+      if (field === 'codigo') {
+        const cuenta = planCuentas.find(c => c.codigo === value);
+        if (cuenta) {
+          newCuentas[index] = { ...newCuentas[index], codigo: value, nombre: cuenta.nombre };
+        }
+      } else {
+        newCuentas[index] = { ...newCuentas[index], [field]: value };
+      }
+      
+      return { ...prev, cuentas: newCuentas };
+    });
+  };
 
-  const handleSaveEntry = () => {
+  const removeCuenta = (index: number) => {
+    if (newAsiento.cuentas.length > 2) {
+      setNewAsiento(prev => ({
+        ...prev,
+        cuentas: prev.cuentas.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const calculateTotals = () => {
+    const debe = newAsiento.cuentas.reduce((sum, cuenta) => sum + (cuenta.debe || 0), 0);
+    const haber = newAsiento.cuentas.reduce((sum, cuenta) => sum + (cuenta.haber || 0), 0);
+    return { debe, haber };
+  };
+
+  const isBalanced = () => {
+    const { debe, haber } = calculateTotals();
+    return Math.abs(debe - haber) < 0.01 && debe > 0;
+  };
+
+  const handleSaveAsiento = () => {
+    if (!isBalanced()) {
+      toast({
+        title: "Error en el asiento",
+        description: "El asiento debe estar balanceado (Debe = Haber) y ser mayor a 0.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newAsiento.concepto.trim()) {
+      toast({
+        title: "Error en el asiento",
+        description: "El concepto es obligatorio.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
       title: "Asiento guardado",
       description: "El asiento contable ha sido registrado correctamente.",
     });
+    
     setShowNewEntry(false);
+    setNewAsiento({
+      fecha: new Date().toISOString().slice(0, 10),
+      concepto: "",
+      referencia: "",
+      cuentas: [
+        { codigo: "", nombre: "", debe: 0, haber: 0 },
+        { codigo: "", nombre: "", debe: 0, haber: 0 }
+      ]
+    });
   };
 
-  const getStatusColor = (estado: string) => {
-    return estado === "Confirmado" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-  };
-
-  const calcularTotales = () => {
-    return filteredAsientos.reduce(
-      (acc, asiento) => ({
-        debe: acc.debe + asiento.total_debe,
-        haber: acc.haber + asiento.total_haber
-      }),
-      { debe: 0, haber: 0 }
-    );
-  };
-
-  const totales = calcularTotales();
+  const filteredAsientos = asientos.filter(asiento => {
+    const matchesSearch = asiento.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         asiento.numero.includes(searchTerm) ||
+                         asiento.referencia.includes(searchTerm);
+    return matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -113,7 +182,7 @@ const LibroDiario = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Libro Diario</h2>
-          <p className="text-slate-600">Registro cronológico de asientos contables</p>
+          <p className="text-slate-600">Registro cronológico de todas las transacciones contables</p>
         </div>
         
         <Dialog open={showNewEntry} onOpenChange={setShowNewEntry}>
@@ -123,105 +192,148 @@ const LibroDiario = () => {
               Nuevo Asiento
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Nuevo Asiento Contable</DialogTitle>
               <DialogDescription>
-                Registrar un nuevo asiento en el libro diario
+                Registre un nuevo asiento en el libro diario
               </DialogDescription>
             </DialogHeader>
+            
             <div className="space-y-6 py-4">
               {/* Datos generales */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="numero">Número de Asiento</Label>
-                  <Input id="numero" placeholder="004" />
+                  <Label htmlFor="fecha">Fecha</Label>
+                  <Input
+                    id="fecha"
+                    type="date"
+                    value={newAsiento.fecha}
+                    onChange={(e) => setNewAsiento(prev => ({ ...prev, fecha: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fecha">Fecha</Label>
-                  <Input id="fecha" type="date" />
+                  <Label htmlFor="concepto">Concepto</Label>
+                  <Input
+                    id="concepto"
+                    value={newAsiento.concepto}
+                    onChange={(e) => setNewAsiento(prev => ({ ...prev, concepto: e.target.value }))}
+                    placeholder="Descripción del asiento contable"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="referencia">Referencia</Label>
-                  <Input id="referencia" placeholder="FAC-001, REC-002, etc." />
+                  <Input
+                    id="referencia"
+                    value={newAsiento.referencia}
+                    onChange={(e) => setNewAsiento(prev => ({ ...prev, referencia: e.target.value }))}
+                    placeholder="Documento de referencia"
+                  />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="concepto">Concepto</Label>
-                <Textarea 
-                  id="concepto" 
-                  placeholder="Descripción del asiento contable..."
-                  className="min-h-[60px]"
-                />
-              </div>
 
-              {/* Detalles del asiento */}
+              {/* Cuentas */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Detalle del Asiento</h3>
-                
-                {/* Fila de ejemplo */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
-                  <div className="space-y-2">
-                    <Label>Cuenta Contable</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar cuenta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cuentasContables.map(cuenta => (
-                          <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
-                            {cuenta.codigo} - {cuenta.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Cuentas Contables</h3>
+                  <Button onClick={addCuenta} size="sm" variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Cuenta
+                  </Button>
+                </div>
+
+                <div className="border rounded-lg">
+                  <div className="grid grid-cols-7 gap-2 p-3 bg-gray-50 border-b font-medium text-sm">
+                    <div>Código</div>
+                    <div className="col-span-2">Cuenta</div>
+                    <div>Debe</div>
+                    <div>Haber</div>
+                    <div>Acciones</div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Debe</Label>
-                    <Input type="number" placeholder="0.00" step="0.01" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Haber</Label>
-                    <Input type="number" placeholder="0.00" step="0.01" />
-                  </div>
-                  <div className="flex items-end">
-                    <Button size="sm" variant="outline">
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                  
+                  {newAsiento.cuentas.map((cuenta, index) => (
+                    <div key={index} className="grid grid-cols-7 gap-2 p-3 border-b">
+                      <div>
+                        <Select 
+                          value={cuenta.codigo} 
+                          onValueChange={(value) => updateCuenta(index, 'codigo', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Código" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {planCuentas.map(c => (
+                              <SelectItem key={c.codigo} value={c.codigo}>
+                                {c.codigo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          value={cuenta.nombre}
+                          readOnly
+                          placeholder="Seleccione una cuenta"
+                          className="bg-gray-50"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          type="number"
+                          value={cuenta.debe}
+                          onChange={(e) => updateCuenta(index, 'debe', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          type="number"
+                          value={cuenta.haber}
+                          onChange={(e) => updateCuenta(index, 'haber', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        {newAsiento.cuentas.length > 2 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCuenta(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Totales */}
+                  <div className="grid grid-cols-7 gap-2 p-3 bg-gray-50 font-bold">
+                    <div className="col-span-3">TOTALES:</div>
+                    <div>Bs. {calculateTotals().debe.toFixed(2)}</div>
+                    <div>Bs. {calculateTotals().haber.toFixed(2)}</div>
+                    <div>
+                      {isBalanced() ? (
+                        <Badge className="bg-green-100 text-green-800">✓ Balanceado</Badge>
+                      ) : (
+                        <Badge className="bg-red-100 text-red-800">✗ No balanceado</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Totales */}
-              <div className="flex justify-end">
-                <div className="w-64 space-y-2 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between">
-                    <span>Total Debe:</span>
-                    <span className="font-mono">Bs. 0.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Haber:</span>
-                    <span className="font-mono">Bs. 0.00</span>
-                  </div>
-                  <div className="flex justify-between font-bold border-t pt-2">
-                    <span>Diferencia:</span>
-                    <span className="font-mono">Bs. 0.00</span>
-                  </div>
-                </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowNewEntry(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveAsiento} disabled={!isBalanced()}>
+                  Guardar Asiento
+                </Button>
               </div>
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowNewEntry(false)}>
-                Cancelar
-              </Button>
-              <Button variant="outline">
-                Guardar Borrador
-              </Button>
-              <Button onClick={handleSaveEntry}>
-                Confirmar Asiento
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -243,12 +355,13 @@ const LibroDiario = () => {
             
             <Select value={filterPeriod} onValueChange={setFilterPeriod}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Período" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2024-06">Junio 2024</SelectItem>
-                <SelectItem value="2024-05">Mayo 2024</SelectItem>
-                <SelectItem value="2024-04">Abril 2024</SelectItem>
+                <SelectItem value="mes-actual">Mes Actual</SelectItem>
+                <SelectItem value="trimestre">Último Trimestre</SelectItem>
+                <SelectItem value="año">Año Actual</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
               </SelectContent>
             </Select>
 
@@ -267,59 +380,61 @@ const LibroDiario = () => {
         <CardHeader>
           <CardTitle>Asientos Contables</CardTitle>
           <CardDescription>
-            Registro cronológico de todas las transacciones contables
+            Registro cronológico de movimientos contables
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {filteredAsientos.map((asiento) => (
-              <div key={asiento.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
+              <div key={asiento.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-4">
-                    <div className="font-mono text-lg font-bold">#{asiento.numero}</div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      {asiento.fecha}
+                    <Badge variant="outline" className="font-mono">
+                      {asiento.numero}
+                    </Badge>
+                    <div>
+                      <div className="font-medium">{asiento.concepto}</div>
+                      <div className="text-sm text-gray-500">
+                        {asiento.fecha} • Ref: {asiento.referencia}
+                      </div>
                     </div>
-                    <Badge className={getStatusColor(asiento.estado)}>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">Bs. {asiento.debe.toFixed(2)}</div>
+                    <Badge className="bg-green-100 text-green-800">
                       {asiento.estado}
                     </Badge>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-600">Ref: {asiento.referencia}</div>
-                  </div>
                 </div>
                 
-                <div className="text-gray-800">{asiento.concepto}</div>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="grid grid-cols-4 gap-2 text-sm font-medium mb-2">
+                    <div>Código</div>
+                    <div>Cuenta</div>
+                    <div className="text-right">Debe</div>
+                    <div className="text-right">Haber</div>
+                  </div>
+                  {asiento.cuentas.map((cuenta, index) => (
+                    <div key={index} className="grid grid-cols-4 gap-2 text-sm py-1">
+                      <div className="font-mono">{cuenta.codigo}</div>
+                      <div>{cuenta.nombre}</div>
+                      <div className="text-right">
+                        {cuenta.debe > 0 ? `Bs. ${cuenta.debe.toFixed(2)}` : '—'}
+                      </div>
+                      <div className="text-right">
+                        {cuenta.haber > 0 ? `Bs. ${cuenta.haber.toFixed(2)}` : '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">Cuenta</th>
-                        <th className="text-right p-2">Debe</th>
-                        <th className="text-right p-2">Haber</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {asiento.detalles.map((detalle, index) => (
-                        <tr key={index} className="border-b last:border-b-0">
-                          <td className="p-2">{detalle.cuenta}</td>
-                          <td className="p-2 text-right font-mono">
-                            {detalle.debe > 0 ? `Bs. ${detalle.debe.toFixed(2)}` : '-'}
-                          </td>
-                          <td className="p-2 text-right font-mono">
-                            {detalle.haber > 0 ? `Bs. ${detalle.haber.toFixed(2)}` : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="font-bold bg-gray-50">
-                        <td className="p-2">TOTALES</td>
-                        <td className="p-2 text-right font-mono">Bs. {asiento.total_debe.toFixed(2)}</td>
-                        <td className="p-2 text-right font-mono">Bs. {asiento.total_haber.toFixed(2)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="flex justify-end gap-2 mt-3">
+                  <Button size="sm" variant="outline">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <FileText className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -327,39 +442,45 @@ const LibroDiario = () => {
         </CardContent>
       </Card>
 
-      {/* Resumen de totales */}
+      {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-red-600" />
-              <div>
-                <p className="text-2xl font-bold text-red-600">Bs. {totales.debe.toFixed(2)}</p>
-                <p className="text-sm text-gray-600">Total Debe</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold text-green-600">Bs. {totales.haber.toFixed(2)}</p>
-                <p className="text-sm text-gray-600">Total Haber</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-blue-600" />
+              <Calculator className="h-8 w-8 text-blue-600" />
               <div>
                 <p className="text-2xl font-bold">{asientos.length}</p>
                 <p className="text-sm text-gray-600">Total Asientos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <Calculator className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  Bs. {asientos.reduce((sum, a) => sum + a.debe, 0).toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-600">Total Movimientos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <FileText className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">100%</p>
+                <p className="text-sm text-gray-600">Asientos Balanceados</p>
               </div>
             </div>
           </CardContent>
