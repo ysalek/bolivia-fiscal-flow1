@@ -162,21 +162,11 @@ export const useReportesContables = () => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('1')) { // Activo
-        if (saldo >= 0) { // Saldo deudor (normal para activo)
-          activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldo });
-          activos.total += saldo;
-        } else { // Saldo acreedor (anómalo para activo), se reclasifica a pasivo para el reporte
-          pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: `${cuenta.nombre} (Saldo Acreedor)`, saldo: -saldo });
-          pasivos.total -= saldo;
-        }
+        activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldo });
+        activos.total += saldo;
       } else if (cuenta.codigo.startsWith('2')) { // Pasivo
-        if (saldo <= 0) { // Saldo acreedor (normal para pasivo)
-          pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
-          pasivos.total -= saldo;
-        } else { // Saldo deudor (anómalo para pasivo), se reclasifica a activo para el reporte
-          activos.cuentas.push({ codigo: cuenta.codigo, nombre: `${cuenta.nombre} (Saldo Deudor)`, saldo: saldo });
-          activos.total += saldo;
-        }
+        pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
+        pasivos.total -= saldo;
       } else if (cuenta.codigo.startsWith('3')) { // Patrimonio
         patrimonio.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
         patrimonio.total -= saldo;
