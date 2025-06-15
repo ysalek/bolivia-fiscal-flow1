@@ -35,10 +35,31 @@ export interface Factura {
   estado: 'borrador' | 'enviada' | 'pagada' | 'anulada';
   estadoSIN: 'pendiente' | 'aceptado' | 'rechazado';
   cuf: string;
+  cufd: string;
+  puntoVenta: number;
   codigoControl: string;
   observaciones: string;
   fechaCreacion: string;
 }
+
+export interface PuntoVenta {
+  codigo: number;
+  nombre: string;
+}
+
+export const puntosVenta: PuntoVenta[] = [
+  { codigo: 0, nombre: "Oficina Central Santa Cruz" },
+  { codigo: 1, nombre: "Sucursal La Paz" },
+];
+
+export const obtenerCUFD = (codigoPuntoVenta: number): string => {
+  const hoy = new Date();
+  const seed = hoy.getFullYear() * 10000 + (hoy.getMonth() + 1) * 100 + hoy.getDate() + codigoPuntoVenta;
+  let random = Math.sin(seed) * 10000;
+  random = random - Math.floor(random);
+  const datePart = hoy.toISOString().slice(0, 10).replace(/-/g, "");
+  return `CUFD_${datePart}_${random.toString(16).slice(2, 12)}`.toUpperCase();
+};
 
 export const clientesIniciales: Cliente[] = [
   {
@@ -100,6 +121,8 @@ export const facturasIniciales: Factura[] = [
     estado: 'enviada',
     estadoSIN: 'aceptado',
     cuf: "E0D5C1B9A8F7E6D5C4B3A2F1E0D9C8B7A6F5E4D3C2B1A0F9E8D7C6B5A4F3E2D1",
+    cufd: obtenerCUFD(0),
+    puntoVenta: 0,
     codigoControl: "12-34-56",
     observaciones: "",
     fechaCreacion: "2024-06-15"
@@ -111,15 +134,18 @@ export const generarNumeroFactura = (ultimaFactura: string): string => {
   return numero.toString().padStart(6, '0');
 };
 
-export const generarCUF = (): string => {
-  // Simula un CUF (Código Único de Facturación) de 64 caracteres hexadecimales.
-  // El CUF real se genera con un algoritmo complejo basado en los datos de la factura.
-  const chars = '0123456789ABCDEF';
-  let cuf = '';
-  for (let i = 0; i < 64; i++) {
-    cuf += chars.charAt(Math.floor(Math.random() * chars.length));
+export const generarCUF = (facturaData: { nitEmisor: string, fechaHora: string, sucursal: string, modalidad: string, tipoEmision: string, tipoFactura: string, tipoDocumentoSector: string, numeroFactura: string, pos: string}, cufd: string): string => {
+  const dataString = Object.values(facturaData).join('|') + '|' + cufd;
+  let hash = 0;
+  if (dataString.length === 0) return '';
+  for (let i = 0; i < dataString.length; i++) {
+      const char = dataString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
   }
-  return cuf;
+  const hexHash = Math.abs(hash).toString(16).toUpperCase();
+  const cuf = (hexHash + dataString.split("").reverse().join("").charCodeAt(0).toString(16) + Date.now().toString(16)).toUpperCase().replace(/[^A-F0-9]/g, '');
+  return cuf.slice(0, 64).padEnd(64, 'A');
 };
 
 const motivosRechazo = [

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura, generarCUF } from "./BillingData";
+import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura, generarCUF, obtenerCUFD, puntosVenta, PuntoVenta } from "./BillingData";
 import { Producto } from "../products/ProductsData";
 import InvoiceClientSelector from "./InvoiceClientSelector";
 import InvoiceItems from "./InvoiceItems";
@@ -13,6 +14,7 @@ import InvoiceTotals from "./InvoiceTotals";
 import InvoiceActions from "./InvoiceActions";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import InvoicePreview from "./InvoicePreview";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface InvoiceFormProps {
   clientes: Cliente[];
@@ -41,6 +43,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [previewingInvoice, setPreviewingInvoice] = useState<Factura | null>(null);
+  const [selectedPuntoVenta, setSelectedPuntoVenta] = useState<PuntoVenta>(puntosVenta[0]);
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -130,10 +133,26 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
 
     const numeros = facturas.map(f => parseInt(f.numero)).filter(n => !isNaN(n));
     const ultimoNumero = numeros.length > 0 ? Math.max(...numeros) : 0;
+    const numeroFactura = generarNumeroFactura(ultimoNumero.toString());
+
+    const cufd = obtenerCUFD(selectedPuntoVenta.codigo);
+
+    // Data for CUF generation, mostly mocked for simulation
+    const cufData = {
+      nitEmisor: "123456789", // Mock NIT emisor from company data
+      fechaHora: new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 17),
+      sucursal: "0", // Mock sucursal (0 for Casa Matriz)
+      modalidad: "1", // 1 for Electronica en linea
+      tipoEmision: "1", // 1 for Online
+      tipoFactura: "1", // 1 for Con derecho a credito fiscal
+      tipoDocumentoSector: "1", // 1 for Factura Estandar
+      numeroFactura: numeroFactura,
+      pos: selectedPuntoVenta.codigo.toString(),
+    };
 
     return {
       id: Date.now().toString(),
-      numero: generarNumeroFactura(ultimoNumero.toString()),
+      numero: numeroFactura,
       cliente: selectedCliente!,
       fecha: new Date().toISOString().slice(0, 10),
       fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -144,7 +163,9 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       total,
       estado: 'enviada',
       estadoSIN: 'pendiente',
-      cuf: generarCUF(),
+      cuf: generarCUF(cufData, cufd),
+      cufd,
+      puntoVenta: selectedPuntoVenta.codigo,
       codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
       observaciones,
       fechaCreacion: new Date().toISOString().slice(0, 10)
@@ -210,13 +231,31 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <InvoiceClientSelector
-            clientes={clientes}
-            selectedCliente={selectedCliente}
-            onSelectCliente={setSelectedCliente}
-            onAddNewClient={onAddNewClient}
-            error={errors.cliente}
-          />
+          <div className="grid md:grid-cols-2 gap-6">
+            <InvoiceClientSelector
+              clientes={clientes}
+              selectedCliente={selectedCliente}
+              onSelectCliente={setSelectedCliente}
+              onAddNewClient={onAddNewClient}
+              error={errors.cliente}
+            />
+            <div className="space-y-2">
+              <Label htmlFor="punto-venta">Punto de Venta</Label>
+              <Select 
+                onValueChange={(value) => setSelectedPuntoVenta(puntosVenta.find(p => p.codigo === parseInt(value))!)} 
+                defaultValue={selectedPuntoVenta.codigo.toString()}
+              >
+                <SelectTrigger id="punto-venta">
+                  <SelectValue placeholder="Seleccione un punto de venta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {puntosVenta.map(pv => (
+                    <SelectItem key={pv.codigo} value={pv.codigo.toString()}>{pv.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           <InvoiceItems
             items={items}

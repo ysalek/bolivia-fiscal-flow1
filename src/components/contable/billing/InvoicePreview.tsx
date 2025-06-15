@@ -90,6 +90,7 @@ const InvoicePreview = ({ invoice }: InvoicePreviewProps) => {
         )}
         <div className="mt-6 pt-4 border-t">
           <p className="text-xs text-muted-foreground break-all"><span className="font-semibold">CUF:</span> {invoice.cuf}</p>
+          <p className="text-xs text-muted-foreground break-all"><span className="font-semibold">CUFD:</span> {invoice.cufd}</p>
           <p className="text-xs text-muted-foreground"><span className="font-semibold">Código de Control:</span> {invoice.codigoControl}</p>
         </div>
         <div className="mt-4 text-center">
