@@ -4,6 +4,15 @@ import { MovimientoInventario } from "@/components/contable/inventory/InventoryD
 import { useAsientos } from "./useAsientos";
 import { useReportesContables } from "./useReportesContables";
 import { useProductos } from "./useProductos";
+import type { 
+  TrialBalanceDetail, 
+  TrialBalanceTotals, 
+  BalanceSheetAccount,
+  BalanceSheetData, 
+  IncomeStatementData, 
+  DeclaracionIVAData 
+} from "./useReportesContables";
+import type { Producto } from "@/components/contable/products/ProductsData";
 
 // Re-export types to avoid breaking changes in other modules after refactoring
 export type { 
@@ -25,7 +34,7 @@ export interface ContabilidadIntegrationHook {
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
   getTrialBalanceData: () => { details: TrialBalanceDetail[], totals: TrialBalanceTotals };
   actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
-  obtenerProductos: () => any[]; // Usar any[] para ser compatible con Producto[]
+  obtenerProductos: () => Producto[];
   validarTransaccion: (asiento: AsientoContable) => boolean;
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
   getBalanceSheetData: () => BalanceSheetData;
