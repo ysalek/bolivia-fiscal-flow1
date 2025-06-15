@@ -1,4 +1,3 @@
-
 import { useAsientos } from "./useAsientos";
 
 // Type Definitions
@@ -241,6 +240,11 @@ export const useReportesContables = () => {
     const startDate = new Date(fechas.fechaInicio);
     const endDate = new Date(fechas.fechaFin);
 
+    // Adding time to endDate to include the whole day
+    endDate.setHours(23, 59, 59, 999);
+    // Adjusting startDate to the beginning of the day
+    startDate.setHours(0, 0, 0, 0);
+
     const asientosEnPeriodo = asientos.filter(a => {
         if (!a.fecha) return false;
         const fechaAsiento = new Date(a.fecha);
@@ -251,7 +255,7 @@ export const useReportesContables = () => {
     let baseImponibleVentas = 0;
 
     asientosEnPeriodo
-      .filter(a => a.numero.startsWith('VTA-'))
+      .filter(a => a.numero.startsWith('VTA-') || a.concepto.toLowerCase().includes('venta'))
       .forEach(asiento => {
         const cuentaVentas = asiento.cuentas.find(c => c.codigo.startsWith('4')); // Ingresos
         const cuentaIVA = asiento.cuentas.find(c => c.codigo === '2113'); // IVA por Pagar
@@ -264,11 +268,11 @@ export const useReportesContables = () => {
     let baseImponibleCompras = 0;
 
     asientosEnPeriodo
-      .filter(a => a.numero.startsWith('CMP-'))
+      .filter(a => a.numero.startsWith('CMP-') || a.concepto.toLowerCase().includes('compra'))
       .forEach(asiento => {
         // Base imponible es el valor de la compra antes de IVA. Puede ser inventario, o un gasto.
         const cuentaCompra = asiento.cuentas.find(c => c.codigo.startsWith('114') || c.codigo.startsWith('5')); 
-        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '2114'); // IVA Crédito Fiscal
+        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '1142'); // IVA Crédito Fiscal - BUG CORREGIDO (era 2114)
 
         if (cuentaCompra) baseImponibleCompras += cuentaCompra.debe;
         if (cuentaIVA) creditoFiscalTotal += cuentaIVA.debe;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidacionSIN } from "./billing/BillingData";
 import { Producto, productosIniciales } from "./products/ProductsData";
@@ -12,6 +12,7 @@ import InvoiceSummary from "./billing/InvoiceSummary";
 import InvoiceList from "./billing/InvoiceList";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import InvoicePreview from "./billing/InvoicePreview";
+import DeclaracionIVA from "./DeclaracionIVA";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
@@ -19,6 +20,7 @@ const FacturacionModule = () => {
   const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showAccountingHistory, setShowAccountingHistory] = useState(false);
+  const [showDeclaracionIVA, setShowDeclaracionIVA] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Factura | null>(null);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const { toast } = useToast();
@@ -207,6 +209,10 @@ const FacturacionModule = () => {
     );
   }
 
+  if (showDeclaracionIVA) {
+    return <DeclaracionIVA onBack={() => setShowDeclaracionIVA(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -215,9 +221,13 @@ const FacturacionModule = () => {
           <h2 className="text-2xl font-bold">Facturación Electrónica</h2>
           <p className="text-slate-600">Gestión de facturas con integración contable e inventario automática</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowAccountingHistory(true)}>
-            Ver Historial Contable
+            Historial Contable
+          </Button>
+          <Button variant="outline" onClick={() => setShowDeclaracionIVA(true)}>
+            <BarChart className="w-4 h-4 mr-2" />
+            Declaración IVA
           </Button>
           <Button onClick={() => setShowNewInvoice(true)}>
             <Plus className="w-4 h-4 mr-2" />
