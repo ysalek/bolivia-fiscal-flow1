@@ -10,6 +10,8 @@ import { Plus, Send, Eye, X, AlertCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura } from "./BillingData";
 import { Producto } from "../products/ProductsData";
+import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { MovimientoInventario } from "../inventory/InventoryData";
 
 interface InvoiceFormProps {
   clientes: Cliente[];
@@ -37,6 +39,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
+  const { generarAsientoVenta, generarAsientoInventario } = useContabilidadIntegration();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -128,7 +131,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
       const subtotal = calculateSubtotal();
       const descuentoTotal = calculateDiscountTotal();
       const iva = calcularIVA(subtotal);
-      const total = calcularTotal(subtotal, 0);
+      const total = calcularTotal(subtotal, 0); // This calculates total based on subtotal (net of discounts) + IVA
 
       const numeros = facturas.map(f => parseInt(f.numero)).filter(n => !isNaN(n));
       const ultimoNumero = numeros.length > 0 ? Math.max(...numeros) : 0;
@@ -153,6 +156,30 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
       };
 
       onSave(nuevaFactura);
+
+      // --- Contabilidad Integration ---
+      // 1. Generate sales accounting entry
+      generarAsientoVenta(nuevaFactura);
+      
+      // 2. Generate inventory cost entries and update stock
+      nuevaFactura.items.forEach(item => {
+        const producto = productos.find(p => p.id === item.productoId);
+        if (producto && producto.costo > 0) {
+            const movimiento: MovimientoInventario = {
+                id: `${Date.now().toString()}-${item.productoId}`,
+                fecha: nuevaFactura.fecha,
+                tipo: 'salida',
+                producto: producto.nombre,
+                productoId: producto.id,
+                cantidad: item.cantidad,
+                costoUnitario: producto.costo,
+                valorMovimiento: item.cantidad * producto.costo,
+                documento: `Factura N° ${nuevaFactura.numero}`,
+                usuario: 'sistema',
+            };
+            generarAsientoInventario(movimiento);
+        }
+      });
       
       toast({
         title: "Factura creada exitosamente",
