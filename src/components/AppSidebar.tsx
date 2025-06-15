@@ -60,8 +60,11 @@ const AppSidebar = ({ modules, activeModule, setActiveModule }: AppSidebarProps)
               {modules.map((module) => {
                 const Icon = module.icon;
                 return (
-                    <SidebarMenuItem key={module.id} active={activeModule === module.id}>
-                        <SidebarMenuButton onClick={() => setActiveModule(module.id)}>
+                    <SidebarMenuItem key={module.id}>
+                        <SidebarMenuButton 
+                            onClick={() => setActiveModule(module.id)} 
+                            isActive={activeModule === module.id}
+                        >
                             <Icon className="h-5 w-5" />
                             <span>{module.label}</span>
                         </SidebarMenuButton>
