@@ -1,9 +1,20 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { Producto } from "@/components/contable/products/ProductsData";
 import { useAsientos } from "./useAsientos";
 import { useReportesContables, BalanceSheetData, IncomeStatementData, DeclaracionIVAData, TrialBalanceDetail, TrialBalanceTotals } from "./useReportesContables";
+
+// Re-export types to avoid breaking changes in other modules after refactoring
+export type { 
+  TrialBalanceDetail, 
+  TrialBalanceTotals, 
+  BalanceSheetAccount,
+  BalanceSheetData, 
+  IncomeStatementData, 
+  DeclaracionIVAData 
+} from "./useReportesContables";
 
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
