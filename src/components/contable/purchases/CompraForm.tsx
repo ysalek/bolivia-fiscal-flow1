@@ -147,8 +147,8 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
           <h3 className="text-lg font-medium">Items de la Compra</h3>
           {errors.items && <p className="text-sm text-red-500 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.items}</p>}
           {items.map((item, index) => (
-            <div key={item.id} className="grid grid-cols-6 gap-4 items-end p-4 border rounded-lg">
-              <div className="col-span-2">
+            <div key={item.id} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end p-4 border rounded-lg bg-slate-50/50">
+              <div className="md:col-span-2">
                 <Label>Producto</Label>
                 <ProductSearchCombobox productos={productos} value={item.productoId} onChange={(id) => updateItem(index, 'productoId', id)} />
               </div>
@@ -164,7 +164,13 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
                 <Label>Subtotal</Label>
                 <Input value={`Bs. ${item.subtotal.toFixed(2)}`} readOnly className="bg-gray-100" />
               </div>
-              {items.length > 1 && <Button variant="outline" size="icon" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4" /></Button>}
+              {items.length > 1 && (
+                <div className="md:self-end">
+                  <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-100 hover:text-red-600" onClick={() => removeItem(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
           <Button onClick={addItem} size="sm"><Plus className="w-4 h-4 mr-2" />Agregar Item</Button>
@@ -180,19 +186,19 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
           />
         </div>
 
-        <div className="flex justify-end">
-            <div className="w-80 space-y-2 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between">
-                    <span>Subtotal:</span>
+        <div className="flex justify-end pt-6">
+            <div className="w-full max-w-sm space-y-2 p-4 bg-slate-50 rounded-lg border">
+                <div className="flex justify-between text-slate-600">
+                    <span>Subtotal</span>
                     <span>Bs. {subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                    <span>IVA (13%):</span>
+                <div className="flex justify-between text-slate-600">
+                    <span>IVA (13%)</span>
                     <span>Bs. {iva.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                    <span>Total:</span>
-                    <span>Bs. {total.toFixed(2)}</span>
+                    <span>Total a Pagar</span>
+                    <span className="text-blue-600">Bs. {total.toFixed(2)}</span>
                 </div>
             </div>
         </div>

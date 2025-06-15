@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, PackageCheck, Clock, Banknote, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Compra, Proveedor, comprasIniciales, proveedoresIniciales } from "./purchases/PurchasesData";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
@@ -76,7 +77,7 @@ const ComprasModule = () => {
     }
     
     // Update purchase status to 'pagada'
-    const comprasActualizadas = compras.map(c => 
+    const comprasActualizadas: Compra[] = compras.map(c => 
         c.id === compra.id ? { ...c, estado: 'pagada' } : c
     );
     setCompras(comprasActualizadas);
@@ -103,54 +104,60 @@ const ComprasModule = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Compras</h2>
-          <p className="text-slate-600">Control de compras y proveedores con integración contable</p>
+          <h2 className="text-3xl font-bold tracking-tight">Gestión de Compras</h2>
+          <p className="text-slate-500">Control de compras y proveedores con integración contable</p>
         </div>
-        <Button onClick={() => setShowNewCompraForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+        <Button onClick={() => setShowNewCompraForm(true)} size="lg">
+          <Plus className="w-5 h-5 mr-2" />
           Nueva Compra
         </Button>
       </div>
 
       {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {compras.filter(c => c.estado === 'recibida').length}
-              </div>
-              <div className="text-sm text-gray-600">Recibidas</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Recibidas</p>
+              <p className="text-2xl font-bold">{compras.filter(c => c.estado === 'recibida').length}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-full">
+              <PackageCheck className="w-6 h-6 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {compras.filter(c => c.estado === 'pendiente').length}
-              </div>
-              <div className="text-sm text-gray-600">Pendientes</div>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Pendientes</p>
+              <p className="text-2xl font-bold">{compras.filter(c => c.estado === 'pendiente').length}</p>
+            </div>
+            <div className="p-3 bg-yellow-100 rounded-full">
+              <Clock className="w-6 h-6 text-yellow-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                Bs. {compras.reduce((sum, c) => sum + c.total, 0).toFixed(2)}
-              </div>
-              <div className="text-sm text-gray-600">Total Comprado</div>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Comprado</p>
+              <p className="text-2xl font-bold">Bs. {compras.reduce((sum, c) => sum + c.total, 0).toFixed(2)}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <Banknote className="w-6 h-6 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{proveedores.length}</div>
-              <div className="text-sm text-gray-600">Proveedores</div>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Proveedores</p>
+              <p className="text-2xl font-bold">{proveedores.length}</p>
+            </div>
+            <div className="p-3 bg-purple-100 rounded-full">
+              <Truck className="w-6 h-6 text-purple-600" />
             </div>
           </CardContent>
         </Card>
