@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ const ComprasModule = () => {
   const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewCompraForm, setShowNewCompraForm] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoCompra, actualizarStockProducto } = useContabilidadIntegration();
+  const { generarAsientoCompra, actualizarStockProducto, generarAsientoPagoCompra } = useContabilidadIntegration();
 
   useEffect(() => {
     const comprasGuardadas = localStorage.getItem('compras');
@@ -75,6 +76,9 @@ const ComprasModule = () => {
       return;
     }
     
+    // Generate accounting entry for payment
+    generarAsientoPagoCompra(compra);
+    
     // Update purchase status to 'pagada'
     const comprasActualizadas: Compra[] = compras.map(c => 
         c.id === compra.id ? { ...c, estado: 'pagada' } : c
@@ -83,8 +87,8 @@ const ComprasModule = () => {
     localStorage.setItem('compras', JSON.stringify(comprasActualizadas));
     
     toast({
-      title: "Compra Procesada",
-      description: `La compra ${compra.numero} ha sido marcada como "pagada".`,
+      title: "Compra Procesada y Pagada",
+      description: `La compra ${compra.numero} ha sido marcada como "pagada" y se generó el asiento de pago.`,
     });
   };
 

@@ -1,7 +1,7 @@
-
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { Factura } from "@/components/contable/billing/BillingData";
+import { Compra } from "@/components/contable/purchases/PurchasesData";
 import { useAsientos } from "./useAsientos";
 import { useProductos } from "./useProductos";
 
@@ -164,6 +164,35 @@ export const useAsientosGenerator = () => {
     return asiento;
   };
 
+  const generarAsientoPagoCompra = (compra: Compra): AsientoContable => {
+    const asiento: AsientoContable = {
+      id: Date.now().toString(),
+      numero: `PGC-${compra.numero}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      concepto: `Pago de compra N° ${compra.numero}`,
+      referencia: compra.numero,
+      debe: compra.total,
+      haber: compra.total,
+      estado: 'registrado',
+      cuentas: [
+        {
+          codigo: "2111",
+          nombre: "Cuentas por Pagar",
+          debe: compra.total,
+          haber: 0
+        },
+        {
+          codigo: "1111",
+          nombre: "Caja y Bancos",
+          debe: 0,
+          haber: compra.total
+        }
+      ]
+    };
+    guardarAsiento(asiento);
+    return asiento;
+  };
+
   const generarAsientoPagoFactura = (factura: Factura): AsientoContable => {
     const asiento: AsientoContable = {
       id: Date.now().toString(),
@@ -260,6 +289,7 @@ export const useAsientosGenerator = () => {
     generarAsientoInventario,
     generarAsientoVenta,
     generarAsientoCompra,
+    generarAsientoPagoCompra,
     generarAsientoPagoFactura,
     generarAsientoAnulacionFactura,
   };

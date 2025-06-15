@@ -1,3 +1,4 @@
+
 import { AsientoContable } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { useAsientos } from "./useAsientos";
@@ -14,6 +15,7 @@ import type {
 } from "./useReportesContables";
 import type { Producto } from "@/components/contable/products/ProductsData";
 import type { Factura } from "@/components/contable/billing/BillingData";
+import type { Compra } from "@/components/contable/purchases/PurchasesData";
 
 // Re-export types to avoid breaking changes in other modules after refactoring
 export type { 
@@ -25,11 +27,13 @@ export type {
   DeclaracionIVAData 
 } from "./useReportesContables";
 export type { Producto } from "@/components/contable/products/ProductsData";
+export type { Compra } from "@/components/contable/purchases/PurchasesData";
 
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
   generarAsientoCompra: (compra: { numero: string, total: number, subtotal: number, iva: number }) => AsientoContable;
+  generarAsientoPagoCompra: (compra: Compra) => AsientoContable;
   generarAsientoPagoFactura: (factura: Factura) => AsientoContable;
   generarAsientoAnulacionFactura: (factura: Factura) => AsientoContable[];
   guardarAsiento: (asiento: AsientoContable) => void;
@@ -53,6 +57,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     generarAsientoInventario,
     generarAsientoVenta,
     generarAsientoCompra,
+    generarAsientoPagoCompra,
     generarAsientoPagoFactura,
     generarAsientoAnulacionFactura,
   } = useAsientosGenerator();
@@ -70,6 +75,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     generarAsientoInventario,
     generarAsientoVenta,
     generarAsientoCompra,
+    generarAsientoPagoCompra,
     generarAsientoPagoFactura,
     generarAsientoAnulacionFactura,
     guardarAsiento,
