@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Users, Package, FileText, PieChart as PieChartIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
@@ -158,7 +159,7 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
   // --- Data for Top Selling Products Chart ---
   const productSales = facturas
     .filter(f => f.estado === 'pagada' || f.estado === 'enviada')
-    .flatMap(f => f.detalles)
+    .flatMap(f => f.items)
     .reduce((acc, detalle) => {
       acc[detalle.productoId] = (acc[detalle.productoId] || 0) + detalle.subtotal;
       return acc;
@@ -235,7 +236,7 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
               <BarChart accessibilityLayer data={salesChartData} margin={{ top: 20, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(value) => `Bs ${value / 1000}k`} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} tickFormatter={(value) => `Bs ${Number(value) / 1000}k`} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
                 <Bar dataKey="ventas" fill="var(--color-ventas)" radius={4} />
               </BarChart>
