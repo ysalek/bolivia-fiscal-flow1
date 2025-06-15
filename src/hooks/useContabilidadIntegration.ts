@@ -9,6 +9,7 @@ export interface ContabilidadIntegrationHook {
   generarAsientoCompra: (compra: any) => AsientoContable;
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
+  getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
   actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
   obtenerProductos: () => Producto[];
   validarTransaccion: (asiento: AsientoContable) => boolean;
@@ -138,6 +139,41 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     });
 
     return { activos, pasivos, patrimonio };
+  };
+
+  const getLibroMayor = (): { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } } => {
+    const asientos = getAsientos();
+    const libroMayor: { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } } = {};
+
+    asientos.filter(a => a.estado === 'registrado').reverse().forEach(asiento => {
+        asiento.cuentas.forEach(cuenta => {
+            if (!libroMayor[cuenta.codigo]) {
+                libroMayor[cuenta.codigo] = {
+                    codigo: cuenta.codigo,
+                    nombre: cuenta.nombre,
+                    movimientos: [],
+                    totalDebe: 0,
+                    totalHaber: 0,
+                };
+            }
+            libroMayor[cuenta.codigo].movimientos.push({
+                fecha: asiento.fecha,
+                concepto: asiento.concepto,
+                referencia: asiento.referencia,
+                debe: cuenta.debe,
+                haber: cuenta.haber,
+            });
+            libroMayor[cuenta.codigo].totalDebe += cuenta.debe;
+            libroMayor[cuenta.codigo].totalHaber += cuenta.haber;
+        });
+    });
+
+    // Sort movements by date
+    for (const codigo in libroMayor) {
+        libroMayor[codigo].movimientos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    }
+
+    return libroMayor;
   };
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
@@ -291,6 +327,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     generarAsientoCompra,
     guardarAsiento,
     getAsientos,
+    getLibroMayor,
     actualizarStockProducto,
     obtenerProductos,
     validarTransaccion,

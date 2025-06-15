@@ -13,7 +13,8 @@ import {
   LogOut,
   User,
   Settings,
-  FolderTree
+  FolderTree,
+  BookCopy
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -23,6 +24,7 @@ import ClientesModule from "@/components/contable/ClientesModule";
 import ProductosModule from "@/components/contable/ProductosModule";
 import InventarioModule from "@/components/contable/InventarioModule";
 import JournalView from "@/components/contable/journal/JournalView";
+import GeneralLedgerView from "@/components/contable/ledger/GeneralLedgerView";
 import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
 import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
@@ -86,6 +88,13 @@ const Index = () => {
       icon: FileText, 
       component: JournalView, 
       permission: "libro_diario" 
+    },
+    { 
+      id: "libro-mayor", 
+      label: "Libro Mayor", 
+      icon: BookCopy, 
+      component: GeneralLedgerView, 
+      permission: "libro_mayor" 
     },
     { 
       id: "balance", 
