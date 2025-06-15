@@ -13,7 +13,7 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
-  login: (usuario: string, password: string) => boolean;
+  login: (emailOrUsuario: string, password: string) => boolean;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
 }
@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     {
       id: 1,
       usuario: "admin",
+      email: "admin@empresa.com",
       password: "admin123",
       nombre: "Juan Pérez",
       rol: "admin",
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     {
       id: 2,
       usuario: "contador",
+      email: "contador@empresa.com",
       password: "contador123", 
       nombre: "María González",
       rol: "contador",
@@ -64,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     {
       id: 3,
       usuario: "ventas",
+      email: "ventas@empresa.com",
       password: "ventas123",
       nombre: "Carlos Mendoza", 
       rol: "ventas",
@@ -78,9 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   ];
 
-  const login = (usuario: string, password: string) => {
+  const login = (emailOrUsuario: string, password: string) => {
     const foundUser = usuarios.find(
-      (u) => u.usuario === usuario && u.password === password
+      (u) => (u.email === emailOrUsuario || u.usuario === emailOrUsuario) && u.password === password
     );
 
     if (foundUser) {
