@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: 'contador@empresa.com',
         rol: 'contador',
         empresa: 'Empresa Demo S.R.L.',
-        permisos: ['contabilidad', 'reportes', 'balance', 'libro_diario']
+        permisos: ['contabilidad', 'reportes', 'balance', 'libro_diario', 'dashboard']
       }
     },
     'ventas@empresa.com': {
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: 'ventas@empresa.com',
         rol: 'ventas',
         empresa: 'Empresa Demo S.R.L.',
-        permisos: ['facturacion', 'clientes', 'productos']
+        permisos: ['facturacion', 'clientes', 'productos', 'dashboard']
       }
     }
   };

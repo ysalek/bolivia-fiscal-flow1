@@ -22,6 +22,7 @@ import ClientesModule from "@/components/contable/ClientesModule";
 import ProductosModule from "@/components/contable/ProductosModule";
 import LibroDiario from "@/components/contable/LibroDiario";
 import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
+import ReportesModule from "@/components/contable/ReportesModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -74,6 +75,13 @@ const Index = () => {
       icon: Calculator, 
       component: BalanceComprobacion, 
       permission: "balance" 
+    },
+    { 
+      id: "reportes", 
+      label: "Reportes", 
+      icon: FileText, 
+      component: ReportesModule, 
+      permission: "reportes" 
     },
   ];
 

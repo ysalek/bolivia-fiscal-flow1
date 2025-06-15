@@ -1,149 +1,165 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Calculator, TrendingUp } from "lucide-react";
+import { FileText, Download, Filter, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface BalanceItem {
+  codigo: string;
+  cuenta: string;
+  debeAnterior: number;
+  haberAnterior: number;
+  debePeriodo: number;
+  haberPeriodo: number;
+  debeAcumulado: number;
+  haberAcumulado: number;
+  saldoDeudor: number;
+  saldoAcreedor: number;
+}
 
 const BalanceComprobacion = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterPeriod, setFilterPeriod] = useState("2024-06");
+  const [fechaInicio, setFechaInicio] = useState("2024-06-01");
+  const [fechaFin, setFechaFin] = useState("2024-06-30");
+  const [tipoBalance, setTipoBalance] = useState("comprobacion");
+  const [balanceData, setBalanceData] = useState<BalanceItem[]>([]);
+  const { toast } = useToast();
 
-  const cuentas = [
+  // Datos de ejemplo para el balance
+  const balanceEjemplo: BalanceItem[] = [
     {
-      codigo: "1.1.01",
-      nombre: "Caja",
-      saldo_inicial: 5000.00,
-      debe: 15412.50,
-      haber: 12960.50,
-      saldo_final: 7452.00,
-      tipo: "Activo"
+      codigo: "1100",
+      cuenta: "CAJA Y BANCOS",
+      debeAnterior: 50000,
+      haberAnterior: 0,
+      debePeriodo: 25000,
+      haberPeriodo: 15000,
+      debeAcumulado: 75000,
+      haberAcumulado: 15000,
+      saldoDeudor: 60000,
+      saldoAcreedor: 0
     },
     {
-      codigo: "1.1.02",
-      nombre: "Bancos",
-      saldo_inicial: 25000.00,
-      debe: 8500.00,
-      haber: 5200.00,
-      saldo_final: 28300.00,
-      tipo: "Activo"
+      codigo: "1200",
+      cuenta: "CUENTAS POR COBRAR",
+      debeAnterior: 30000,
+      haberAnterior: 0,
+      debePeriodo: 45000,
+      haberPeriodo: 20000,
+      debeAcumulado: 75000,
+      haberAcumulado: 20000,
+      saldoDeudor: 55000,
+      saldoAcreedor: 0
     },
     {
-      codigo: "1.2.01",
-      nombre: "Cuentas por Cobrar",
-      saldo_inicial: 8000.00,
-      debe: 12500.00,
-      haber: 7800.00,
-      saldo_final: 12700.00,
-      tipo: "Activo"
+      codigo: "1300",
+      cuenta: "INVENTARIOS",
+      debeAnterior: 80000,
+      haberAnterior: 0,
+      debePeriodo: 120000,
+      haberPeriodo: 95000,
+      debeAcumulado: 200000,
+      haberAcumulado: 95000,
+      saldoDeudor: 105000,
+      saldoAcreedor: 0
     },
     {
-      codigo: "1.1.06",
-      nombre: "IVA Crédito Fiscal",
-      saldo_inicial: 1200.00,
-      debe: 650.00,
-      haber: 0.00,
-      saldo_final: 1850.00,
-      tipo: "Activo"
+      codigo: "2100",
+      cuenta: "CUENTAS POR PAGAR",
+      debeAnterior: 0,
+      haberAnterior: 25000,
+      debePeriodo: 15000,
+      haberPeriodo: 35000,
+      debeAcumulado: 15000,
+      haberAcumulado: 60000,
+      saldoDeudor: 0,
+      saldoAcreedor: 45000
     },
     {
-      codigo: "2.1.01",
-      nombre: "Retenciones por Pagar",
-      saldo_inicial: 2500.00,
-      debe: 1000.00,
-      haber: 3000.00,
-      saldo_final: 4500.00,
-      tipo: "Pasivo"
+      codigo: "3100",
+      cuenta: "CAPITAL SOCIAL",
+      debeAnterior: 0,
+      haberAnterior: 100000,
+      debePeriodo: 0,
+      haberPeriodo: 0,
+      debeAcumulado: 0,
+      haberAcumulado: 100000,
+      saldoDeudor: 0,
+      saldoAcreedor: 100000
     },
     {
-      codigo: "2.1.05",
-      nombre: "IVA por Pagar",
-      saldo_inicial: 1800.00,
-      debe: 500.00,
-      haber: 2162.50,
-      saldo_final: 3462.50,
-      tipo: "Pasivo"
+      codigo: "4100",
+      cuenta: "VENTAS",
+      debeAnterior: 0,
+      haberAnterior: 0,
+      debePeriodo: 0,
+      haberPeriodo: 180000,
+      debeAcumulado: 0,
+      haberAcumulado: 180000,
+      saldoDeudor: 0,
+      saldoAcreedor: 180000
     },
     {
-      codigo: "3.1.01",
-      nombre: "Capital Social",
-      saldo_inicial: 50000.00,
-      debe: 0.00,
-      haber: 0.00,
-      saldo_final: 50000.00,
-      tipo: "Patrimonio"
-    },
-    {
-      codigo: "4.1.01",
-      nombre: "Ventas",
-      saldo_inicial: 0.00,
-      debe: 0.00,
-      haber: 35750.00,
-      saldo_final: 35750.00,
-      tipo: "Ingresos"
-    },
-    {
-      codigo: "5.1.01",
-      nombre: "Sueldos y Salarios",
-      saldo_inicial: 0.00,
-      debe: 15000.00,
-      haber: 0.00,
-      saldo_final: 15000.00,
-      tipo: "Gastos"
-    },
-    {
-      codigo: "5.2.01",
-      nombre: "Gastos de Oficina",
-      saldo_inicial: 0.00,
-      debe: 850.00,
-      haber: 0.00,
-      saldo_final: 850.00,
-      tipo: "Gastos"
+      codigo: "5100",
+      cuenta: "COSTO DE VENTAS",
+      debeAnterior: 0,
+      haberAnterior: 0,
+      debePeriodo: 95000,
+      haberPeriodo: 0,
+      debeAcumulado: 95000,
+      haberAcumulado: 0,
+      saldoDeudor: 95000,
+      saldoAcreedor: 0
     }
   ];
 
-  const filteredCuentas = cuentas.filter(cuenta =>
-    cuenta.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cuenta.codigo.includes(searchTerm)
-  );
+  useEffect(() => {
+    setBalanceData(balanceEjemplo);
+  }, []);
 
-  const getTipoColor = (tipo: string) => {
-    const colors: { [key: string]: string } = {
-      "Activo": "bg-blue-100 text-blue-800",
-      "Pasivo": "bg-red-100 text-red-800",
-      "Patrimonio": "bg-green-100 text-green-800",
-      "Ingresos": "bg-purple-100 text-purple-800",
-      "Gastos": "bg-orange-100 text-orange-800"
-    };
-    return colors[tipo] || "bg-gray-100 text-gray-800";
+  const generarBalance = () => {
+    // Simular generación del balance
+    toast({
+      title: "Balance generado",
+      description: `Balance de ${tipoBalance} generado para el período ${fechaInicio} - ${fechaFin}`,
+    });
+    setBalanceData(balanceEjemplo);
   };
 
-  const calcularTotales = () => {
-    return filteredCuentas.reduce(
-      (acc, cuenta) => ({
-        saldo_inicial: acc.saldo_inicial + cuenta.saldo_inicial,
-        debe: acc.debe + cuenta.debe,
-        haber: acc.haber + cuenta.haber,
-        saldo_final: acc.saldo_final + Math.abs(cuenta.saldo_final)
-      }),
-      { saldo_inicial: 0, debe: 0, haber: 0, saldo_final: 0 }
-    );
-  };
-
-  const totales = calcularTotales();
-
-  const calcularTotalesPorTipo = () => {
-    const tipos = ["Activo", "Pasivo", "Patrimonio", "Ingresos", "Gastos"];
-    return tipos.map(tipo => {
-      const cuentasTipo = filteredCuentas.filter(c => c.tipo === tipo);
-      const total = cuentasTipo.reduce((sum, c) => sum + Math.abs(c.saldo_final), 0);
-      return { tipo, total, cantidad: cuentasTipo.length };
+  const exportarBalance = () => {
+    toast({
+      title: "Balance exportado",
+      description: "El balance ha sido exportado a Excel correctamente",
     });
   };
 
-  const resumenTipos = calcularTotalesPorTipo();
+  const calcularTotales = () => {
+    return balanceData.reduce((acc, item) => ({
+      debeAnterior: acc.debeAnterior + item.debeAnterior,
+      haberAnterior: acc.haberAnterior + item.haberAnterior,
+      debePeriodo: acc.debePeriodo + item.debePeriodo,
+      haberPeriodo: acc.haberPeriodo + item.haberPeriodo,
+      debeAcumulado: acc.debeAcumulado + item.debeAcumulado,
+      haberAcumulado: acc.haberAcumulado + item.haberAcumulado,
+      saldoDeudor: acc.saldoDeudor + item.saldoDeudor,
+      saldoAcreedor: acc.saldoAcreedor + item.saldoAcreedor
+    }), {
+      debeAnterior: 0,
+      haberAnterior: 0,
+      debePeriodo: 0,
+      haberPeriodo: 0,
+      debeAcumulado: 0,
+      haberAcumulado: 0,
+      saldoDeudor: 0,
+      saldoAcreedor: 0
+    });
+  };
+
+  const totales = calcularTotales();
 
   return (
     <div className="space-y-6">
@@ -151,184 +167,144 @@ const BalanceComprobacion = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Balance de Comprobación</h2>
-          <p className="text-slate-600">Verificación de saldos contables por período</p>
+          <p className="text-slate-600">Resumen de saldos de todas las cuentas contables</p>
         </div>
-        
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button onClick={exportarBalance} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Exportar
           </Button>
-          <Button variant="outline">
-            <Calculator className="w-4 h-4 mr-2" />
-            Recalcular
+          <Button onClick={generarBalance}>
+            <FileText className="w-4 h-4 mr-2" />
+            Generar Balance
           </Button>
         </div>
       </div>
 
       {/* Filtros */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filtros de Consulta
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fechaInicio">Fecha Inicio</Label>
               <Input
-                placeholder="Buscar cuenta..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                id="fechaInicio"
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
               />
             </div>
-            
-            <div className="flex items-center gap-4">
-              <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Período" />
+            <div className="space-y-2">
+              <Label htmlFor="fechaFin">Fecha Fin</Label>
+              <Input
+                id="fechaFin"
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Balance</Label>
+              <Select value={tipoBalance} onValueChange={setTipoBalance}>
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2024-06">Junio 2024</SelectItem>
-                  <SelectItem value="2024-05">Mayo 2024</SelectItem>
-                  <SelectItem value="2024-04">Abril 2024</SelectItem>
-                  <SelectItem value="2024-q2">Q2 2024</SelectItem>
+                  <SelectItem value="comprobacion">Balance de Comprobación</SelectItem>
+                  <SelectItem value="general">Balance General</SelectItem>
+                  <SelectItem value="resultados">Estado de Resultados</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-end">
+              <Button onClick={generarBalance} className="w-full">
+                <Calendar className="w-4 h-4 mr-2" />
+                Consultar
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Resumen por tipos de cuenta */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {resumenTipos.map((resumen) => (
-          <Card key={resumen.tipo}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Badge className={getTipoColor(resumen.tipo)}>
-                    {resumen.tipo}
-                  </Badge>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {resumen.cantidad} cuenta(s)
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold">
-                    Bs. {resumen.total.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Balance de comprobación */}
+      {/* Balance */}
       <Card>
         <CardHeader>
-          <CardTitle>Balance de Comprobación - {filterPeriod}</CardTitle>
+          <CardTitle>Balance de Comprobación</CardTitle>
           <CardDescription>
-            Resumen de saldos de todas las cuentas contables
+            Período: {fechaInicio} al {fechaFin}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left p-3">Código</th>
-                  <th className="text-left p-3">Cuenta</th>
-                  <th className="text-left p-3">Tipo</th>
-                  <th className="text-right p-3">Saldo Inicial</th>
-                  <th className="text-right p-3">Debe</th>
-                  <th className="text-right p-3">Haber</th>
-                  <th className="text-right p-3">Saldo Final</th>
+                <tr className="border-b-2 border-slate-300">
+                  <th className="text-left p-2 font-semibold">Código</th>
+                  <th className="text-left p-2 font-semibold">Cuenta</th>
+                  <th className="text-right p-2 font-semibold">Debe Anterior</th>
+                  <th className="text-right p-2 font-semibold">Haber Anterior</th>
+                  <th className="text-right p-2 font-semibold">Debe Período</th>
+                  <th className="text-right p-2 font-semibold">Haber Período</th>
+                  <th className="text-right p-2 font-semibold">Debe Acumulado</th>
+                  <th className="text-right p-2 font-semibold">Haber Acumulado</th>
+                  <th className="text-right p-2 font-semibold">Saldo Deudor</th>
+                  <th className="text-right p-2 font-semibold">Saldo Acreedor</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCuentas.map((cuenta, index) => (
-                  <tr key={cuenta.codigo} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-gray-25' : ''}`}>
-                    <td className="p-3 font-mono text-sm">{cuenta.codigo}</td>
-                    <td className="p-3 font-medium">{cuenta.nombre}</td>
-                    <td className="p-3">
-                      <Badge className={getTipoColor(cuenta.tipo)} variant="outline">
-                        {cuenta.tipo}
-                      </Badge>
+                {balanceData.map((item, index) => (
+                  <tr key={index} className="border-b hover:bg-slate-50">
+                    <td className="p-2 font-mono">{item.codigo}</td>
+                    <td className="p-2 font-medium">{item.cuenta}</td>
+                    <td className="p-2 text-right">{item.debeAnterior.toFixed(2)}</td>
+                    <td className="p-2 text-right">{item.haberAnterior.toFixed(2)}</td>
+                    <td className="p-2 text-right">{item.debePeriodo.toFixed(2)}</td>
+                    <td className="p-2 text-right">{item.haberPeriodo.toFixed(2)}</td>
+                    <td className="p-2 text-right">{item.debeAcumulado.toFixed(2)}</td>
+                    <td className="p-2 text-right">{item.haberAcumulado.toFixed(2)}</td>
+                    <td className="p-2 text-right font-semibold text-blue-600">
+                      {item.saldoDeudor > 0 ? item.saldoDeudor.toFixed(2) : '0.00'}
                     </td>
-                    <td className="p-3 text-right font-mono">
-                      Bs. {cuenta.saldo_inicial.toFixed(2)}
-                    </td>
-                    <td className="p-3 text-right font-mono text-red-600">
-                      {cuenta.debe > 0 ? `Bs. ${cuenta.debe.toFixed(2)}` : '-'}
-                    </td>
-                    <td className="p-3 text-right font-mono text-green-600">
-                      {cuenta.haber > 0 ? `Bs. ${cuenta.haber.toFixed(2)}` : '-'}
-                    </td>
-                    <td className="p-3 text-right font-mono font-bold">
-                      <span className={cuenta.saldo_final >= 0 ? 'text-blue-600' : 'text-red-600'}>
-                        Bs. {cuenta.saldo_final.toFixed(2)}
-                      </span>
+                    <td className="p-2 text-right font-semibold text-red-600">
+                      {item.saldoAcreedor > 0 ? item.saldoAcreedor.toFixed(2) : '0.00'}
                     </td>
                   </tr>
                 ))}
-                
-                {/* Fila de totales */}
-                <tr className="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                  <td className="p-3" colSpan={3}>TOTALES</td>
-                  <td className="p-3 text-right font-mono">
-                    Bs. {totales.saldo_inicial.toFixed(2)}
-                  </td>
-                  <td className="p-3 text-right font-mono text-red-600">
-                    Bs. {totales.debe.toFixed(2)}
-                  </td>
-                  <td className="p-3 text-right font-mono text-green-600">
-                    Bs. {totales.haber.toFixed(2)}
-                  </td>
-                  <td className="p-3 text-right font-mono text-blue-600">
-                    Bs. {totales.saldo_final.toFixed(2)}
-                  </td>
+                {/* Totales */}
+                <tr className="border-t-2 border-slate-400 bg-slate-100 font-bold">
+                  <td className="p-2" colSpan={2}>TOTALES</td>
+                  <td className="p-2 text-right">{totales.debeAnterior.toFixed(2)}</td>
+                  <td className="p-2 text-right">{totales.haberAnterior.toFixed(2)}</td>
+                  <td className="p-2 text-right">{totales.debePeriodo.toFixed(2)}</td>
+                  <td className="p-2 text-right">{totales.haberPeriodo.toFixed(2)}</td>
+                  <td className="p-2 text-right">{totales.debeAcumulado.toFixed(2)}</td>
+                  <td className="p-2 text-right">{totales.haberAcumulado.toFixed(2)}</td>
+                  <td className="p-2 text-right text-blue-600">{totales.saldoDeudor.toFixed(2)}</td>
+                  <td className="p-2 text-right text-red-600">{totales.saldoAcreedor.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Verificación de balance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Verificación de Balance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <h3 className="font-medium text-red-800">Total Debe</h3>
-              <p className="text-2xl font-bold text-red-600">
-                Bs. {totales.debe.toFixed(2)}
-              </p>
-            </div>
-            
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <h3 className="font-medium text-green-800">Total Haber</h3>
-              <p className="text-2xl font-bold text-green-600">
-                Bs. {totales.haber.toFixed(2)}
-              </p>
-            </div>
-            
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-800">Diferencia</h3>
-              <p className={`text-2xl font-bold ${
-                Math.abs(totales.debe - totales.haber) < 0.01 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                Bs. {Math.abs(totales.debe - totales.haber).toFixed(2)}
-              </p>
-              {Math.abs(totales.debe - totales.haber) < 0.01 && (
-                <Badge className="mt-2 bg-green-100 text-green-800">
-                  ✓ Balance Cuadrado
+          {/* Verificación de cuadre */}
+          <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Verificación de Cuadre:</span>
+              <div className="flex items-center gap-4">
+                <span>Total Debe: Bs. {totales.debeAcumulado.toFixed(2)}</span>
+                <span>Total Haber: Bs. {totales.haberAcumulado.toFixed(2)}</span>
+                <Badge 
+                  variant={totales.debeAcumulado === totales.haberAcumulado ? "default" : "destructive"}
+                >
+                  {totales.debeAcumulado === totales.haberAcumulado ? "Cuadrado" : "Descuadrado"}
                 </Badge>
-              )}
+              </div>
             </div>
           </div>
         </CardContent>
