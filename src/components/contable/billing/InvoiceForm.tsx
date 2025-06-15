@@ -164,7 +164,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
       // 2. Generate inventory cost entries and update stock
       nuevaFactura.items.forEach(item => {
         const producto = productos.find(p => p.id === item.productoId);
-        if (producto && producto.costo > 0) {
+        if (producto && producto.costoUnitario > 0) {
             const movimiento: MovimientoInventario = {
                 id: `${Date.now().toString()}-${item.productoId}`,
                 fecha: nuevaFactura.fecha,
@@ -172,10 +172,14 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
                 producto: producto.nombre,
                 productoId: producto.id,
                 cantidad: item.cantidad,
-                costoUnitario: producto.costo,
-                valorMovimiento: item.cantidad * producto.costo,
+                costoUnitario: producto.costoUnitario,
+                valorMovimiento: item.cantidad * producto.costoUnitario,
                 documento: `Factura N° ${nuevaFactura.numero}`,
                 usuario: 'sistema',
+                costoPromedioPonderado: producto.costoUnitario, // Usando costo unitario como temporal
+                motivo: 'Venta',
+                stockAnterior: producto.stockActual,
+                stockNuevo: producto.stockActual - item.cantidad,
             };
             generarAsientoInventario(movimiento);
         }
