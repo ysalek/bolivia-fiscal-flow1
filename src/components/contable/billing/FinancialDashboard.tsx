@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, DollarSign, Users, Package, FileText } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Users, Package, FileText, PieChart as PieChartIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import {
   ChartConfig,
@@ -156,11 +155,48 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
       fill: statusChartConfig[name as Factura['estado']]?.color || 'hsl(var(--chart-3))',
     }));
 
+  // --- Data for Top Selling Products Chart ---
+  const productSales = facturas
+    .filter(f => f.estado === 'pagada' || f.estado === 'enviada')
+    .flatMap(f => f.detalles)
+    .reduce((acc, detalle) => {
+      acc[detalle.productoId] = (acc[detalle.productoId] || 0) + detalle.subtotal;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const topProductsData = Object.entries(productSales)
+    .map(([productoId, totalVentas]) => {
+      const producto = productos.find(p => p.id === productoId);
+      return {
+        name: producto ? producto.nombre : 'Producto Desconocido',
+        value: totalVentas,
+      };
+    })
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  const topProductsColors = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+  ];
+
+  const topProductsChartData = topProductsData.map((entry, index) => ({
+    ...entry,
+    fill: topProductsColors[index % topProductsColors.length],
+  }));
+
+  const topProductsChartConfig = topProductsData.reduce((acc, cur) => {
+    acc[cur.name] = { label: cur.name };
+    return acc;
+  }, {} as ChartConfig);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Dashboard Financiero</h2>
+        <h2 className="text-2xl font-bold">Escritorio Financiero</h2>
         <p className="text-gray-600">Resumen de métricas clave del negocio</p>
       </div>
 
@@ -188,14 +224,14 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
       </div>
       
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
           <CardHeader>
             <CardTitle>Ventas de los Últimos 30 Días</CardTitle>
             <CardDescription>Análisis de ingresos diarios (Bs.)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={salesChartConfig} className="h-[250px] w-full">
+            <ChartContainer config={salesChartConfig} className="h-[300px] w-full">
               <BarChart accessibilityLayer data={salesChartData} margin={{ top: 20, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
@@ -206,10 +242,12 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2">
+        
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
                 <CardTitle>Estado de Facturas</CardTitle>
-                <CardDescription>Distribución del total de facturas emitidas</CardDescription>
+                <CardDescription>Distribución del total de facturas</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center p-4">
                 <ChartContainer config={statusChartConfig} className="h-[250px] w-full aspect-square">
@@ -234,7 +272,33 @@ const FinancialDashboard = ({ facturas, asientos, productos }: FinancialDashboar
                     </PieChart>
                 </ChartContainer>
             </CardContent>
-        </Card>
+          </Card>
+
+          <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChartIcon className="w-5 h-5" /> Top 5 Productos Vendidos
+                </CardTitle>
+                <CardDescription>Productos con mayores ingresos por ventas (Bs.)</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center p-4">
+                <ChartContainer config={topProductsChartConfig} className="h-[250px] w-full aspect-square">
+                    <PieChart>
+                        <ChartTooltip content={<ChartTooltipContent nameKey="name" formatter={(value) => `Bs. ${Number(value).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />} />
+                        <Pie data={topProductsChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ percent }) => {
+                              if (percent * 100 < 5) return null;
+                              return `${(percent * 100).toFixed(0)}%`;
+                          }}>
+                          {topProductsChartData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Alertas */}
