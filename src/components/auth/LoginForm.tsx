@@ -1,0 +1,154 @@
+
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, LogIn, Building2 } from "lucide-react";
+import { useAuth } from './AuthProvider';
+
+const LoginForm = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const success = await login(email, password);
+      if (!success) {
+        setError('Email o contraseña incorrectos');
+      }
+    } catch (error) {
+      setError('Error al iniciar sesión. Intente nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const demoCredentials = [
+    { role: 'Administrador', email: 'admin@empresa.com', password: 'admin123' },
+    { role: 'Contador', email: 'contador@empresa.com', password: 'contador123' },
+    { role: 'Ventas', email: 'ventas@empresa.com', password: 'ventas123' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Sistema Contable
+          </h1>
+          <p className="text-slate-600">
+            Inicie sesión para acceder al sistema
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Iniciar Sesión</CardTitle>
+            <CardDescription>
+              Ingrese sus credenciales para acceder
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@empresa.com"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Iniciando sesión...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Iniciar Sesión
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Demo Credentials */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Credenciales de Demostración</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {demoCredentials.map((cred, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-sm">{cred.role}</div>
+                <div className="text-xs text-gray-600">
+                  {cred.email} / {cred.password}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 h-6 px-2 text-xs"
+                  onClick={() => {
+                    setEmail(cred.email);
+                    setPassword(cred.password);
+                  }}
+                >
+                  Usar estas credenciales
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default LoginForm;
