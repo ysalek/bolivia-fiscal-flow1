@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -11,6 +10,8 @@ import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import InvoiceSummary from "./billing/InvoiceSummary";
 import InvoiceList from "./billing/InvoiceList";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import InvoicePreview from "./billing/InvoicePreview";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
@@ -18,8 +19,16 @@ const FacturacionModule = () => {
   const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showAccountingHistory, setShowAccountingHistory] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Factura | null>(null);
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoVenta, generarAsientoInventario, getAsientos } = useContabilidadIntegration();
+  const { 
+    generarAsientoVenta, 
+    generarAsientoInventario, 
+    getAsientos,
+    generarAsientoPagoFactura,
+    generarAsientoAnulacionFactura
+  } = useContabilidadIntegration();
 
   // Cargar datos desde localStorage
   useEffect(() => {
@@ -106,6 +115,42 @@ const FacturacionModule = () => {
     }
   };
 
+  const handleUpdateInvoiceStatus = (invoiceId: string, newStatus: 'pagada' | 'anulada') => {
+    const invoiceToUpdate = facturas.find(f => f.id === invoiceId);
+    if (!invoiceToUpdate) return;
+
+    let updatedInvoice: Factura;
+    
+    if (newStatus === 'pagada') {
+      if (invoiceToUpdate.estado !== 'enviada') {
+        toast({ title: "Acción no permitida", description: "Solo se pueden pagar facturas enviadas.", variant: "default" });
+        return;
+      }
+      updatedInvoice = { ...invoiceToUpdate, estado: 'pagada' };
+      generarAsientoPagoFactura(updatedInvoice);
+      toast({ title: "Factura Pagada", description: `La factura N° ${updatedInvoice.numero} se marcó como pagada.` });
+    } else if (newStatus === 'anulada') {
+      if (invoiceToUpdate.estado === 'anulada' || invoiceToUpdate.estado === 'pagada') {
+        toast({ title: "Acción no permitida", description: "No se puede anular una factura pagada o ya anulada.", variant: "destructive" });
+        return;
+      }
+      updatedInvoice = { ...invoiceToUpdate, estado: 'anulada' };
+      generarAsientoAnulacionFactura(updatedInvoice);
+      toast({ title: "Factura Anulada", description: `La factura N° ${updatedInvoice.numero} ha sido anulada.` });
+    } else {
+      return;
+    }
+
+    const nuevasFacturas = facturas.map(f => f.id === invoiceId ? updatedInvoice : f);
+    setFacturas(nuevasFacturas);
+    localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
+  };
+
+  const handleShowDetails = (invoice: Factura) => {
+    setSelectedInvoice(invoice);
+    setIsDetailViewOpen(true);
+  };
+
   if (showNewInvoice) {
     return (
       <InvoiceForm
@@ -158,7 +203,21 @@ const FacturacionModule = () => {
       <InvoiceSummary facturas={facturas} />
 
       {/* Lista de facturas */}
-      <InvoiceList facturas={facturas} />
+      <InvoiceList 
+        facturas={facturas} 
+        onShowDetails={handleShowDetails}
+        onUpdateStatus={handleUpdateInvoiceStatus}
+      />
+      
+      {selectedInvoice && (
+        <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
+          <DialogContent className="max-w-4xl p-0">
+            <div className="p-6">
+              <InvoicePreview invoice={selectedInvoice} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

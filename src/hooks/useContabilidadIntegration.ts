@@ -12,6 +12,7 @@ import type {
   DeclaracionIVAData 
 } from "./useReportesContables";
 import type { Producto } from "@/components/contable/products/ProductsData";
+import type { Factura } from "@/components/contable/billing/BillingData";
 
 // Re-export types to avoid breaking changes in other modules after refactoring
 export type { 
@@ -28,6 +29,8 @@ export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
   generarAsientoVenta: (factura: any) => AsientoContable;
   generarAsientoCompra: (compra: { numero: string, total: number, subtotal: number, iva: number }) => AsientoContable;
+  generarAsientoPagoFactura: (factura: Factura) => AsientoContable;
+  generarAsientoAnulacionFactura: (factura: Factura) => AsientoContable[];
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
@@ -67,12 +70,21 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         haber: 0
       });
       
-      cuentas.push({
-        codigo: "2111",
-        nombre: "Cuentas por Pagar",
-        debe: 0,
-        haber: movimiento.valorMovimiento
-      });
+      if (movimiento.motivo === 'Anulación Venta') {
+          cuentas.push({
+              codigo: "5111",
+              nombre: "Costo de Productos Vendidos",
+              debe: 0,
+              haber: movimiento.valorMovimiento
+          });
+      } else {
+        cuentas.push({
+          codigo: "2111",
+          nombre: "Cuentas por Pagar",
+          debe: 0,
+          haber: movimiento.valorMovimiento
+        });
+      }
 
       if (movimiento.productoId) {
         actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'entrada');
@@ -201,10 +213,104 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     return asiento;
   };
 
+  const generarAsientoPagoFactura = (factura: Factura): AsientoContable => {
+    const asiento: AsientoContable = {
+      id: Date.now().toString(),
+      numero: `PAG-${factura.numero}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      concepto: `Pago de factura N° ${factura.numero}`,
+      referencia: factura.numero,
+      debe: factura.total,
+      haber: factura.total,
+      estado: 'registrado',
+      cuentas: [
+        {
+          codigo: "1111",
+          nombre: "Caja y Bancos",
+          debe: factura.total,
+          haber: 0
+        },
+        {
+          codigo: "1131",
+          nombre: "Cuentas por Cobrar",
+          debe: 0,
+          haber: factura.total
+        }
+      ]
+    };
+    guardarAsiento(asiento);
+    return asiento;
+  };
+
+  const generarAsientoAnulacionFactura = (factura: Factura): AsientoContable[] => {
+    // Reversión del asiento de venta
+    const asientoVentaReversion: AsientoContable = {
+      id: Date.now().toString(),
+      numero: `ANV-${factura.numero}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      concepto: `Anulación de venta, factura N° ${factura.numero}`,
+      referencia: factura.numero,
+      debe: factura.total,
+      haber: factura.total,
+      estado: 'registrado',
+      cuentas: [
+        {
+          codigo: "4111",
+          nombre: "Ventas de Productos",
+          debe: factura.subtotal,
+          haber: 0
+        },
+        {
+          codigo: "2113",
+          nombre: "IVA por Pagar",
+          debe: factura.iva,
+          haber: 0
+        },
+        {
+          codigo: "1131",
+          nombre: "Cuentas por Cobrar",
+          debe: 0,
+          haber: factura.total
+        }
+      ]
+    };
+    guardarAsiento(asientoVentaReversion);
+
+    const asientosCosto: AsientoContable[] = [];
+    factura.items.forEach(item => {
+      const producto = obtenerProductos().find(p => p.id === item.productoId);
+      if (producto && producto.costoUnitario > 0) {
+        const valorMovimiento = item.cantidad * producto.costoUnitario;
+        const movimientoInventario: MovimientoInventario = {
+          id: `${Date.now().toString()}-${item.productoId}`,
+          fecha: new Date().toISOString().slice(0, 10),
+          tipo: 'entrada',
+          productoId: item.productoId,
+          producto: item.descripcion,
+          cantidad: item.cantidad,
+          costoUnitario: producto.costoUnitario,
+          costoPromedioPonderado: producto.costoUnitario,
+          motivo: 'Anulación Venta',
+          documento: `Factura Anulada N° ${factura.numero}`,
+          usuario: 'Sistema',
+          stockAnterior: producto.stockActual,
+          stockNuevo: producto.stockActual + item.cantidad,
+          valorMovimiento,
+        };
+        const asientoCosto = generarAsientoInventario(movimientoInventario);
+        asientosCosto.push(asientoCosto);
+      }
+    });
+
+    return [asientoVentaReversion, ...asientosCosto];
+  };
+
   return {
     generarAsientoInventario,
     generarAsientoVenta,
     generarAsientoCompra,
+    generarAsientoPagoFactura,
+    generarAsientoAnulacionFactura,
     guardarAsiento,
     getAsientos,
     getLibroMayor: reportesHook.getLibroMayor,
