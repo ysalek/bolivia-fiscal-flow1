@@ -32,17 +32,22 @@ const ComprasModule = () => {
 
   const handleSaveCompra = (nuevaCompra: Compra) => {
     try {
-      // 1. Update stock for each item
-      nuevaCompra.items.forEach(item => {
-        actualizarStockProducto(item.productoId, item.cantidad, 'entrada');
-      });
-      
-      // 2. Generate ONE accounting entry for the entire purchase
-      generarAsientoCompra({
+      // 1. Generate ONE accounting entry for the entire purchase
+      const asientoCompra = generarAsientoCompra({
         numero: nuevaCompra.numero,
         total: nuevaCompra.total,
         subtotal: nuevaCompra.subtotal,
         iva: nuevaCompra.iva
+      });
+      
+      // If accounting fails, stop. A toast is shown inside the hook.
+      if (!asientoCompra) {
+        return;
+      }
+
+      // 2. Update stock for each item *after* successful accounting entry
+      nuevaCompra.items.forEach(item => {
+        actualizarStockProducto(item.productoId, item.cantidad, 'entrada');
       });
       
       // 3. Update purchases list and persist
@@ -50,6 +55,7 @@ const ComprasModule = () => {
       setCompras(nuevasCompras);
       localStorage.setItem('compras', JSON.stringify(nuevasCompras));
 
+      // 4. Show success message
       toast({
         title: "Compra Creada Exitosamente",
         description: `Compra N° ${nuevaCompra.numero} registrada. Inventario actualizado.`,
@@ -77,7 +83,12 @@ const ComprasModule = () => {
     }
     
     // Generate accounting entry for payment
-    generarAsientoPagoCompra(compra);
+    const asientoPago = generarAsientoPagoCompra(compra);
+    
+    // If payment entry failed, stop. Error toast is shown inside the hook.
+    if (!asientoPago) {
+      return;
+    }
     
     // Update purchase status to 'pagada'
     const comprasActualizadas: Compra[] = compras.map(c => 

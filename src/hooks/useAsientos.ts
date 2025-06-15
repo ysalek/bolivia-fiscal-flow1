@@ -22,14 +22,14 @@ export const useAsientos = () => {
     return true;
   };
 
-  const guardarAsiento = (asiento: AsientoContable) => {
+  const guardarAsiento = (asiento: AsientoContable): boolean => {
     if (!validarTransaccion(asiento)) {
       toast({
         title: "Error en el asiento contable",
         description: "El asiento no está balanceado. Debe = Haber",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     const asientosExistentes = getAsientos();
@@ -42,6 +42,7 @@ export const useAsientos = () => {
       title: "Asiento contable registrado",
       description: `Asiento ${asiento.numero} registrado exitosamente`,
     });
+    return true;
   };
 
 

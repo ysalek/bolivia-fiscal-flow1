@@ -1,3 +1,4 @@
+
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { Factura } from "@/components/contable/billing/BillingData";
@@ -9,7 +10,7 @@ export const useAsientosGenerator = () => {
   const { guardarAsiento } = useAsientos();
   const { obtenerProductos, actualizarStockProducto } = useProductos();
 
-  const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
+  const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     
@@ -72,11 +73,10 @@ export const useAsientosGenerator = () => {
       cuentas
     };
 
-    guardarAsiento(asiento);
-    return asiento;
+    return guardarAsiento(asiento) ? asiento : null;
   };
 
-  const generarAsientoVenta = (factura: any): AsientoContable => {
+  const generarAsientoVenta = (factura: any): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     const totalConIVA = factura.total;
@@ -116,11 +116,10 @@ export const useAsientosGenerator = () => {
       cuentas
     };
 
-    guardarAsiento(asiento);
-    return asiento;
+    return guardarAsiento(asiento) ? asiento : null;
   };
 
-  const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable => {
+  const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     const totalCompra = compra.total;
@@ -160,11 +159,10 @@ export const useAsientosGenerator = () => {
       cuentas
     };
 
-    guardarAsiento(asiento);
-    return asiento;
+    return guardarAsiento(asiento) ? asiento : null;
   };
 
-  const generarAsientoPagoCompra = (compra: Compra): AsientoContable => {
+  const generarAsientoPagoCompra = (compra: Compra): AsientoContable | null => {
     const asiento: AsientoContable = {
       id: Date.now().toString(),
       numero: `PGC-${compra.numero}`,
@@ -189,11 +187,10 @@ export const useAsientosGenerator = () => {
         }
       ]
     };
-    guardarAsiento(asiento);
-    return asiento;
+    return guardarAsiento(asiento) ? asiento : null;
   };
 
-  const generarAsientoPagoFactura = (factura: Factura): AsientoContable => {
+  const generarAsientoPagoFactura = (factura: Factura): AsientoContable | null => {
     const asiento: AsientoContable = {
       id: Date.now().toString(),
       numero: `PAG-${factura.numero}`,
@@ -218,11 +215,10 @@ export const useAsientosGenerator = () => {
         }
       ]
     };
-    guardarAsiento(asiento);
-    return asiento;
+    return guardarAsiento(asiento) ? asiento : null;
   };
 
-  const generarAsientoAnulacionFactura = (factura: Factura): AsientoContable[] => {
+  const generarAsientoAnulacionFactura = (factura: Factura): AsientoContable[] | null => {
     // Reversión del asiento de venta
     const asientoVentaReversion: AsientoContable = {
       id: Date.now().toString(),
@@ -254,10 +250,16 @@ export const useAsientosGenerator = () => {
         }
       ]
     };
-    guardarAsiento(asientoVentaReversion);
+    if (!guardarAsiento(asientoVentaReversion)) {
+      return null;
+    }
 
-    const asientosCosto: AsientoContable[] = [];
+    const asientosGenerados: AsientoContable[] = [asientoVentaReversion];
+    let todoOk = true;
+
     factura.items.forEach(item => {
+      if (!todoOk) return;
+
       const producto = obtenerProductos().find(p => p.id === item.productoId);
       if (producto && producto.costoUnitario > 0) {
         const valorMovimiento = item.cantidad * producto.costoUnitario;
@@ -278,11 +280,22 @@ export const useAsientosGenerator = () => {
           valorMovimiento,
         };
         const asientoCosto = generarAsientoInventario(movimientoInventario);
-        asientosCosto.push(asientoCosto);
+        if (asientoCosto) {
+          asientosGenerados.push(asientoCosto);
+        } else {
+          console.error(`Error crítico: Falló la reversión del costo para el producto ${item.productoId} en la anulación de la factura ${factura.numero}. El sistema puede quedar en un estado inconsistente.`);
+          todoOk = false;
+        }
       }
     });
 
-    return [asientoVentaReversion, ...asientosCosto];
+    if (!todoOk) {
+      // Idealmente, aquí se debería revertir el 'asientoVentaReversion'.
+      // Por ahora, notificamos el estado parcialmente completado.
+      return asientosGenerados; // Devuelve lo que se pudo generar
+    }
+
+    return asientosGenerados;
   };
   
   return {

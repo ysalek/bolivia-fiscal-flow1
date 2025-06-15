@@ -30,13 +30,13 @@ export type { Producto } from "@/components/contable/products/ProductsData";
 export type { Compra } from "@/components/contable/purchases/PurchasesData";
 
 export interface ContabilidadIntegrationHook {
-  generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
-  generarAsientoVenta: (factura: any) => AsientoContable;
-  generarAsientoCompra: (compra: { numero: string, total: number, subtotal: number, iva: number }) => AsientoContable;
-  generarAsientoPagoCompra: (compra: Compra) => AsientoContable;
-  generarAsientoPagoFactura: (factura: Factura) => AsientoContable;
-  generarAsientoAnulacionFactura: (factura: Factura) => AsientoContable[];
-  guardarAsiento: (asiento: AsientoContable) => void;
+  generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable | null;
+  generarAsientoVenta: (factura: any) => AsientoContable | null;
+  generarAsientoCompra: (compra: { numero: string, total: number, subtotal: number, iva: number }) => AsientoContable | null;
+  generarAsientoPagoCompra: (compra: Compra) => AsientoContable | null;
+  generarAsientoPagoFactura: (factura: Factura) => AsientoContable | null;
+  generarAsientoAnulacionFactura: (factura: Factura) => AsientoContable[] | null;
+  guardarAsiento: (asiento: AsientoContable) => boolean;
   getAsientos: () => AsientoContable[];
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
   getTrialBalanceData: () => { details: TrialBalanceDetail[], totals: TrialBalanceTotals };
