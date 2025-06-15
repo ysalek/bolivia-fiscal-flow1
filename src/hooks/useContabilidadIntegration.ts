@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
@@ -10,19 +9,47 @@ export interface ContabilidadIntegrationHook {
   generarAsientoCompra: (compra: any) => AsientoContable;
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
-  actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => void;
+  actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
   obtenerProductos: () => Producto[];
+  validarTransaccion: (asiento: AsientoContable) => boolean;
+  obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
   const { toast } = useToast();
 
+  const validarTransaccion = (asiento: AsientoContable): boolean => {
+    const totalDebe = asiento.cuentas.reduce((sum, cuenta) => sum + cuenta.debe, 0);
+    const totalHaber = asiento.cuentas.reduce((sum, cuenta) => sum + cuenta.haber, 0);
+    
+    if (Math.abs(totalDebe - totalHaber) > 0.01) {
+      console.error("Error: El asiento no está balanceado", { totalDebe, totalHaber });
+      return false;
+    }
+    
+    return true;
+  };
+
   const guardarAsiento = (asiento: AsientoContable) => {
+    if (!validarTransaccion(asiento)) {
+      toast({
+        title: "Error en el asiento contable",
+        description: "El asiento no está balanceado. Debe = Haber",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const asientosExistentes = JSON.parse(localStorage.getItem('asientosContables') || '[]');
     const nuevosAsientos = [asiento, ...asientosExistentes];
     localStorage.setItem('asientosContables', JSON.stringify(nuevosAsientos));
     
-    console.log("Asiento guardado en localStorage:", asiento);
+    console.log("Asiento guardado correctamente:", asiento);
+    
+    toast({
+      title: "Asiento contable registrado",
+      description: `Asiento ${asiento.numero} registrado exitosamente`,
+    });
   };
 
   const getAsientos = (): AsientoContable[] => {
@@ -33,11 +60,20 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     return JSON.parse(localStorage.getItem('productos') || '[]');
   };
 
-  const actualizarStockProducto = (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => {
-    const productos = obtenerProductos();
-    const productoIndex = productos.findIndex(p => p.id === productoId);
-    
-    if (productoIndex !== -1) {
+  const actualizarStockProducto = (productoId: string, cantidad: number, tipo: 'entrada' | 'salida'): boolean => {
+    try {
+      const productos = obtenerProductos();
+      const productoIndex = productos.findIndex(p => p.id === productoId);
+      
+      if (productoIndex === -1) {
+        toast({
+          title: "Error",
+          description: "Producto no encontrado",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const producto = productos[productoIndex];
       const nuevaCantidad = tipo === 'entrada' 
         ? producto.stockActual + cantidad 
@@ -50,7 +86,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
           description: `No hay suficiente stock para ${producto.nombre}. Stock actual: ${producto.stockActual}`,
           variant: "destructive"
         });
-        return;
+        return false;
       }
       
       productos[productoIndex] = {
@@ -69,7 +105,39 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
           variant: "destructive"
         });
       }
+
+      console.log(`Stock actualizado: ${producto.nombre} - ${producto.stockActual} -> ${nuevaCantidad}`);
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar stock:", error);
+      return false;
     }
+  };
+
+  const obtenerBalanceGeneral = () => {
+    const asientos = getAsientos();
+    let activos = 0;
+    let pasivos = 0;
+    let patrimonio = 0;
+
+    asientos.forEach(asiento => {
+      if (asiento.estado === 'registrado') {
+        asiento.cuentas.forEach(cuenta => {
+          const codigo = cuenta.codigo;
+          const saldoNeto = cuenta.debe - cuenta.haber;
+          
+          if (codigo.startsWith('1')) { // Activos
+            activos += saldoNeto;
+          } else if (codigo.startsWith('2')) { // Pasivos
+            pasivos += saldoNeto;
+          } else if (codigo.startsWith('3')) { // Patrimonio
+            patrimonio += saldoNeto;
+          }
+        });
+      }
+    });
+
+    return { activos, pasivos, patrimonio };
   };
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
@@ -77,7 +145,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     const fecha = new Date().toISOString().slice(0, 10);
     
     if (movimiento.tipo === 'entrada') {
-      // Débito: Inventarios
       cuentas.push({
         codigo: "1141",
         nombre: "Inventarios",
@@ -85,7 +152,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         haber: 0
       });
       
-      // Crédito: Cuentas por Pagar (asumiendo compra a crédito)
       cuentas.push({
         codigo: "2111",
         nombre: "Cuentas por Pagar",
@@ -93,12 +159,10 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         haber: movimiento.valorMovimiento
       });
 
-      // Actualizar stock del producto
       if (movimiento.productoId) {
         actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'entrada');
       }
     } else if (movimiento.tipo === 'salida') {
-      // Débito: Costo de Productos Vendidos
       cuentas.push({
         codigo: "5111",
         nombre: "Costo de Productos Vendidos",
@@ -106,7 +170,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         haber: 0
       });
       
-      // Crédito: Inventarios
       cuentas.push({
         codigo: "1141",
         nombre: "Inventarios",
@@ -114,7 +177,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         haber: movimiento.valorMovimiento
       });
 
-      // Actualizar stock del producto
       if (movimiento.productoId) {
         actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'salida');
       }
@@ -143,7 +205,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     const subtotal = factura.subtotal;
     const ivaVenta = factura.iva;
 
-    // Débito: Cuentas por Cobrar o Caja
     cuentas.push({
       codigo: "1131",
       nombre: "Cuentas por Cobrar",
@@ -151,7 +212,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       haber: 0
     });
 
-    // Crédito: Ventas
     cuentas.push({
       codigo: "4111",
       nombre: "Ventas de Productos",
@@ -159,7 +219,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       haber: subtotal
     });
 
-    // Crédito: IVA por Pagar
     cuentas.push({
       codigo: "2113",
       nombre: "IVA por Pagar",
@@ -186,10 +245,9 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
   const generarAsientoCompra = (compra: any): AsientoContable => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
-    const totalConIVA = compra.total * 1.13; // IVA 13%
+    const totalConIVA = compra.total * 1.13;
     const ivaCompra = totalConIVA - compra.total;
 
-    // Débito: Inventarios o Gastos
     cuentas.push({
       codigo: "1141",
       nombre: "Inventarios",
@@ -197,7 +255,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       haber: 0
     });
 
-    // Débito: IVA Crédito Fiscal
     cuentas.push({
       codigo: "2114",
       nombre: "IVA Crédito Fiscal",
@@ -205,7 +262,6 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
       haber: 0
     });
 
-    // Crédito: Cuentas por Pagar
     cuentas.push({
       codigo: "2111",
       nombre: "Cuentas por Pagar",
@@ -236,6 +292,8 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     guardarAsiento,
     getAsientos,
     actualizarStockProducto,
-    obtenerProductos
+    obtenerProductos,
+    validarTransaccion,
+    obtenerBalanceGeneral
   };
 };

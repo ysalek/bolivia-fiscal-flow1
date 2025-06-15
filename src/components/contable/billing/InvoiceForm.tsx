@@ -11,6 +11,7 @@ import { Plus, Send, Eye, X, AlertCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura } from "./BillingData";
 import { Producto } from "../products/ProductsData";
+import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 interface InvoiceFormProps {
   clientes: Cliente[];
@@ -38,6 +39,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
+  const { generarAsientoVenta, actualizarStockProducto } = useContabilidadIntegration();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -125,39 +127,58 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
       return;
     }
 
-    const subtotal = calculateSubtotal();
-    const descuentoTotal = calculateDiscountTotal();
-    const iva = calcularIVA(subtotal);
-    const total = calcularTotal(subtotal, 0);
+    try {
+      const subtotal = calculateSubtotal();
+      const descuentoTotal = calculateDiscountTotal();
+      const iva = calcularIVA(subtotal);
+      const total = calcularTotal(subtotal, 0);
 
-    const ultimoNumero = facturas.length > 0 ? 
-      Math.max(...facturas.map(f => parseInt(f.numero))) : 0;
+      const ultimoNumero = facturas.length > 0 ? 
+        Math.max(...facturas.map(f => parseInt(f.numero))) : 0;
 
-    const nuevaFactura: Factura = {
-      id: Date.now().toString(),
-      numero: generarNumeroFactura(ultimoNumero.toString()),
-      cliente: selectedCliente!,
-      fecha: new Date().toISOString().slice(0, 10),
-      fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      items: items.filter(item => item.descripcion.trim()),
-      subtotal,
-      descuentoTotal,
-      iva,
-      total,
-      estado: 'enviada',
-      estadoSIN: 'pendiente',
-      cuf: `CUF${Date.now()}`,
-      codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
-      observaciones,
-      fechaCreacion: new Date().toISOString().slice(0, 10)
-    };
+      const nuevaFactura: Factura = {
+        id: Date.now().toString(),
+        numero: generarNumeroFactura(ultimoNumero.toString()),
+        cliente: selectedCliente!,
+        fecha: new Date().toISOString().slice(0, 10),
+        fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        items: items.filter(item => item.descripcion.trim()),
+        subtotal,
+        descuentoTotal,
+        iva,
+        total,
+        estado: 'enviada',
+        estadoSIN: 'pendiente',
+        cuf: `CUF${Date.now()}`,
+        codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
+        observaciones,
+        fechaCreacion: new Date().toISOString().slice(0, 10)
+      };
 
-    onSave(nuevaFactura);
-    
-    toast({
-      title: "Factura creada exitosamente",
-      description: `Factura N° ${nuevaFactura.numero} ha sido generada correctamente.`,
-    });
+      // Generar asiento contable automáticamente
+      generarAsientoVenta(nuevaFactura);
+
+      // Actualizar stock de productos
+      items.forEach(item => {
+        if (item.productoId) {
+          actualizarStockProducto(item.productoId, item.cantidad, 'salida');
+        }
+      });
+
+      onSave(nuevaFactura);
+      
+      toast({
+        title: "Factura creada exitosamente",
+        description: `Factura N° ${nuevaFactura.numero} ha sido generada y registrada contablemente.`,
+      });
+    } catch (error) {
+      console.error("Error al crear la factura:", error);
+      toast({
+        title: "Error al crear la factura",
+        description: "Ocurrió un error inesperado. Por favor intente nuevamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
