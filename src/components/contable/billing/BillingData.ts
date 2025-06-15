@@ -122,6 +122,36 @@ export const generarCUF = (): string => {
   return cuf;
 };
 
+const motivosRechazo = [
+  "El NIT del cliente es inválido",
+  "El código de producto SIN no corresponde",
+  "Firma digital inválida",
+  "Factura fuera de secuencia",
+];
+
+export const simularValidacionSIN = (factura: Factura): Promise<Factura> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Simular una respuesta del SIN. 85% de probabilidad de éxito.
+      const aceptada = Math.random() < 0.85;
+      
+      const facturaActualizada: Factura = {
+        ...factura,
+        estadoSIN: aceptada ? 'aceptado' : 'rechazado',
+      };
+      
+      if (!aceptada) {
+        facturaActualizada.estado = 'borrador';
+        facturaActualizada.observaciones = `RECHAZADA POR EL SIN. MOTIVO SIMULADO: ${motivosRechazo[Math.floor(Math.random() * motivosRechazo.length)]}. ${factura.observaciones || ''}`.trim();
+      } else {
+        facturaActualizada.estado = 'enviada';
+      }
+
+      resolve(facturaActualizada);
+    }, 2500); // Simular latencia de red de 2.5 segundos
+  });
+};
+
 export const calcularIVA = (subtotal: number): number => {
   return subtotal * 0.13;
 };

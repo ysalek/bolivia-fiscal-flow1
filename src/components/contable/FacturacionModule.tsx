@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Factura, Cliente, facturasIniciales, clientesIniciales } from "./billing/BillingData";
+import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidacionSIN } from "./billing/BillingData";
 import { Producto, productosIniciales } from "./products/ProductsData";
 import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
@@ -58,58 +58,85 @@ const FacturacionModule = () => {
     });
   };
 
-  const handleSaveInvoice = (nuevaFactura: Factura) => {
+  const handleSaveInvoice = async (nuevaFactura: Factura) => {
+    setShowNewInvoice(false);
+    
+    const processingToast = toast({
+      title: "Procesando factura...",
+      description: "Enviando al SIN para validación. Esto puede tardar unos segundos.",
+    });
+
     try {
-      // 1. Procesar inventario y generar asiento de costo de ventas
-      nuevaFactura.items.forEach(item => {
-        const producto = productos.find(p => p.id === item.productoId);
-        if (producto && producto.costoUnitario > 0) {
-          const movimientoInventario: MovimientoInventario = {
-            id: `${Date.now().toString()}-${item.productoId}`,
-            fecha: nuevaFactura.fecha,
-            tipo: 'salida',
-            productoId: item.productoId,
-            producto: item.descripcion,
-            cantidad: item.cantidad,
-            costoUnitario: producto.costoUnitario,
-            costoPromedioPonderado: producto.costoUnitario, // Placeholder, usar costo unitario por ahora
-            motivo: 'Venta',
-            documento: `Factura N° ${nuevaFactura.numero}`,
-            usuario: 'Sistema',
-            stockAnterior: producto.stockActual,
-            stockNuevo: producto.stockActual - item.cantidad,
-            valorMovimiento: item.cantidad * producto.costoUnitario,
-          };
-
-          // Genera el asiento contable de costo y actualiza el stock del producto
-          generarAsientoInventario(movimientoInventario);
-
-          // Guarda el movimiento en localStorage para el historial de inventario
-          const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
-          const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
-          localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
-        }
-      });
-
-      // 2. Generar asiento contable de venta
-      generarAsientoVenta(nuevaFactura);
+      const facturaValidada = await simularValidacionSIN(nuevaFactura);
       
-      // 3. Actualizar la lista de facturas y persistir
-      const nuevasFacturas = [nuevaFactura, ...facturas];
-      setFacturas(nuevasFacturas);
-      localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
+      processingToast.update({ id: processingToast.id, title: "Respuesta del SIN recibida" });
+
+      if (facturaValidada.estadoSIN === 'aceptado') {
+        // La factura fue aceptada, proceder con la contabilidad
+        
+        // 1. Procesar inventario y generar asiento de costo de ventas
+        facturaValidada.items.forEach(item => {
+          const producto = productos.find(p => p.id === item.productoId);
+          if (producto && producto.costoUnitario > 0) {
+            const movimientoInventario: MovimientoInventario = {
+              id: `${Date.now().toString()}-${item.productoId}`,
+              fecha: facturaValidada.fecha,
+              tipo: 'salida',
+              productoId: item.productoId,
+              producto: item.descripcion,
+              cantidad: item.cantidad,
+              costoUnitario: producto.costoUnitario,
+              costoPromedioPonderado: producto.costoUnitario,
+              motivo: 'Venta',
+              documento: `Factura N° ${facturaValidada.numero}`,
+              usuario: 'Sistema',
+              stockAnterior: producto.stockActual,
+              stockNuevo: producto.stockActual - item.cantidad,
+              valorMovimiento: item.cantidad * producto.costoUnitario,
+            };
+
+            generarAsientoInventario(movimientoInventario);
+
+            const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
+            const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
+            localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
+          }
+        });
+
+        // 2. Generar asiento contable de venta
+        generarAsientoVenta(facturaValidada);
+        
+        // 3. Actualizar la lista de facturas y persistir
+        const nuevasFacturas = [facturaValidada, ...facturas];
+        setFacturas(nuevasFacturas);
+        localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
+        
+        toast({
+          title: "Factura ACEPTADA por el SIN",
+          description: `Factura N° ${facturaValidada.numero} generada y registrada contablemente.`,
+          variant: "default",
+        });
+
+      } else {
+        // La factura fue rechazada
+        const nuevasFacturas = [facturaValidada, ...facturas];
+        setFacturas(nuevasFacturas);
+        localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
+
+        toast({
+          title: "Factura RECHAZADA por el SIN",
+          description: `La factura N° ${facturaValidada.numero} fue rechazada. Revise las observaciones y corríjala.`,
+          variant: "destructive",
+          duration: 9000,
+        });
+      }
       
-      toast({
-        title: "Factura creada exitosamente",
-        description: `Factura N° ${nuevaFactura.numero} generada y registrada contablemente. Inventario actualizado.`,
-      });
-      
-      setShowNewInvoice(false);
     } catch (error) {
-      console.error("Error al guardar y procesar la factura:", error);
+      processingToast.update({ id: processingToast.id, title: "Error de Conexión" });
+      console.error("Error al procesar la factura:", error);
       toast({
-        title: "Error al procesar la factura",
-        description: "Ocurrió un error inesperado durante la integración contable.",
+        title: "Error de Conexión",
+        description: "No se pudo comunicar con el servicio de Impuestos Nacionales. Intente nuevamente.",
         variant: "destructive"
       });
     }
