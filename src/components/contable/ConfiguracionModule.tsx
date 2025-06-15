@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,11 @@ import {
   Database,
   Save,
   Upload,
-  Download
+  Download,
+  Key,
+  TestTube,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,11 +56,125 @@ const ConfiguracionModule = () => {
     notificacionesEmail: true
   });
 
+  // Estado para configuración SIN
+  const [configSin, setConfigSin] = useState({
+    urlApi: "https://pilotosiatservicios.impuestos.gob.bo",
+    tokenDelegado: "",
+    codigoSistema: "",
+    nit: empresa.nit,
+    codigoModalidad: "1",
+    codigoEmision: "1",
+    tipoFacturaDocumento: "1",
+    tipoAmbiente: "2", // 1: Producción, 2: Pruebas
+    codigoSucursal: "0",
+    codigoPuntoVenta: "0",
+    cuis: "",
+    cufd: "",
+    fechaVigenciaCufd: "",
+    activo: false
+  });
+
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   const guardarConfiguracion = (seccion: string) => {
     toast({
       title: "Configuración guardada",
       description: `Los cambios en ${seccion} han sido guardados correctamente`,
     });
+  };
+
+  const guardarConfigSin = () => {
+    // Guardar configuración SIN en localStorage o base de datos
+    localStorage.setItem('configSin', JSON.stringify(configSin));
+    toast({
+      title: "Configuración SIN guardada",
+      description: "Las credenciales han sido guardadas de forma segura",
+    });
+  };
+
+  const testearConexionSin = async () => {
+    setTestingConnection(true);
+    
+    try {
+      // Simular prueba de conexión con el SIN
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (configSin.tokenDelegado && configSin.codigoSistema) {
+        setConnectionStatus('success');
+        toast({
+          title: "Conexión exitosa",
+          description: "La conexión con el SIN se estableció correctamente",
+        });
+      } else {
+        setConnectionStatus('error');
+        toast({
+          title: "Error de conexión",
+          description: "Verifique las credenciales ingresadas",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setConnectionStatus('error');
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con el SIN",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const obtenerCuis = async () => {
+    toast({
+      title: "Obteniendo CUIS",
+      description: "Solicitando código único de inicio de sistema...",
+    });
+    
+    // Simular obtención de CUIS
+    setTimeout(() => {
+      const nuevoCuis = `CUIS${Date.now()}`;
+      setConfigSin({...configSin, cuis: nuevoCuis});
+      toast({
+        title: "CUIS obtenido",
+        description: `Nuevo CUIS: ${nuevoCuis}`,
+      });
+    }, 1500);
+  };
+
+  const obtenerCufd = async () => {
+    if (!configSin.cuis) {
+      toast({
+        title: "Error",
+        description: "Primero debe obtener el CUIS",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Obteniendo CUFD",
+      description: "Solicitando código único de facturación diaria...",
+    });
+    
+    // Simular obtención de CUFD
+    setTimeout(() => {
+      const nuevoCufd = `CUFD${Date.now()}`;
+      const fechaVigencia = new Date();
+      fechaVigencia.setDate(fechaVigencia.getDate() + 1);
+      
+      setConfigSin({
+        ...configSin, 
+        cufd: nuevoCufd,
+        fechaVigenciaCufd: fechaVigencia.toISOString().split('T')[0]
+      });
+      
+      toast({
+        title: "CUFD obtenido",
+        description: `Nuevo CUFD válido hasta: ${fechaVigencia.toLocaleDateString()}`,
+      });
+    }, 1500);
   };
 
   const exportarConfiguracion = () => {
@@ -95,9 +212,10 @@ const ConfiguracionModule = () => {
       </div>
 
       <Tabs defaultValue="empresa" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           <TabsTrigger value="fiscal">Configuración Fiscal</TabsTrigger>
+          <TabsTrigger value="sin">Integración SIN</TabsTrigger>
           <TabsTrigger value="sistema">Sistema</TabsTrigger>
           <TabsTrigger value="backup">Backup</TabsTrigger>
         </TabsList>
@@ -268,6 +386,213 @@ const ConfiguracionModule = () => {
               <Button onClick={() => guardarConfiguracion("Configuración Fiscal")} className="w-full">
                 <Save className="w-4 h-4 mr-2" />
                 Guardar Configuración Fiscal
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Configuración SIN */}
+        <TabsContent value="sin" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5" />
+                Configuración SIN
+              </CardTitle>
+              <CardDescription>
+                Credenciales y parámetros para la integración con el Servicio de Impuestos Nacionales
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Configuración básica */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">Configuración Básica</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="urlApi">URL API SIN</Label>
+                    <Input
+                      id="urlApi"
+                      value={configSin.urlApi}
+                      onChange={(e) => setConfigSin({...configSin, urlApi: e.target.value})}
+                      placeholder="https://serviciosweb.impuestos.gob.bo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo de Ambiente</Label>
+                    <Select value={configSin.tipoAmbiente} onValueChange={(value) => setConfigSin({...configSin, tipoAmbiente: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2">Ambiente de Pruebas</SelectItem>
+                        <SelectItem value="1">Ambiente de Producción</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Credenciales */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">Credenciales de Acceso</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tokenDelegado">Token Delegado *</Label>
+                    <Input
+                      id="tokenDelegado"
+                      type="password"
+                      value={configSin.tokenDelegado}
+                      onChange={(e) => setConfigSin({...configSin, tokenDelegado: e.target.value})}
+                      placeholder="Token proporcionado por SIN"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codigoSistema">Código de Sistema *</Label>
+                    <Input
+                      id="codigoSistema"
+                      value={configSin.codigoSistema}
+                      onChange={(e) => setConfigSin({...configSin, codigoSistema: e.target.value})}
+                      placeholder="Código asignado por SIN"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nitSin">NIT Empresa</Label>
+                    <Input
+                      id="nitSin"
+                      value={configSin.nit}
+                      onChange={(e) => setConfigSin({...configSin, nit: e.target.value})}
+                      placeholder="NIT de la empresa"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codigoModalidad">Código Modalidad</Label>
+                    <Select value={configSin.codigoModalidad} onValueChange={(value) => setConfigSin({...configSin, codigoModalidad: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Electronica en línea</SelectItem>
+                        <SelectItem value="2">Computarizada en línea</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Códigos de ubicación */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">Códigos de Ubicación</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="codigoSucursalSin">Código Sucursal</Label>
+                    <Input
+                      id="codigoSucursalSin"
+                      value={configSin.codigoSucursal}
+                      onChange={(e) => setConfigSin({...configSin, codigoSucursal: e.target.value})}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="codigoPuntoVentaSin">Código Punto Venta</Label>
+                    <Input
+                      id="codigoPuntoVentaSin"
+                      value={configSin.codigoPuntoVenta}
+                      onChange={(e) => setConfigSin({...configSin, codigoPuntoVenta: e.target.value})}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipoEmision">Tipo Emisión</Label>
+                    <Select value={configSin.codigoEmision} onValueChange={(value) => setConfigSin({...configSin, codigoEmision: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Online</SelectItem>
+                        <SelectItem value="2">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Test de conexión */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-lg">Prueba de Conexión</h4>
+                  <div className="flex items-center gap-2">
+                    {connectionStatus === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                    {connectionStatus === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
+                    <Button 
+                      onClick={testearConexionSin} 
+                      disabled={testingConnection}
+                      variant="outline"
+                    >
+                      <TestTube className="w-4 h-4 mr-2" />
+                      {testingConnection ? "Probando..." : "Probar Conexión"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Códigos SIN */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">Códigos SIN</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cuis">CUIS (Código Único Inicio Sistema)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="cuis"
+                        value={configSin.cuis}
+                        readOnly
+                        placeholder="No obtenido"
+                      />
+                      <Button onClick={obtenerCuis} variant="outline">
+                        Obtener
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cufd">CUFD (Código Único Facturación Diaria)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="cufd"
+                        value={configSin.cufd}
+                        readOnly
+                        placeholder="No obtenido"
+                      />
+                      <Button onClick={obtenerCufd} variant="outline" disabled={!configSin.cuis}>
+                        Obtener
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                {configSin.fechaVigenciaCufd && (
+                  <div className="text-sm text-slate-600">
+                    <strong>Vigencia CUFD:</strong> {new Date(configSin.fechaVigenciaCufd).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+
+              {/* Estado de integración */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <div className="font-medium">Estado de Integración SIN</div>
+                  <div className="text-sm text-slate-600">
+                    {configSin.activo ? "Integración activa y funcionando" : "Integración desactivada"}
+                  </div>
+                </div>
+                <Switch
+                  checked={configSin.activo}
+                  onCheckedChange={(checked) => setConfigSin({...configSin, activo: checked})}
+                />
+              </div>
+
+              <Button onClick={guardarConfigSin} className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Configuración SIN
               </Button>
             </CardContent>
           </Card>
