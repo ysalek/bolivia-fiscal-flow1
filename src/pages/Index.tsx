@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,9 +19,11 @@ import Dashboard from "@/components/contable/Dashboard";
 import FacturacionModule from "@/components/contable/FacturacionModule";
 import ClientesModule from "@/components/contable/ClientesModule";
 import ProductosModule from "@/components/contable/ProductosModule";
+import InventarioModule from "@/components/contable/InventarioModule";
 import LibroDiario from "@/components/contable/LibroDiario";
 import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
 import ReportesModule from "@/components/contable/ReportesModule";
+import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -63,6 +64,13 @@ const Index = () => {
       permission: "productos" 
     },
     { 
+      id: "inventario", 
+      label: "Inventario", 
+      icon: Calculator, 
+      component: InventarioModule, 
+      permission: "inventario" 
+    },
+    { 
       id: "libro-diario", 
       label: "Libro Diario", 
       icon: FileText, 
@@ -82,6 +90,13 @@ const Index = () => {
       icon: FileText, 
       component: ReportesModule, 
       permission: "reportes" 
+    },
+    { 
+      id: "configuracion", 
+      label: "Configuración", 
+      icon: Settings, 
+      component: ConfiguracionModule, 
+      permission: "configuracion" 
     },
   ];
 
