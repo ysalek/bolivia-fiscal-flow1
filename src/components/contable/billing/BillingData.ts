@@ -1,4 +1,3 @@
-
 export interface Cliente {
   id: string;
   nombre: string;
@@ -116,8 +115,7 @@ export const calcularIVA = (subtotal: number): number => {
   return subtotal * 0.13;
 };
 
-export const calcularTotal = (subtotal: number, descuento: number = 0): number => {
-  const subtotalConDescuento = subtotal - descuento;
+export const calcularTotal = (subtotalConDescuento: number): number => {
   const iva = calcularIVA(subtotalConDescuento);
   return subtotalConDescuento + iva;
 };
