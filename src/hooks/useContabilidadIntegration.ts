@@ -2,6 +2,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
+import { Producto } from "@/components/contable/products/ProductsData";
 
 export interface ContabilidadIntegrationHook {
   generarAsientoInventario: (movimiento: MovimientoInventario) => AsientoContable;
@@ -9,6 +10,8 @@ export interface ContabilidadIntegrationHook {
   generarAsientoCompra: (compra: any) => AsientoContable;
   guardarAsiento: (asiento: AsientoContable) => void;
   getAsientos: () => AsientoContable[];
+  actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => void;
+  obtenerProductos: () => Producto[];
 }
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
@@ -24,6 +27,49 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
 
   const getAsientos = (): AsientoContable[] => {
     return JSON.parse(localStorage.getItem('asientosContables') || '[]');
+  };
+
+  const obtenerProductos = (): Producto[] => {
+    return JSON.parse(localStorage.getItem('productos') || '[]');
+  };
+
+  const actualizarStockProducto = (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => {
+    const productos = obtenerProductos();
+    const productoIndex = productos.findIndex(p => p.id === productoId);
+    
+    if (productoIndex !== -1) {
+      const producto = productos[productoIndex];
+      const nuevaCantidad = tipo === 'entrada' 
+        ? producto.stockActual + cantidad 
+        : producto.stockActual - cantidad;
+      
+      // Evitar stock negativo
+      if (nuevaCantidad < 0) {
+        toast({
+          title: "Error de stock",
+          description: `No hay suficiente stock para ${producto.nombre}. Stock actual: ${producto.stockActual}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      productos[productoIndex] = {
+        ...producto,
+        stockActual: nuevaCantidad,
+        fechaActualizacion: new Date().toISOString().slice(0, 10)
+      };
+      
+      localStorage.setItem('productos', JSON.stringify(productos));
+      
+      // Alerta de stock bajo
+      if (nuevaCantidad <= producto.stockMinimo && nuevaCantidad > 0) {
+        toast({
+          title: "Stock bajo",
+          description: `El producto ${producto.nombre} tiene stock bajo (${nuevaCantidad} unidades)`,
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable => {
@@ -46,6 +92,11 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         debe: 0,
         haber: movimiento.valorMovimiento
       });
+
+      // Actualizar stock del producto
+      if (movimiento.productoId) {
+        actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'entrada');
+      }
     } else if (movimiento.tipo === 'salida') {
       // Débito: Costo de Productos Vendidos
       cuentas.push({
@@ -62,6 +113,11 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
         debe: 0,
         haber: movimiento.valorMovimiento
       });
+
+      // Actualizar stock del producto
+      if (movimiento.productoId) {
+        actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'salida');
+      }
     }
 
     const asiento: AsientoContable = {
@@ -178,6 +234,8 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     generarAsientoVenta,
     generarAsientoCompra,
     guardarAsiento,
-    getAsientos
+    getAsientos,
+    actualizarStockProducto,
+    obtenerProductos
   };
 };
