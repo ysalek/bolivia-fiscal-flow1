@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Eye, FileText } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Compra, Proveedor, comprasIniciales, proveedoresIniciales } from "./purchases/PurchasesData";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { Producto, productosIniciales } from "./products/ProductsData";
 import { MovimientoInventario } from "./inventory/InventoryData";
 import CompraForm from "./purchases/CompraForm";
+import PurchasesList from "./purchases/PurchasesList";
+import ProveedoresList from "./purchases/ProveedoresList";
 
 const ComprasModule = () => {
   const [compras, setCompras] = useState<Compra[]>(comprasIniciales);
@@ -16,7 +18,7 @@ const ComprasModule = () => {
   const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewCompraForm, setShowNewCompraForm] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoCompra, generarAsientoInventario, actualizarStockProducto } = useContabilidadIntegration();
+  const { generarAsientoCompra, generarAsientoInventario } = useContabilidadIntegration();
 
   useEffect(() => {
     const comprasGuardadas = localStorage.getItem('compras');
@@ -28,16 +30,6 @@ const ComprasModule = () => {
     const productosGuardados = localStorage.getItem('productos');
     if (productosGuardados) setProductos(JSON.parse(productosGuardados));
   }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "recibida": return "bg-green-100 text-green-800";
-      case "pendiente": return "bg-yellow-100 text-yellow-800";
-      case "pagada": return "bg-blue-100 text-blue-800";
-      case "anulada": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const handleSaveCompra = (nuevaCompra: Compra) => {
     try {
@@ -177,106 +169,10 @@ const ComprasModule = () => {
       </div>
 
       {/* Lista de compras */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Órdenes de Compra</CardTitle>
-          <CardDescription>
-            Historial de compras realizadas con integración contable automática
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {compras.map((compra) => (
-              <div key={compra.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="font-mono">
-                        {compra.numero}
-                      </Badge>
-                      <Badge className={getStatusColor(compra.estado)}>
-                        {compra.estado}
-                      </Badge>
-                    </div>
-                    <div className="font-medium text-lg">{compra.proveedor.nombre}</div>
-                    <div className="text-sm text-gray-500">
-                      NIT: {compra.proveedor.nit} • Fecha: {compra.fecha}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">Bs. {compra.total.toFixed(2)}</div>
-                    <div className="text-sm text-gray-500">
-                      Subtotal: Bs. {compra.subtotal.toFixed(2)} + IVA: Bs. {compra.iva.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Items de la compra */}
-                <div className="bg-gray-50 rounded p-3 mb-3">
-                  <div className="text-sm font-medium mb-2">Items comprados:</div>
-                  <div className="space-y-1">
-                    {compra.items.map((item, index) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span>{item.descripcion} (x{item.cantidad})</span>
-                        <span>Bs. {item.subtotal.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-500">
-                    Vencimiento: {compra.fechaVencimiento}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <FileText className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleProcessPurchase(compra)}
-                    >
-                      <Package className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <PurchasesList compras={compras} onProcessPurchase={handleProcessPurchase} />
 
       {/* Proveedores */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Proveedores Activos</CardTitle>
-          <CardDescription>Base de datos de proveedores</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {proveedores.map((proveedor) => (
-              <div key={proveedor.id} className="border rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="font-medium">{proveedor.nombre}</div>
-                    <div className="text-sm text-gray-500">NIT: {proveedor.nit}</div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Activo</Badge>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <div>{proveedor.email}</div>
-                  <div>{proveedor.telefono}</div>
-                  <div>{proveedor.direccion}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <ProveedoresList proveedores={proveedores} />
     </div>
   );
 };
