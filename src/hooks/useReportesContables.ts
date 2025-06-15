@@ -253,31 +253,38 @@ export const useReportesContables = () => {
 
     let debitoFiscalTotal = 0;
     let baseImponibleVentas = 0;
-
-    asientosEnPeriodo
-      .filter(a => a.numero.startsWith('VTA-') || a.concepto.toLowerCase().includes('venta'))
-      .forEach(asiento => {
-        const cuentaVentas = asiento.cuentas.find(c => c.codigo.startsWith('4')); // Ingresos
-        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '2113'); // IVA por Pagar
-
-        if (cuentaVentas) baseImponibleVentas += cuentaVentas.haber;
-        if (cuentaIVA) debitoFiscalTotal += cuentaIVA.haber;
-      });
-
     let creditoFiscalTotal = 0;
     let baseImponibleCompras = 0;
 
-    asientosEnPeriodo
-      .filter(a => a.numero.startsWith('CMP-') || a.concepto.toLowerCase().includes('compra'))
-      .forEach(asiento => {
-        // Base imponible es el valor de la compra antes de IVA. Puede ser inventario, o un gasto.
-        const cuentaCompra = asiento.cuentas.find(c => c.codigo.startsWith('114') || c.codigo.startsWith('5')); 
-        const cuentaIVA = asiento.cuentas.find(c => c.codigo === '1142'); // IVA Crédito Fiscal - BUG CORREGIDO (era 2114)
+    asientosEnPeriodo.forEach(asiento => {
+      // Ventas (Débito Fiscal): Se identifica por un crédito a una cuenta de Ingresos (código 4xxx)
+      const ventaCuenta = asiento.cuentas.find(c => c.codigo.startsWith('4') && c.haber > 0);
+      const ivaDebitoCuenta = asiento.cuentas.find(c => c.codigo === '2113' && c.haber > 0);
+      if (ventaCuenta && ivaDebitoCuenta) {
+        baseImponibleVentas += ventaCuenta.haber;
+        debitoFiscalTotal += ivaDebitoCuenta.haber;
+      }
 
-        if (cuentaCompra) baseImponibleCompras += cuentaCompra.debe;
-        if (cuentaIVA) creditoFiscalTotal += cuentaIVA.debe;
-      });
-    
+      // Anulación de Ventas (Notas de Crédito): Se identifica por un débito a una cuenta de Ingresos
+      const reversionVentaCuenta = asiento.cuentas.find(c => c.codigo.startsWith('4') && c.debe > 0);
+      const reversionIvaDebito = asiento.cuentas.find(c => c.codigo === '2113' && c.debe > 0);
+      if (reversionVentaCuenta && reversionIvaDebito) {
+        baseImponibleVentas -= reversionVentaCuenta.debe;
+        debitoFiscalTotal -= reversionIvaDebito.debe;
+      }
+
+      // Compras (Crédito Fiscal): Se identifica por un débito a la cuenta de IVA Crédito Fiscal (1142)
+      const ivaCreditoCuenta = asiento.cuentas.find(c => c.codigo === '1142' && c.debe > 0);
+      if (ivaCreditoCuenta) {
+        creditoFiscalTotal += ivaCreditoCuenta.debe;
+        // La base imponible son los otros débitos (Inventario, Gastos) en la misma transacción
+        const baseCompra = asiento.cuentas
+          .filter(c => (c.codigo === '1141' || c.codigo.startsWith('5')) && c.debe > 0)
+          .reduce((sum, c) => sum + c.debe, 0);
+        baseImponibleCompras += baseCompra;
+      }
+    });
+
     const diferencia = debitoFiscalTotal - creditoFiscalTotal;
     const saldo = {
       aFavorFisco: diferencia > 0 ? diferencia : 0,
