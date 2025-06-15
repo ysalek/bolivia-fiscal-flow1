@@ -16,7 +16,8 @@ import {
   FolderTree,
   BookCopy,
   Scale,
-  Landmark
+  Landmark,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -25,6 +26,7 @@ import FacturacionModule from "@/components/contable/FacturacionModule";
 import ClientesModule from "@/components/contable/ClientesModule";
 import ProductosModule from "@/components/contable/ProductosModule";
 import InventarioModule from "@/components/contable/InventarioModule";
+import ComprasModule from "@/components/contable/ComprasModule";
 import JournalView from "@/components/contable/journal/JournalView";
 import GeneralLedgerView from "@/components/contable/ledger/GeneralLedgerView";
 import BalanceComprobacionModule from "@/components/contable/BalanceComprobacionModule";
@@ -77,6 +79,13 @@ const Index = () => {
       icon: Calculator, 
       component: InventarioModule, 
       permission: "inventario" 
+    },
+    { 
+      id: "compras", 
+      label: "Compras", 
+      icon: ShoppingCart, 
+      component: ComprasModule, 
+      permission: "compras" 
     },
     { 
       id: "plan-cuentas", 

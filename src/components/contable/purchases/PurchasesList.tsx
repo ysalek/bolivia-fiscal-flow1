@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, FileText, Package } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface PurchasesListProps {
   compras: Compra[];
@@ -22,6 +23,7 @@ const getStatusColor = (status: string) => {
 };
 
 const PurchasesList = ({ compras, onProcessPurchase }: PurchasesListProps) => {
+  const { toast } = useToast();
   return (
     <Card>
       <CardHeader>
@@ -57,10 +59,20 @@ const PurchasesList = ({ compras, onProcessPurchase }: PurchasesListProps) => {
                   <TableCell className="text-right">Bs. {compra.total.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex gap-2 justify-center">
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => toast({ title: "Próximamente", description: "La vista detallada de la compra estará disponible pronto."})}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => toast({ title: "Próximamente", description: "La vista del asiento contable estará disponible pronto."})}
+                      >
                         <FileText className="h-4 w-4" />
                       </Button>
                       <Button
