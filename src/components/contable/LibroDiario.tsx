@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,20 +25,45 @@ const LibroDiario = () => {
   });
   const { toast } = useToast();
 
-  // Plan de cuentas simplificado
+  // Plan de cuentas completo y estructurado
   const planCuentas = [
-    { codigo: "1101", nombre: "Caja" },
-    { codigo: "1102", nombre: "Bancos" },
-    { codigo: "1201", nombre: "Cuentas por Cobrar" },
-    { codigo: "1301", nombre: "Inventarios" },
-    { codigo: "1501", nombre: "Muebles y Enseres" },
-    { codigo: "2101", nombre: "Cuentas por Pagar" },
-    { codigo: "2201", nombre: "IVA por Pagar" },
-    { codigo: "3101", nombre: "Capital Social" },
-    { codigo: "4101", nombre: "Ventas" },
-    { codigo: "5101", nombre: "Costo de Ventas" },
-    { codigo: "6101", nombre: "Gastos Administrativos" },
-    { codigo: "6201", nombre: "Gastos de Ventas" }
+    // ACTIVOS
+    { codigo: "1111", nombre: "Caja" },
+    { codigo: "1112", nombre: "Caja Chica" },
+    { codigo: "1121", nombre: "Bancos" },
+    { codigo: "1131", nombre: "Cuentas por Cobrar" },
+    { codigo: "1132", nombre: "Documentos por Cobrar" },
+    { codigo: "1141", nombre: "Inventarios" },
+    { codigo: "1211", nombre: "Muebles y Enseres" },
+    { codigo: "1212", nombre: "Equipos de Computación" },
+    { codigo: "1213", nombre: "Vehículos" },
+    
+    // PASIVOS
+    { codigo: "2111", nombre: "Cuentas por Pagar" },
+    { codigo: "2112", nombre: "Documentos por Pagar" },
+    { codigo: "2113", nombre: "IVA por Pagar" },
+    { codigo: "2114", nombre: "IVA Crédito Fiscal" },
+    { codigo: "2211", nombre: "Préstamos Bancarios LP" },
+    
+    // PATRIMONIO
+    { codigo: "3111", nombre: "Capital Social" },
+    { codigo: "3211", nombre: "Utilidades del Ejercicio" },
+    { codigo: "3212", nombre: "Utilidades Retenidas" },
+    
+    // INGRESOS
+    { codigo: "4111", nombre: "Ventas de Productos" },
+    { codigo: "4112", nombre: "Ventas de Servicios" },
+    { codigo: "4211", nombre: "Otros Ingresos" },
+    
+    // GASTOS
+    { codigo: "5111", nombre: "Costo de Productos Vendidos" },
+    { codigo: "5211", nombre: "Sueldos y Salarios" },
+    { codigo: "5212", nombre: "Servicios Básicos" },
+    { codigo: "5213", nombre: "Alquileres" },
+    { codigo: "5214", nombre: "Seguros" },
+    { codigo: "5221", nombre: "Gastos de Ventas" },
+    { codigo: "5222", nombre: "Publicidad" },
+    { codigo: "5223", nombre: "Comisiones" }
   ];
 
   const asientos = [

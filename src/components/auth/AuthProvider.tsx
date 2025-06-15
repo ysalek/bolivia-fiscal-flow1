@@ -1,135 +1,118 @@
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface User {
-  id: string;
+interface User {
+  id: number;
+  usuario: string;
   nombre: string;
-  email: string;
-  rol: 'admin' | 'contador' | 'ventas' | 'usuario';
+  rol: string;
   empresa: string;
   permisos: string[];
 }
 
-export interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+interface AuthContextProps {
   isAuthenticated: boolean;
+  user: User | null;
+  login: (usuario: string, password: string) => boolean;
+  logout: () => void;
   hasPermission: (permission: string) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps>({
+  isAuthenticated: false,
+  user: null,
+  login: () => false,
+  logout: () => {},
+  hasPermission: () => false,
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Simular usuarios para demo
-  const mockUsers: { [key: string]: { password: string; user: User } } = {
-    'admin@empresa.com': {
-      password: 'admin123',
-      user: {
-        id: '1',
-        nombre: 'Administrador Sistema',
-        email: 'admin@empresa.com',
-        rol: 'admin',
-        empresa: 'Empresa Demo S.R.L.',
-        permisos: ['*'] // Todos los permisos
-      }
+  const usuarios = [
+    {
+      id: 1,
+      usuario: "admin",
+      password: "admin123",
+      nombre: "Juan Pérez",
+      rol: "admin",
+      empresa: "Empresa Demo SRL",
+      permisos: ["*"] // Admin tiene todos los permisos
     },
-    'contador@empresa.com': {
-      password: 'contador123',
-      user: {
-        id: '2',
-        nombre: 'María García',
-        email: 'contador@empresa.com',
-        rol: 'contador',
-        empresa: 'Empresa Demo S.R.L.',
-        permisos: ['contabilidad', 'reportes', 'balance', 'libro_diario', 'dashboard', 'inventario', 'productos']
-      }
+    {
+      id: 2,
+      usuario: "contador",
+      password: "contador123", 
+      nombre: "María González",
+      rol: "contador",
+      empresa: "Empresa Demo SRL",
+      permisos: [
+        "dashboard", 
+        "facturacion", 
+        "clientes", 
+        "productos", 
+        "inventario", 
+        "plan_cuentas",
+        "libro_diario", 
+        "balance", 
+        "reportes"
+      ]
     },
-    'ventas@empresa.com': {
-      password: 'ventas123',
-      user: {
-        id: '3',
-        nombre: 'Carlos López',
-        email: 'ventas@empresa.com',
-        rol: 'ventas',
-        empresa: 'Empresa Demo S.R.L.',
-        permisos: ['facturacion', 'clientes', 'productos', 'dashboard', 'inventario']
-      }
+    {
+      id: 3,
+      usuario: "ventas",
+      password: "ventas123",
+      nombre: "Carlos Mendoza", 
+      rol: "ventas",
+      empresa: "Empresa Demo SRL",
+      permisos: [
+        "dashboard", 
+        "facturacion", 
+        "clientes", 
+        "productos", 
+        "inventario"
+      ]
     }
-  };
+  ];
 
-  // Verificar si hay una sesión guardada al cargar
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error cargando usuario guardado:', error);
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
+  const login = (usuario: string, password: string) => {
+    const foundUser = usuarios.find(
+      (u) => u.usuario === usuario && u.password === password
+    );
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Simular delay de autenticación
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const userData = mockUsers[email];
-      if (userData && userData.password === password) {
-        setUser(userData.user);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(userData.user));
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error en login:', error);
+    if (foundUser) {
+      setIsAuthenticated(true);
+      setUser(foundUser);
+      return true;
+    } else {
+      setIsAuthenticated(false);
+      setUser(null);
       return false;
     }
   };
 
   const logout = () => {
-    setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
+    setUser(null);
   };
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = (permission: string) => {
     if (!user) return false;
-    if (user.permisos.includes('*')) return true; // Admin tiene todos los permisos
-    return user.permisos.includes(permission);
-  };
-
-  const value: AuthContextType = {
-    user,
-    login,
-    logout,
-    isAuthenticated,
-    hasPermission
+    return user.permisos.includes(permission) || user.permisos.includes('*');
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        hasPermission,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import {
   Receipt,
   LogOut,
   User,
-  Settings
+  Settings,
+  FolderTree
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -24,6 +26,7 @@ import LibroDiario from "@/components/contable/LibroDiario";
 import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
 import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
+import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -69,6 +72,13 @@ const Index = () => {
       icon: Calculator, 
       component: InventarioModule, 
       permission: "inventario" 
+    },
+    { 
+      id: "plan-cuentas", 
+      label: "Plan de Cuentas", 
+      icon: FolderTree, 
+      component: PlanCuentasModule, 
+      permission: "plan_cuentas" 
     },
     { 
       id: "libro-diario", 
