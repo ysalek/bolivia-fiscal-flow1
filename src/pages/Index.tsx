@@ -22,7 +22,7 @@ import FacturacionModule from "@/components/contable/FacturacionModule";
 import ClientesModule from "@/components/contable/ClientesModule";
 import ProductosModule from "@/components/contable/ProductosModule";
 import InventarioModule from "@/components/contable/InventarioModule";
-import LibroDiario from "@/components/contable/LibroDiario";
+import JournalView from "@/components/contable/journal/JournalView";
 import BalanceComprobacion from "@/components/contable/BalanceComprobacion";
 import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
@@ -84,7 +84,7 @@ const Index = () => {
       id: "libro-diario", 
       label: "Libro Diario", 
       icon: FileText, 
-      component: LibroDiario, 
+      component: JournalView, 
       permission: "libro_diario" 
     },
     { 
