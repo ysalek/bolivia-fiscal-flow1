@@ -9,7 +9,7 @@ import { Loader2, LogIn, Building2 } from "lucide-react";
 import { useAuth } from './AuthProvider';
 
 const LoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [emailOrUsuario, setEmailOrUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,9 +21,9 @@ const LoginForm = () => {
     setError('');
 
     try {
-      const success = await login(email, password);
+      const success = login(emailOrUsuario, password);
       if (!success) {
-        setError('Email o contraseña incorrectos');
+        setError('Email/Usuario o contraseña incorrectos');
       }
     } catch (error) {
       setError('Error al iniciar sesión. Intente nuevamente.');
@@ -33,9 +33,24 @@ const LoginForm = () => {
   };
 
   const demoCredentials = [
-    { role: 'Administrador', email: 'admin@empresa.com', password: 'admin123' },
-    { role: 'Contador', email: 'contador@empresa.com', password: 'contador123' },
-    { role: 'Ventas', email: 'ventas@empresa.com', password: 'ventas123' }
+    { 
+      role: 'Administrador', 
+      email: 'admin@empresa.com', 
+      usuario: 'admin',
+      password: 'admin123' 
+    },
+    { 
+      role: 'Contador', 
+      email: 'contador@empresa.com', 
+      usuario: 'contador',
+      password: 'contador123' 
+    },
+    { 
+      role: 'Ventas', 
+      email: 'ventas@empresa.com', 
+      usuario: 'ventas',
+      password: 'ventas123' 
+    }
   ];
 
   return (
@@ -67,13 +82,13 @@ const LoginForm = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="emailOrUsuario">Email o Usuario</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@empresa.com"
+                  id="emailOrUsuario"
+                  type="text"
+                  value={emailOrUsuario}
+                  onChange={(e) => setEmailOrUsuario(e.target.value)}
+                  placeholder="admin@empresa.com o admin"
                   required
                   disabled={isLoading}
                 />
@@ -128,20 +143,35 @@ const LoginForm = () => {
             {demoCredentials.map((cred, index) => (
               <div key={index} className="p-3 bg-gray-50 rounded-lg">
                 <div className="font-medium text-sm">{cred.role}</div>
-                <div className="text-xs text-gray-600">
-                  {cred.email} / {cred.password}
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div>Email: {cred.email}</div>
+                  <div>Usuario: {cred.usuario}</div>
+                  <div>Contraseña: {cred.password}</div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 h-6 px-2 text-xs"
-                  onClick={() => {
-                    setEmail(cred.email);
-                    setPassword(cred.password);
-                  }}
-                >
-                  Usar estas credenciales
-                </Button>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-xs flex-1"
+                    onClick={() => {
+                      setEmailOrUsuario(cred.email);
+                      setPassword(cred.password);
+                    }}
+                  >
+                    Usar Email
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-xs flex-1"
+                    onClick={() => {
+                      setEmailOrUsuario(cred.usuario);
+                      setPassword(cred.password);
+                    }}
+                  >
+                    Usar Usuario
+                  </Button>
+                </div>
               </div>
             ))}
           </CardContent>

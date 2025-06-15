@@ -60,7 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         "plan_cuentas",
         "libro_diario", 
         "balance", 
-        "reportes"
+        "reportes",
+        "configuracion"
       ]
     },
     {
@@ -82,17 +83,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   const login = (emailOrUsuario: string, password: string) => {
+    console.log('Intentando login con:', emailOrUsuario, password);
+    
     const foundUser = usuarios.find(
       (u) => (u.email === emailOrUsuario || u.usuario === emailOrUsuario) && u.password === password
     );
 
+    console.log('Usuario encontrado:', foundUser);
+
     if (foundUser) {
+      const userToSet = {
+        id: foundUser.id,
+        usuario: foundUser.usuario,
+        nombre: foundUser.nombre,
+        rol: foundUser.rol,
+        empresa: foundUser.empresa,
+        permisos: foundUser.permisos
+      };
+      
       setIsAuthenticated(true);
-      setUser(foundUser);
+      setUser(userToSet);
+      console.log('Login exitoso, usuario configurado:', userToSet);
       return true;
     } else {
       setIsAuthenticated(false);
       setUser(null);
+      console.log('Login fallido');
       return false;
     }
   };
@@ -100,11 +116,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    console.log('Logout exitoso');
   };
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    return user.permisos.includes(permission) || user.permisos.includes('*');
+    const hasAccess = user.permisos.includes(permission) || user.permisos.includes('*');
+    console.log(`Verificando permiso ${permission} para usuario ${user.usuario}:`, hasAccess);
+    return hasAccess;
   };
 
   return (
