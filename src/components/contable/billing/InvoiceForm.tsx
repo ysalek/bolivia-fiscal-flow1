@@ -6,12 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Send, Eye, X, AlertCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, ItemFactura, Factura, calcularIVA, calcularTotal, generarNumeroFactura } from "./BillingData";
 import { Producto } from "../products/ProductsData";
-import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 interface InvoiceFormProps {
   clientes: Cliente[];
@@ -39,7 +37,6 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
-  const { generarAsientoVenta, actualizarStockProducto } = useContabilidadIntegration();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -133,8 +130,8 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
       const iva = calcularIVA(subtotal);
       const total = calcularTotal(subtotal, 0);
 
-      const ultimoNumero = facturas.length > 0 ? 
-        Math.max(...facturas.map(f => parseInt(f.numero))) : 0;
+      const numeros = facturas.map(f => parseInt(f.numero)).filter(n => !isNaN(n));
+      const ultimoNumero = numeros.length > 0 ? Math.max(...numeros) : 0;
 
       const nuevaFactura: Factura = {
         id: Date.now().toString(),
@@ -154,16 +151,6 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel }: Invoic
         observaciones,
         fechaCreacion: new Date().toISOString().slice(0, 10)
       };
-
-      // Generar asiento contable automáticamente
-      generarAsientoVenta(nuevaFactura);
-
-      // Actualizar stock de productos
-      items.forEach(item => {
-        if (item.productoId) {
-          actualizarStockProducto(item.productoId, item.cantidad, 'salida');
-        }
-      });
 
       onSave(nuevaFactura);
       

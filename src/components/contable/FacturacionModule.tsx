@@ -5,29 +5,33 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Receipt, Eye, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales } from "./billing/BillingData";
-import { Producto } from "./products/ProductsData";
+import { Producto, productosIniciales } from "./products/ProductsData";
 import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
+import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
+  const [showAccountingHistory, setShowAccountingHistory] = useState(false);
   const { toast } = useToast();
-  const { generarAsientoVenta, generarAsientoInventario } = useContabilidadIntegration();
+  const { generarAsientoVenta, generarAsientoInventario, getAsientos } = useContabilidadIntegration();
 
-  // Cargar productos desde localStorage
+  // Cargar datos desde localStorage
   useEffect(() => {
+    const facturasGuardadas = localStorage.getItem('facturas');
+    if (facturasGuardadas) {
+      setFacturas(JSON.parse(facturasGuardadas));
+    }
+
     const productosGuardados = localStorage.getItem('productos');
     if (productosGuardados) {
       setProductos(JSON.parse(productosGuardados));
     }
-  }, []);
 
-  // Cargar clientes desde localStorage
-  useEffect(() => {
     const clientesGuardados = localStorage.getItem('clientes');
     if (clientesGuardados) {
       setClientes(JSON.parse(clientesGuardados));
@@ -63,17 +67,21 @@ const FacturacionModule = () => {
       localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
     });
 
-    setFacturas(prev => [nuevaFactura, ...prev]);
+    const nuevasFacturas = [nuevaFactura, ...facturas];
+    setFacturas(nuevasFacturas);
+    
+    // Guardar en localStorage
+    localStorage.setItem('facturas', JSON.stringify(nuevasFacturas));
     
     // Generar asiento contable de venta
-    const asientoVenta = generarAsientoVenta({
+    generarAsientoVenta({
       numero: nuevaFactura.numero,
       total: nuevaFactura.total,
       subtotal: nuevaFactura.subtotal,
       iva: nuevaFactura.iva
     });
     
-    console.log("Asiento de venta generado:", asientoVenta);
+    console.log("Factura guardada y asientos generados");
     
     toast({
       title: "Factura creada exitosamente",
@@ -114,6 +122,22 @@ const FacturacionModule = () => {
     );
   }
 
+  if (showAccountingHistory) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Historial Contable de Facturación</h2>
+          <Button onClick={() => setShowAccountingHistory(false)}>
+            Volver a Facturación
+          </Button>
+        </div>
+        <InvoiceAccountingHistory 
+          asientos={getAsientos()} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -122,10 +146,15 @@ const FacturacionModule = () => {
           <h2 className="text-2xl font-bold">Facturación Electrónica</h2>
           <p className="text-slate-600">Gestión de facturas con integración contable e inventario automática</p>
         </div>
-        <Button onClick={() => setShowNewInvoice(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Factura
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowAccountingHistory(true)}>
+            Ver Historial Contable
+          </Button>
+          <Button onClick={() => setShowNewInvoice(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Factura
+          </Button>
+        </div>
       </div>
 
       {/* Resumen */}
@@ -211,11 +240,10 @@ const FacturacionModule = () => {
                   </div>
                 </div>
                 
-                {/* Items de la factura */}
                 <div className="bg-gray-50 rounded p-3 mb-3">
                   <div className="text-sm font-medium mb-2">Items facturados:</div>
                   <div className="space-y-1">
-                    {factura.items.map((item, index) => (
+                    {factura.items.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span>{item.descripcion} (x{item.cantidad})</span>
                         <span>Bs. {item.subtotal.toFixed(2)}</span>
