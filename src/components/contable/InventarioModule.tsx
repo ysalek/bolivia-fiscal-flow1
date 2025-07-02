@@ -33,28 +33,61 @@ const InventarioModule = () => {
   const { toast } = useToast();
 
   const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoActualizado: ProductoInventario) => {
-    // Primero generar el asiento contable
-    const asientoContable = generarAsientoInventario(nuevoMovimiento);
-    
-    if (!asientoContable) {
+    try {
+      console.log("Procesando movimiento de inventario:", nuevoMovimiento);
+      console.log("Producto a actualizar:", productoActualizado);
+
+      // Generar el asiento contable
+      const asientoContable = generarAsientoInventario(nuevoMovimiento);
+      
+      if (!asientoContable) {
+        toast({
+          title: "Error contable",
+          description: "No se pudo generar el asiento contable. El movimiento no fue procesado.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Si el asiento se generó correctamente, actualizar el estado
+      setMovimientos(prev => {
+        const nuevosMovimientos = [nuevoMovimiento, ...prev];
+        console.log("Movimientos actualizados:", nuevosMovimientos.length);
+        return nuevosMovimientos;
+      });
+
+      setProductos(prev => {
+        const productosActualizados = prev.map(p => 
+          p.id === productoActualizado.id ? productoActualizado : p
+        );
+        console.log("Productos actualizados:", productosActualizados.find(p => p.id === productoActualizado.id));
+        return productosActualizados;
+      });
+
+      console.log("Asiento contable generado:", asientoContable);
+      
+      toast({
+        title: "Movimiento registrado",
+        description: `${nuevoMovimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} de inventario registrada exitosamente con asiento contable N° ${asientoContable.numero}`,
+      });
+
+      // Verificar alertas de stock
+      if (productoActualizado.stockActual <= productoActualizado.stockMinimo && productoActualizado.stockActual > 0) {
+        toast({
+          title: "Alerta de stock",
+          description: `El producto ${productoActualizado.nombre} tiene stock bajo (${productoActualizado.stockActual} unidades)`,
+          variant: "destructive"
+        });
+      }
+
+    } catch (error) {
+      console.error("Error al procesar movimiento:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar el asiento contable",
+        description: "Ocurrió un error al procesar el movimiento de inventario",
         variant: "destructive"
       });
-      return;
     }
-
-    // Si el asiento se generó correctamente, proceder con el movimiento
-    setMovimientos(prev => [nuevoMovimiento, ...prev]);
-    setProductos(prev => prev.map(p => p.id === productoActualizado.id ? productoActualizado : p));
-
-    console.log("Asiento contable generado:", asientoContable);
-    
-    toast({
-      title: "Movimiento registrado",
-      description: `${nuevoMovimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada y asiento contable generado`,
-    });
   };
 
   const handleDownloadFormat = () => {

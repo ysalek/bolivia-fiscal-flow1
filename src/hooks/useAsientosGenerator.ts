@@ -10,61 +10,79 @@ export const useAsientosGenerator = () => {
   const { obtenerProductos } = useProductos();
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable | null => {
-    const cuentas: CuentaAsiento[] = [];
-    const fecha = new Date().toISOString().slice(0, 10);
-    
-    if (movimiento.tipo === 'entrada') {
-      cuentas.push({
-        codigo: "1141",
-        nombre: "Inventarios",
-        debe: movimiento.valorMovimiento,
-        haber: 0
-      });
+    try {
+      const cuentas: CuentaAsiento[] = [];
+      const fecha = new Date().toISOString().slice(0, 10);
       
-      if (movimiento.motivo === 'Anulación Venta') {
-          cuentas.push({
-              codigo: "5111",
-              nombre: "Costo de Productos Vendidos",
-              debe: 0,
-              haber: movimiento.valorMovimiento
-          });
-      } else {
+      console.log("Generando asiento para movimiento:", movimiento);
+      
+      if (movimiento.tipo === 'entrada') {
+        // Entrada de inventario
         cuentas.push({
-          codigo: "2111",
-          nombre: "Cuentas por Pagar",
+          codigo: "1141",
+          nombre: "Inventarios",
+          debe: movimiento.valorMovimiento,
+          haber: 0
+        });
+        
+        // Determinar la cuenta de contrapartida según el motivo
+        if (movimiento.motivo?.toLowerCase().includes('anulación') || 
+            movimiento.motivo?.toLowerCase().includes('devolucion')) {
+          cuentas.push({
+            codigo: "5111",
+            nombre: "Costo de Productos Vendidos",
+            debe: 0,
+            haber: movimiento.valorMovimiento
+          });
+        } else {
+          // Compra o ingreso normal
+          cuentas.push({
+            codigo: "2111",
+            nombre: "Cuentas por Pagar",
+            debe: 0,
+            haber: movimiento.valorMovimiento
+          });
+        }
+      } else if (movimiento.tipo === 'salida') {
+        // Salida de inventario
+        cuentas.push({
+          codigo: "5111",
+          nombre: "Costo de Productos Vendidos",
+          debe: movimiento.valorMovimiento,
+          haber: 0
+        });
+        
+        cuentas.push({
+          codigo: "1141",
+          nombre: "Inventarios",
           debe: 0,
           haber: movimiento.valorMovimiento
         });
       }
-    } else if (movimiento.tipo === 'salida') {
-      cuentas.push({
-        codigo: "5111",
-        nombre: "Costo de Productos Vendidos",
-        debe: movimiento.valorMovimiento,
-        haber: 0
-      });
-      
-      cuentas.push({
-        codigo: "1141",
-        nombre: "Inventarios",
-        debe: 0,
-        haber: movimiento.valorMovimiento
-      });
+
+      const totalDebe = cuentas.reduce((sum, cuenta) => sum + cuenta.debe, 0);
+      const totalHaber = cuentas.reduce((sum, cuenta) => sum + cuenta.haber, 0);
+
+      const asiento: AsientoContable = {
+        id: `AST-INV-${Date.now()}`,
+        numero: `INV-${movimiento.tipo.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+        fecha,
+        concepto: `${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} de inventario - ${movimiento.producto}${movimiento.motivo ? ` (${movimiento.motivo})` : ''}`,
+        referencia: movimiento.documento || 'N/A',
+        debe: totalDebe,
+        haber: totalHaber,
+        estado: 'registrado',
+        cuentas
+      };
+
+      console.log("Asiento generado:", asiento);
+
+      const resultado = guardarAsiento(asiento);
+      return resultado ? asiento : null;
+    } catch (error) {
+      console.error("Error al generar asiento de inventario:", error);
+      return null;
     }
-
-    const asiento: AsientoContable = {
-      id: Date.now().toString(),
-      numero: `AST-${Date.now().toString().slice(-6)}`,
-      fecha,
-      concepto: `${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} de inventario - ${movimiento.producto}`,
-      referencia: movimiento.documento,
-      debe: movimiento.valorMovimiento,
-      haber: movimiento.valorMovimiento,
-      estado: 'registrado',
-      cuentas
-    };
-
-    return guardarAsiento(asiento) ? asiento : null;
   };
 
   const generarAsientoVenta = (factura: any): AsientoContable | null => {

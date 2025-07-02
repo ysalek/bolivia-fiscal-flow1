@@ -12,17 +12,42 @@ interface ProductSearchSelectProps {
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-const ProductSearchSelect = ({ productos, value, onValueChange, placeholder = "Buscar producto..." }: ProductSearchSelectProps) => {
+const ProductSearchSelect = ({ 
+  productos, 
+  value, 
+  onValueChange, 
+  placeholder = "Buscar producto...",
+  disabled = false 
+}: ProductSearchSelectProps) => {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   const productosDisponibles = useMemo(() => 
     productos.filter(p => p.categoria !== "Servicios"), 
     [productos]
   );
 
+  const productosFiltrados = useMemo(() => {
+    if (!searchValue) return productosDisponibles;
+    
+    const search = searchValue.toLowerCase();
+    return productosDisponibles.filter(p => 
+      p.codigo.toLowerCase().includes(search) || 
+      p.nombre.toLowerCase().includes(search) ||
+      p.categoria.toLowerCase().includes(search)
+    );
+  }, [productosDisponibles, searchValue]);
+
   const selectedProduct = productosDisponibles.find(p => p.id === value);
+
+  const handleSelect = (producto: ProductoInventario) => {
+    onValueChange(producto.id);
+    setOpen(false);
+    setSearchValue("");
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -32,35 +57,39 @@ const ProductSearchSelect = ({ productos, value, onValueChange, placeholder = "B
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
           {selectedProduct ? (
             <span className="truncate">
               {selectedProduct.codigo} - {selectedProduct.nombre}
             </span>
           ) : (
-            placeholder
+            <span className="text-muted-foreground">{placeholder}</span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0 bg-white border shadow-lg z-50">
-        <Command>
+      <PopoverContent className="w-[500px] p-0 bg-white border shadow-lg z-50">
+        <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <CommandInput placeholder="Buscar por código o nombre..." className="border-0 focus:ring-0" />
+            <CommandInput 
+              placeholder="Buscar por código, nombre o categoría..." 
+              className="border-0 focus:ring-0"
+              value={searchValue}
+              onValueChange={setSearchValue}
+            />
           </div>
-          <CommandList>
-            <CommandEmpty>No se encontraron productos.</CommandEmpty>
+          <CommandList className="max-h-[300px]">
+            <CommandEmpty>
+              {searchValue ? "No se encontraron productos que coincidan con la búsqueda." : "No hay productos disponibles."}
+            </CommandEmpty>
             <CommandGroup>
-              {productosDisponibles.map((producto) => (
+              {productosFiltrados.map((producto) => (
                 <CommandItem
                   key={producto.id}
-                  value={`${producto.codigo} ${producto.nombre}`}
-                  onSelect={() => {
-                    onValueChange(producto.id);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer"
+                  onSelect={() => handleSelect(producto)}
+                  className="cursor-pointer p-3"
                 >
                   <Check
                     className={cn(
@@ -69,9 +98,21 @@ const ProductSearchSelect = ({ productos, value, onValueChange, placeholder = "B
                     )}
                   />
                   <div className="flex-1">
-                    <div className="font-medium">{producto.codigo} - {producto.nombre}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Stock: {producto.stockActual} | Costo: Bs. {producto.costoPromedioPonderado.toFixed(2)}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-sm">
+                          {producto.codigo} - {producto.nombre}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Categoría: {producto.categoria}
+                        </div>
+                      </div>
+                      <div className="text-right text-xs">
+                        <div className="font-medium">Stock: {producto.stockActual}</div>
+                        <div className="text-muted-foreground">
+                          Bs. {producto.costoPromedioPonderado.toFixed(2)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CommandItem>
