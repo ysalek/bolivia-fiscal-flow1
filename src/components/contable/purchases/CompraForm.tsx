@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Proveedor, ItemCompra, Compra } from "./PurchasesData";
 import { Producto } from "../products/ProductsData";
 import ProductSearchCombobox from "../billing/ProductSearchCombobox";
+import ProveedorSearchCombobox from "./ProveedorSearchCombobox";
 
 interface CompraFormProps {
   proveedores: Proveedor[];
@@ -132,14 +133,14 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
       <CardContent className="space-y-6">
         <div>
           <Label>Proveedor</Label>
-          <Select onValueChange={(id) => setSelectedProveedor(proveedores.find(p => p.id === id) || null)}>
-            <SelectTrigger className={errors.proveedor ? "border-red-500" : ""}>
-              <SelectValue placeholder="Seleccione un proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              {proveedores.map(p => <SelectItem key={p.id} value={p.id}>{p.nombre} (NIT: {p.nit})</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className={errors.proveedor ? "border border-red-500 rounded-md" : ""}>
+            <ProveedorSearchCombobox 
+              proveedores={proveedores} 
+              value={selectedProveedor?.id || ""} 
+              onValueChange={(id) => setSelectedProveedor(proveedores.find(p => p.id === id) || null)}
+              placeholder="Buscar proveedor..."
+            />
+          </div>
           {errors.proveedor && <p className="text-sm text-red-500 mt-1">{errors.proveedor}</p>}
         </div>
 
