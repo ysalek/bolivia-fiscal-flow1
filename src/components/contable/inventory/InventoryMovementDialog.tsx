@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ProductoInventario, MovimientoInventario, calcularPromedioPonderado } from "./InventoryData";
 import { useToast } from "@/hooks/use-toast";
+import ProductSearchSelect from "./ProductSearchSelect";
 
 interface InventoryMovementDialogProps {
   open: boolean;
@@ -113,7 +113,7 @@ const InventoryMovementDialog = ({ open, onOpenChange, tipo, productos, onMovimi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
             Registrar {tipo === 'entrada' ? 'Entrada' : 'Salida'} de Inventario
@@ -126,18 +126,12 @@ const InventoryMovementDialog = ({ open, onOpenChange, tipo, productos, onMovimi
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Producto</Label>
-            <Select value={formData.productoId} onValueChange={(value) => setFormData(prev => ({ ...prev, productoId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar producto" />
-              </SelectTrigger>
-              <SelectContent>
-                {productos.filter(p => p.categoria !== "Servicios").map(producto => (
-                  <SelectItem key={producto.id} value={producto.id}>
-                    {producto.codigo} - {producto.nombre} (Stock: {producto.stockActual})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ProductSearchSelect
+              productos={productos}
+              value={formData.productoId}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, productoId: value }))}
+              placeholder="Buscar producto..."
+            />
           </div>
 
           {selectedProduct && (

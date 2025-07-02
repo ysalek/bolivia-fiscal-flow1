@@ -33,12 +33,22 @@ const InventarioModule = () => {
   const { toast } = useToast();
 
   const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoActualizado: ProductoInventario) => {
+    // Primero generar el asiento contable
+    const asientoContable = generarAsientoInventario(nuevoMovimiento);
+    
+    if (!asientoContable) {
+      toast({
+        title: "Error",
+        description: "No se pudo generar el asiento contable",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Si el asiento se generó correctamente, proceder con el movimiento
     setMovimientos(prev => [nuevoMovimiento, ...prev]);
     setProductos(prev => prev.map(p => p.id === productoActualizado.id ? productoActualizado : p));
 
-    // Generar asiento contable automáticamente
-    const asientoContable = generarAsientoInventario(nuevoMovimiento);
-    
     console.log("Asiento contable generado:", asientoContable);
     
     toast({

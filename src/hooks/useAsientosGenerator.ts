@@ -1,4 +1,3 @@
-
 import { AsientoContable, CuentaAsiento } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { Factura } from "@/components/contable/billing/BillingData";
@@ -8,7 +7,7 @@ import { useProductos } from "./useProductos";
 
 export const useAsientosGenerator = () => {
   const { guardarAsiento } = useAsientos();
-  const { obtenerProductos, actualizarStockProducto } = useProductos();
+  const { obtenerProductos } = useProductos();
 
   const generarAsientoInventario = (movimiento: MovimientoInventario): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
@@ -37,10 +36,6 @@ export const useAsientosGenerator = () => {
           haber: movimiento.valorMovimiento
         });
       }
-
-      if (movimiento.productoId) {
-        actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'entrada');
-      }
     } else if (movimiento.tipo === 'salida') {
       cuentas.push({
         codigo: "5111",
@@ -55,10 +50,6 @@ export const useAsientosGenerator = () => {
         debe: 0,
         haber: movimiento.valorMovimiento
       });
-
-      if (movimiento.productoId) {
-        actualizarStockProducto(movimiento.productoId, movimiento.cantidad, 'salida');
-      }
     }
 
     const asiento: AsientoContable = {
@@ -290,9 +281,7 @@ export const useAsientosGenerator = () => {
     });
 
     if (!todoOk) {
-      // Idealmente, aquí se debería revertir el 'asientoVentaReversion'.
-      // Por ahora, notificamos el estado parcialmente completado.
-      return asientosGenerados; // Devuelve lo que se pudo generar
+      return asientosGenerados;
     }
 
     return asientosGenerados;
