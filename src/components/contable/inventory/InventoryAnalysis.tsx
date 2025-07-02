@@ -43,7 +43,7 @@ const InventoryAnalysis = () => {
               fechaUltimaCompra = fechaCompra;
               ultimaCompra = {
                 fecha: compra.fecha,
-                precioCompra: item.precioUnitario,
+                precioCompra: item.costoUnitario,
                 cantidad: item.cantidad
               };
             }
@@ -57,9 +57,9 @@ const InventoryAnalysis = () => {
         : 0;
 
       // Calcular margen de utilidad
-      const precioCompra = ultimaCompra?.precioCompra || producto.costo;
+      const precioCompra = ultimaCompra?.precioCompra || producto.costoUnitario;
       const margenUtilidad = precioCompra > 0 
-        ? ((producto.precio - precioCompra) / precioCompra) * 100
+        ? ((producto.precioVenta - precioCompra) / precioCompra) * 100
         : 0;
 
       // Calcular posible descuento (máximo 50% del margen)
@@ -175,7 +175,7 @@ const InventoryAnalysis = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              Bs. {analisisProductos.reduce((sum, p) => sum + (p.producto.stockActual * p.producto.costo), 0).toFixed(2)}
+              Bs. {analisisProductos.reduce((sum, p) => sum + (p.producto.stockActual * p.producto.costoUnitario), 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">A costo de compra</p>
           </CardContent>
@@ -216,7 +216,7 @@ const InventoryAnalysis = () => {
                       <p className="font-medium">{analisis.producto.nombre}</p>
                       <p className="text-sm text-muted-foreground">
                         Stock: {analisis.producto.stockActual} | 
-                        Precio: Bs. {analisis.producto.precio.toFixed(2)}
+                        Precio: Bs. {analisis.producto.precioVenta.toFixed(2)}
                       </p>
                     </div>
                   </TableCell>

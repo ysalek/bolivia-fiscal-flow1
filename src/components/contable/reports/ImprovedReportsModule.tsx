@@ -60,7 +60,7 @@ const ImprovedReportsModule = () => {
         </TabsContent>
 
         <TabsContent value="tax">
-          <DeclaracionIVA />
+          <DeclaracionIVA onBack={() => {}} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +66,8 @@ const AdvancesManagement = () => {
         concepto: `Anticipo recibido de ${anticipo.entidadNombre} - ${anticipo.concepto}`,
         referencia: `Anticipo Cliente ${anticipo.entidadNombre}`,
         estado: 'registrado' as const,
+        debe: anticipo.monto,
+        haber: anticipo.monto,
         cuentas: [
           {
             codigo: '1111',
@@ -93,6 +94,8 @@ const AdvancesManagement = () => {
         concepto: `Anticipo entregado a ${anticipo.entidadNombre} - ${anticipo.concepto}`,
         referencia: `Anticipo Proveedor ${anticipo.entidadNombre}`,
         estado: 'registrado' as const,
+        debe: anticipo.monto,
+        haber: anticipo.monto,
         cuentas: [
           {
             codigo: '1151',
