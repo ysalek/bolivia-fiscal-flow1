@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import FinancialDashboard from "./billing/FinancialDashboard";
+import EnhancedFinancialDashboard from "./dashboard/EnhancedFinancialDashboard";
 import { Factura, facturasIniciales } from "./billing/BillingData";
 import { AsientoContable, asientosIniciales } from "./diary/DiaryData";
 import { Producto, productosIniciales } from "./products/ProductsData";
@@ -29,7 +29,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <FinancialDashboard 
+    <EnhancedFinancialDashboard 
       facturas={facturas}
       asientos={asientos}
       productos={productos}

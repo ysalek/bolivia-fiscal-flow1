@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Calculator,
   FileText,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
+import OnboardingTour from "@/components/contable/dashboard/OnboardingTour";
 import Dashboard from "@/components/contable/Dashboard";
 import FacturacionModule from "@/components/contable/FacturacionModule";
 import ClientesModule from "@/components/contable/ClientesModule";
@@ -33,12 +34,23 @@ import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import AppSidebar from "@/components/AppSidebar";
+import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
 import TutorialModule from "@/components/contable/TutorialModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
   const [activeModule, setActiveModule] = useState("dashboard");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    if (isAuthenticated) {
+      const hasCompletedOnboarding = localStorage.getItem('onboarding-completed');
+      if (!hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [isAuthenticated]);
 
   // Si no está autenticado, mostrar formulario de login
   if (!isAuthenticated) {
@@ -52,101 +64,115 @@ const Index = () => {
   const modules = [
     { 
       id: "dashboard", 
-      label: "Dashboard", 
+      label: "Escritorio Financiero", 
       icon: BarChart3, 
       component: Dashboard, 
-      permission: "dashboard" 
+      permission: "dashboard",
+      keywords: ["dashboard", "resumen", "finanzas", "kpi", "métricas", "ventas"]
     },
     { 
       id: "facturacion", 
-      label: "Facturación", 
+      label: "Facturación Electrónica", 
       icon: Receipt, 
       component: FacturacionModule, 
-      permission: "facturacion" 
+      permission: "facturacion",
+      keywords: ["facturación", "facturas", "siat", "QR", "electrónica", "fiscal"]
     },
     { 
       id: "clientes", 
-      label: "Clientes", 
+      label: "Gestión de Clientes", 
       icon: Users, 
       component: ClientesModule, 
-      permission: "clientes" 
+      permission: "clientes",
+      keywords: ["clientes", "contactos", "nit", "ci", "gestión"]
     },
     { 
       id: "productos", 
-      label: "Productos", 
+      label: "Catálogo de Productos", 
       icon: Package, 
       component: ProductosModule, 
-      permission: "productos" 
+      permission: "productos",
+      keywords: ["productos", "servicios", "catálogo", "precios", "gestión"]
     },
     { 
       id: "inventario", 
-      label: "Inventario", 
+      label: "Control de Inventario", 
       icon: Calculator, 
       component: InventarioModule, 
-      permission: "inventario" 
+      permission: "inventario",
+      keywords: ["inventario", "stock", "almacén", "movimientos", "control"]
     },
     { 
       id: "compras", 
-      label: "Compras", 
+      label: "Gestión de Compras", 
       icon: ShoppingCart, 
       component: ComprasModule, 
-      permission: "compras" 
+      permission: "compras",
+      keywords: ["compras", "proveedores", "órdenes", "adquisiciones"]
     },
     { 
       id: "plan-cuentas", 
       label: "Plan de Cuentas", 
       icon: FolderTree, 
       component: PlanCuentasModule, 
-      permission: "plan_cuentas" 
+      permission: "plan_cuentas",
+      keywords: ["plan", "cuentas", "contabilidad", "estructura", "código"]
     },
     { 
       id: "libro-diario", 
       label: "Libro Diario", 
       icon: FileText, 
       component: JournalView, 
-      permission: "libro_diario" 
+      permission: "libro_diario",
+      keywords: ["libro", "diario", "asientos", "contabilidad", "registros"]
     },
     { 
       id: "libro-mayor", 
       label: "Libro Mayor", 
       icon: BookCopy, 
       component: GeneralLedgerView, 
-      permission: "libro_mayor" 
+      permission: "libro_mayor",
+      keywords: ["libro", "mayor", "cuentas", "saldos", "movimientos"]
     },
     { 
       id: "balance", 
       label: "Balance de Comprobación", 
       icon: Scale, 
       component: BalanceComprobacionModule, 
-      permission: "balance" 
+      permission: "balance",
+      keywords: ["balance", "comprobación", "sumas", "saldos", "verificación"]
     },
     { 
       id: "balance-general", 
       label: "Balance General", 
       icon: Landmark, 
       component: BalanceGeneralModule, 
-      permission: "balance_general" 
+      permission: "balance_general",
+      keywords: ["balance", "general", "estados", "financieros", "situación"]
     },
     { 
       id: "reportes", 
-      label: "Reportes", 
+      label: "Reportes Contables", 
       icon: FileText, 
       component: ReportesModule, 
-      permission: "reportes" 
+      permission: "reportes",
+      keywords: ["reportes", "informes", "análisis", "excel", "exportar"]
     },
     { 
       id: "configuracion", 
-      label: "Configuración", 
+      label: "Configuración del Sistema", 
       icon: Settings, 
       component: ConfiguracionModule, 
-      permission: "configuracion" 
+      permission: "configuracion",
+      keywords: ["configuración", "ajustes", "sistema", "parámetros"]
     },
     {
       id: "tutorial",
-      label: "Tutorial",
+      label: "Centro de Ayuda",
       icon: HelpCircle,
       component: TutorialModule,
-      permission: "tutorial"
+      permission: "tutorial",
+      keywords: ["tutorial", "ayuda", "guía", "aprendizaje", "soporte"]
     },
   ];
 
@@ -161,27 +187,39 @@ const Index = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full flex bg-muted/40">
-        <AppSidebar
+        <SearchableSidebar
           modules={allowedModules}
           activeModule={activeModule}
           setActiveModule={setActiveModule}
         />
         <div className="flex-1 flex flex-col">
-          <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 w-full border-b">
+          <header className="bg-gradient-card/95 backdrop-blur supports-[backdrop-filter]:bg-gradient-card/90 sticky top-0 z-40 w-full border-b shadow-card">
             <div className="container flex h-16 items-center px-6">
-              <SidebarTrigger className="mr-4 lg:hidden" />
-              <h1 className="text-xl font-semibold text-foreground">
-                {activeModuleLabel}
-              </h1>
+              <SidebarTrigger className="mr-4 lg:hidden hover:bg-primary/10 rounded-lg transition-colors" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-foreground">
+                  {activeModuleLabel}
+                </h1>
+              </div>
             </div>
           </header>
-          <main className="p-6 flex-1">
+          <main className="p-6 flex-1 bg-gradient-card/30">
             <div className="animate-in fade-in-50 duration-300">
               <ActiveComponent key={activeModule} />
             </div>
           </main>
         </div>
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onNavigateToModule={(moduleId) => setActiveModule(moduleId)}
+      />
     </SidebarProvider>
   );
 };
