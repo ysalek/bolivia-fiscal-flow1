@@ -106,8 +106,47 @@ export const useReportesContables = () => {
     return libroMayor;
   };
 
-  const getTrialBalanceData = (): { details: TrialBalanceDetail[], totals: TrialBalanceTotals } => {
-    const libroMayor = getLibroMayor();
+  const getTrialBalanceData = (filtros?: { fechaInicio?: string, fechaFin?: string, cuentaInicio?: string, cuentaFin?: string }): { details: TrialBalanceDetail[], totals: TrialBalanceTotals } => {
+    const asientos = getAsientos();
+    const filteredAsientos = asientos.filter(asiento => {
+      if (asiento.estado !== 'registrado') return false;
+      
+      // Filtro por fechas
+      if (filtros?.fechaInicio || filtros?.fechaFin) {
+        const fechaAsiento = new Date(asiento.fecha);
+        if (filtros.fechaInicio && fechaAsiento < new Date(filtros.fechaInicio)) return false;
+        if (filtros.fechaFin && fechaAsiento > new Date(filtros.fechaFin + 'T23:59:59')) return false;
+      }
+      
+      return true;
+    });
+
+    // Recrear libro mayor con asientos filtrados
+    const libroMayorFiltrado: { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } } = {};
+    
+    filteredAsientos.reverse().forEach(asiento => {
+        asiento.cuentas.forEach(cuenta => {
+            if (!libroMayorFiltrado[cuenta.codigo]) {
+                libroMayorFiltrado[cuenta.codigo] = {
+                    codigo: cuenta.codigo,
+                    nombre: cuenta.nombre,
+                    movimientos: [],
+                    totalDebe: 0,
+                    totalHaber: 0,
+                };
+            }
+            libroMayorFiltrado[cuenta.codigo].movimientos.push({
+                fecha: asiento.fecha,
+                concepto: asiento.concepto,
+                referencia: asiento.referencia,
+                debe: cuenta.debe,
+                haber: cuenta.haber,
+            });
+            libroMayorFiltrado[cuenta.codigo].totalDebe += cuenta.debe;
+            libroMayorFiltrado[cuenta.codigo].totalHaber += cuenta.haber;
+        });
+    });
+
     const details: TrialBalanceDetail[] = [];
     const totals: TrialBalanceTotals = {
         sumaDebe: 0,
@@ -116,7 +155,16 @@ export const useReportesContables = () => {
         saldoAcreedor: 0,
     };
 
-    const sortedAccounts = Object.values(libroMayor).sort((a, b) => a.codigo.localeCompare(b.codigo));
+    let sortedAccounts = Object.values(libroMayorFiltrado).sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    // Filtro por rango de cuentas
+    if (filtros?.cuentaInicio || filtros?.cuentaFin) {
+      sortedAccounts = sortedAccounts.filter(cuenta => {
+        if (filtros.cuentaInicio && cuenta.codigo < filtros.cuentaInicio) return false;
+        if (filtros.cuentaFin && cuenta.codigo > filtros.cuentaFin) return false;
+        return true;
+      });
+    }
 
     sortedAccounts.forEach(cuenta => {
         const { codigo, nombre, totalDebe, totalHaber } = cuenta;
