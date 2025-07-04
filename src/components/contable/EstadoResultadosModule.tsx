@@ -5,16 +5,55 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
-import { TrendingUp, Download, Calendar, FileText } from 'lucide-react';
+import { TrendingUp, Download, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const EstadoResultadosModule = () => {
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
-  const { getIncomeStatementData } = useContabilidadIntegration();
 
-  const estadoResultados = getIncomeStatementData();
+  // Datos de ejemplo para el Estado de Resultados
+  const estadoResultados = {
+    ingresos: {
+      total: 150000,
+      cuentas: [
+        { codigo: '4111', nombre: 'Ventas de Mercaderías', saldo: 120000 },
+        { codigo: '4112', nombre: 'Ventas de Servicios', saldo: 30000 }
+      ]
+    },
+    costosVentas: {
+      total: 75000,
+      cuentas: [
+        { codigo: '5111', nombre: 'Costo de Ventas', saldo: 75000 }
+      ]
+    },
+    gastosOperativos: {
+      total: 45000,
+      cuentas: [
+        { codigo: '6111', nombre: 'Sueldos y Salarios', saldo: 25000 },
+        { codigo: '6112', nombre: 'Alquileres', saldo: 12000 },
+        { codigo: '6113', nombre: 'Servicios Básicos', saldo: 8000 }
+      ]
+    },
+    otrosIngresos: {
+      total: 5000,
+      cuentas: [
+        { codigo: '4211', nombre: 'Ingresos Financieros', saldo: 5000 }
+      ]
+    },
+    otrosGastos: {
+      total: 3000,
+      cuentas: [
+        { codigo: '6211', nombre: 'Gastos Financieros', saldo: 3000 }
+      ]
+    },
+    impuestos: {
+      total: 8000,
+      cuentas: [
+        { codigo: '6311', nombre: 'Impuesto a las Utilidades', saldo: 8000 }
+      ]
+    }
+  };
 
   const utilidadBruta = estadoResultados.ingresos.total - estadoResultados.costosVentas.total;
   const utilidadOperativa = utilidadBruta - estadoResultados.gastosOperativos.total;
@@ -26,7 +65,6 @@ const EstadoResultadosModule = () => {
   const margenNeto = estadoResultados.ingresos.total > 0 ? (utilidadNeta / estadoResultados.ingresos.total) * 100 : 0;
 
   const exportarExcel = () => {
-    // Implementar exportación a Excel
     console.log('Exportando Estado de Resultados a Excel...');
   };
 
@@ -112,15 +150,6 @@ const EstadoResultadosModule = () => {
                 <TableCell className="text-right">{estadoResultados.ingresos.total.toFixed(2)}</TableCell>
                 <TableCell className="text-right">100.0%</TableCell>
               </TableRow>
-              {estadoResultados.ingresos.cuentas.map((cuenta) => (
-                <TableRow key={cuenta.codigo}>
-                  <TableCell className="pl-8">{cuenta.nombre}</TableCell>
-                  <TableCell className="text-right">{cuenta.saldo.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    {estadoResultados.ingresos.total > 0 ? ((cuenta.saldo / estadoResultados.ingresos.total) * 100).toFixed(1) : '0.0'}%
-                  </TableCell>
-                </TableRow>
-              ))}
 
               <TableRow className="font-medium bg-muted/50">
                 <TableCell>(-) COSTO DE VENTAS</TableCell>

@@ -30,7 +30,12 @@ export const usePWA = () => {
       // Trigger sync
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
         navigator.serviceWorker.ready.then((registration) => {
-          return registration.sync.register('sync-facturas');
+          // Verificar si el navegador soporta Background Sync
+          if ('sync' in registration) {
+            return (registration as any).sync.register('sync-facturas');
+          }
+        }).catch((error) => {
+          console.log('Background sync no disponible:', error);
         });
       }
     };
