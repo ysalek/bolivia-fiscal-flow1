@@ -1,0 +1,22 @@
+
+{
+  "name": "Sistema Contable Boliviano",
+  "short_name": "ContableBO",
+  "description": "Sistema contable completo para empresas bolivianas con integración SIAT",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#005BAA",
+  "theme_color": "#005BAA",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es-BO",
+  "scope": "/",
+  "prefer_related_applications": false
+}

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
   FileText,
@@ -7,8 +7,6 @@ import {
   Package,
   BarChart3,
   Receipt,
-  LogOut,
-  User,
   Settings,
   FolderTree,
   BookCopy,
@@ -16,6 +14,8 @@ import {
   Landmark,
   ShoppingCart,
   HelpCircle,
+  TrendingUp,
+  Database,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -33,9 +33,15 @@ import BalanceGeneralModule from "@/components/contable/BalanceGeneralModule";
 import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
+import TutorialModule from "@/components/contable/TutorialModule";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
-import TutorialModule from "@/components/contable/TutorialModule";
+import EnhancedLayout from "@/components/contable/dashboard/EnhancedLayout";
+
+// Lazy load de módulos pesados
+const EstadoResultadosModule = lazy(() => import("@/components/contable/EstadoResultadosModule"));
+const KardexModule = lazy(() => import("@/components/contable/KardexModule"));
+const BackupModule = lazy(() => import("@/components/contable/BackupModule"));
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -151,12 +157,36 @@ const Index = () => {
       keywords: ["balance", "general", "estados", "financieros", "situación"]
     },
     { 
+      id: "estado-resultados", 
+      label: "Estado de Resultados", 
+      icon: TrendingUp, 
+      component: EstadoResultadosModule, 
+      permission: "reportes",
+      keywords: ["estado", "resultados", "ganancias", "pérdidas", "utilidad"]
+    },
+    { 
+      id: "kardex", 
+      label: "Kardex por Producto", 
+      icon: Calculator, 
+      component: KardexModule, 
+      permission: "inventario",
+      keywords: ["kardex", "movimientos", "fifo", "lifo", "promedio", "valoración"]
+    },
+    { 
       id: "reportes", 
       label: "Reportes Contables", 
       icon: FileText, 
       component: ReportesModule, 
       permission: "reportes",
       keywords: ["reportes", "informes", "análisis", "excel", "exportar"]
+    },
+    { 
+      id: "backup", 
+      label: "Backup y Restauración", 
+      icon: Database, 
+      component: BackupModule, 
+      permission: "configuracion",
+      keywords: ["backup", "respaldo", "restaurar", "seguridad", "datos"]
     },
     { 
       id: "configuracion", 
@@ -181,45 +211,50 @@ const Index = () => {
     module.permission === 'tutorial' || hasPermission(module.permission)
   );
 
-  const ActiveComponent = allowedModules.find(m => m.id === activeModule)?.component || Dashboard;
-  const activeModuleLabel = allowedModules.find(m => m.id === activeModule)?.label || 'Dashboard';
+  const activeModuleData = allowedModules.find(m => m.id === activeModule);
+  const ActiveComponent = activeModuleData?.component || Dashboard;
+  const activeModuleLabel = activeModuleData?.label || 'Dashboard';
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full flex bg-muted/40">
-        <SearchableSidebar
-          modules={allowedModules}
-          activeModule={activeModule}
-          setActiveModule={setActiveModule}
-        />
-        <div className="flex-1 flex flex-col">
-          <header className="bg-gradient-card/95 backdrop-blur supports-[backdrop-filter]:bg-gradient-card/90 sticky top-0 z-40 w-full border-b shadow-card">
-            <div className="container flex h-16 items-center px-6">
-              <SidebarTrigger className="mr-4 lg:hidden hover:bg-primary/10 rounded-lg transition-colors" />
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-white" />
+      <EnhancedLayout>
+        <div className="min-h-screen w-full flex bg-muted/40">
+          <SearchableSidebar
+            modules={allowedModules}
+            activeModule={activeModule}
+            setActiveModule={setActiveModule}
+          />
+          <div className="flex-1 flex flex-col">
+            <header className="bg-gradient-card/95 backdrop-blur supports-[backdrop-filter]:bg-gradient-card/90 sticky top-0 z-40 w-full border-b shadow-card">
+              <div className="container flex h-16 items-center px-6">
+                <SidebarTrigger className="mr-4 lg:hidden hover:bg-primary/10 rounded-lg transition-colors" />
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-white" />
+                  </div>
+                  <h1 className="text-xl font-bold text-foreground">
+                    {activeModuleLabel}
+                  </h1>
                 </div>
-                <h1 className="text-xl font-bold text-foreground">
-                  {activeModuleLabel}
-                </h1>
               </div>
-            </div>
-          </header>
-          <main className="p-6 flex-1 bg-gradient-card/30">
-            <div className="animate-in fade-in-50 duration-300">
-              <ActiveComponent key={activeModule} />
-            </div>
-          </main>
+            </header>
+            <main className="p-6 flex-1 bg-gradient-card/30">
+              <div className="animate-in fade-in-50 duration-300">
+                <Suspense fallback={<div className="flex items-center justify-center h-64">Cargando...</div>}>
+                  <ActiveComponent key={activeModule} />
+                </Suspense>
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
 
-      {/* Onboarding Tour */}
-      <OnboardingTour
-        isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-        onNavigateToModule={(moduleId) => setActiveModule(moduleId)}
-      />
+        {/* Onboarding Tour */}
+        <OnboardingTour
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onNavigateToModule={(moduleId) => setActiveModule(moduleId)}
+        />
+      </EnhancedLayout>
     </SidebarProvider>
   );
 };
