@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Print, Share2 } from "lucide-react";
+import { Download, Printer, Share2 } from "lucide-react";
 import { Factura } from "./BillingData";
 import { generateBolivianQR, generateQRCode, QRData } from "@/utils/qrGenerator";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +27,7 @@ const EnhancedInvoicePreview = ({ invoice, showActions = true }: EnhancedInvoice
       const qrData: QRData = {
         nit: "1234567890001", // NIT de la empresa
         numeroFactura: invoice.numero,
-        numeroAutorizacion: invoice.numeroAutorizacion || "AUTO123456789",
+        numeroAutorizacion: invoice.codigoControl || "AUTO123456789",
         fecha: invoice.fecha.replace(/-/g, ''),
         monto: invoice.total,
         moneda: "BOL",
@@ -104,7 +104,7 @@ const EnhancedInvoicePreview = ({ invoice, showActions = true }: EnhancedInvoice
             Descargar PDF
           </Button>
           <Button onClick={handlePrint} variant="outline" size="sm">
-            <Print className="w-4 h-4 mr-2" />
+            <Printer className="w-4 h-4 mr-2" />
             Imprimir
           </Button>
           <Button onClick={handleShare} variant="outline" size="sm">
@@ -125,9 +125,7 @@ const EnhancedInvoicePreview = ({ invoice, showActions = true }: EnhancedInvoice
                 <div><strong>N°:</strong> {invoice.numero}</div>
                 <div><strong>Fecha:</strong> {new Date(invoice.fecha).toLocaleDateString('es-BO')}</div>
                 <div><strong>NIT:</strong> 1234567890001</div>
-                {invoice.numeroAutorizacion && (
-                  <div><strong>Autorización:</strong> {invoice.numeroAutorizacion}</div>
-                )}
+                <div><strong>Autorización:</strong> {invoice.codigoControl || 'N/A'}</div>
               </div>
             </div>
             
@@ -192,9 +190,7 @@ const EnhancedInvoicePreview = ({ invoice, showActions = true }: EnhancedInvoice
                     <tr key={index} className="border-t">
                       <td className="p-3">
                         <div className="font-medium">{item.descripcion}</div>
-                        {item.detalles && (
-                          <div className="text-sm text-muted-foreground">{item.detalles}</div>
-                        )}
+                        <div className="text-sm text-muted-foreground">Código: {item.codigo}</div>
                       </td>
                       <td className="p-3 text-center">{item.cantidad.toFixed(2)}</td>
                       <td className="p-3 text-right">Bs. {item.precioUnitario.toFixed(2)}</td>
