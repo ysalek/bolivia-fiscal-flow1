@@ -1,55 +1,84 @@
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { Download, Upload, Database, Clock, Shield, AlertTriangle } from 'lucide-react';
-
-interface BackupInfo {
-  fecha: string;
-  tamaño: string;
-  version: string;
-  registros: number;
-}
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Download, Upload, Database, Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const BackupModule = () => {
-  const [backups, setBackups] = useState<BackupInfo[]>([]);
-  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [importProgress, setImportProgress] = useState(0);
   const { toast } = useToast();
 
-  const crearBackup = async () => {
-    setIsCreatingBackup(true);
-    
-    try {
-      // Simular proceso de backup
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Recopilar datos del localStorage
-      const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-      const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
-      const productos = JSON.parse(localStorage.getItem('productos') || '[]');
-      const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-      
-      const backupData = {
-        timestamp: new Date().toISOString(),
-        version: '2.0.0',
-        data: {
-          facturas,
-          asientos,
-          productos,
-          clientes
+  const getAllLocalStorageData = () => {
+    const data: { [key: string]: any } = {};
+    const keys = [
+      'facturas',
+      'clientes',
+      'productos',
+      'asientosContables',
+      'movimientosInventario',
+      'proveedores',
+      'compras'
+    ];
+
+    keys.forEach(key => {
+      const value = localStorage.getItem(key);
+      if (value) {
+        try {
+          data[key] = JSON.parse(value);
+        } catch (error) {
+          data[key] = value;
         }
+      }
+    });
+
+    return data;
+  };
+
+  const getBackupInfo = () => {
+    const data = getAllLocalStorageData();
+    return {
+      facturas: data.facturas?.length || 0,
+      clientes: data.clientes?.length || 0,
+      productos: data.productos?.length || 0,
+      asientos: data.asientosContables?.length || 0,
+      movimientos: data.movimientosInventario?.length || 0,
+      proveedores: data.proveedores?.length || 0,
+      compras: data.compras?.length || 0
+    };
+  };
+
+  const exportBackup = async () => {
+    setIsExporting(true);
+    setExportProgress(0);
+
+    try {
+      // Simular progreso
+      for (let i = 0; i <= 100; i += 10) {
+        setExportProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const data = getAllLocalStorageData();
+      const backup = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        sistema: "Sistema Contable Boliviano",
+        data: data
       };
-      
-      // Crear archivo de descarga
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
-        type: 'application/json' 
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: 'application/json'
       });
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -58,94 +87,98 @@ const BackupModule = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
-      // Agregar a la lista de backups
-      const nuevoBackup: BackupInfo = {
-        fecha: new Date().toISOString(),
-        tamaño: `${Math.round(blob.size / 1024)} KB`,
-        version: '2.0.0',
-        registros: facturas.length + asientos.length + productos.length + clientes.length
-      };
-      
-      setBackups(prev => [nuevoBackup, ...prev]);
-      
+
       toast({
-        title: "Backup creado exitosamente",
-        description: "El archivo de respaldo se descargó automáticamente",
+        title: "Backup exportado",
+        description: "El respaldo se ha descargado exitosamente.",
       });
-      
+
     } catch (error) {
       toast({
-        title: "Error al crear backup",
-        description: "No se pudo crear el archivo de respaldo",
+        title: "Error en exportación",
+        description: "No se pudo crear el backup. Intente nuevamente.",
         variant: "destructive"
       });
     } finally {
-      setIsCreatingBackup(false);
+      setIsExporting(false);
+      setExportProgress(0);
     }
   };
 
-  const restaurarBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsRestoring(true);
-    
-    try {
-      const text = await file.text();
-      const backupData = JSON.parse(text);
-      
-      if (!backupData.data || !backupData.timestamp) {
-        throw new Error('Formato de backup inválido');
+    setIsImporting(true);
+    setImportProgress(0);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result as string;
+        const backup = JSON.parse(content);
+
+        if (!backup.data || !backup.version) {
+          throw new Error("Formato de backup inválido");
+        }
+
+        // Simular progreso
+        for (let i = 0; i <= 100; i += 20) {
+          setImportProgress(i);
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        // Restaurar datos
+        Object.keys(backup.data).forEach(key => {
+          localStorage.setItem(key, JSON.stringify(backup.data[key]));
+        });
+
+        toast({
+          title: "Backup restaurado",
+          description: "Los datos se han restaurado exitosamente. Recargue la página.",
+        });
+
+      } catch (error) {
+        toast({
+          title: "Error en importación",
+          description: "El archivo de backup es inválido o está corrupto.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsImporting(false);
+        setImportProgress(0);
+        if (event.target) {
+          event.target.value = '';
+        }
       }
-      
-      // Confirmar restauración
-      const confirmar = window.confirm(
-        '⚠️ ADVERTENCIA: Esta acción reemplazará todos los datos actuales. ¿Está seguro de continuar?'
-      );
-      
-      if (!confirmar) {
-        setIsRestoring(false);
-        return;
-      }
-      
-      // Restaurar datos
-      const { facturas, asientos, productos, clientes } = backupData.data;
-      
-      if (facturas) localStorage.setItem('facturas', JSON.stringify(facturas));
-      if (asientos) localStorage.setItem('asientosContables', JSON.stringify(asientos));
-      if (productos) localStorage.setItem('productos', JSON.stringify(productos));
-      if (clientes) localStorage.setItem('clientes', JSON.stringify(clientes));
-      
+    };
+
+    reader.readAsText(file);
+  };
+
+  const clearAllData = () => {
+    if (confirm("¿Está seguro de eliminar TODOS los datos? Esta acción no se puede deshacer.")) {
+      const keys = [
+        'facturas',
+        'clientes', 
+        'productos',
+        'asientosContables',
+        'movimientosInventario',
+        'proveedores',
+        'compras'
+      ];
+
+      keys.forEach(key => localStorage.removeItem(key));
+
       toast({
-        title: "Backup restaurado exitosamente",
-        description: "Los datos han sido restaurados. La página se recargará.",
-      });
-      
-      // Recargar la página para actualizar todos los componentes
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-      
-    } catch (error) {
-      toast({
-        title: "Error al restaurar backup",
-        description: "El archivo de backup es inválido o está corrupto",
+        title: "Datos eliminados",
+        description: "Todos los datos han sido eliminados. Recargue la página.",
         variant: "destructive"
       });
-    } finally {
-      setIsRestoring(false);
-      // Reset input
-      event.target.value = '';
     }
   };
 
-  const programarBackupAutomatico = () => {
-    toast({
-      title: "Función próximamente",
-      description: "El backup automático estará disponible en una próxima actualización",
-    });
-  };
+  const backupInfo = getBackupInfo();
 
   return (
     <div className="space-y-6">
@@ -153,153 +186,142 @@ const BackupModule = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="w-6 h-6" />
-            Sistema de Backup y Restauración
+            Backup y Restauración
           </CardTitle>
           <CardDescription>
-            Cree copias de seguridad de sus datos contables y restaure información cuando sea necesario
+            Respalde y restaure todos los datos del sistema contable
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Alert className="mb-6">
-            <Shield className="w-4 h-4" />
+            <Shield className="h-4 w-4" />
             <AlertDescription>
-              <strong>Importante:</strong> Se recomienda crear backups periódicos de sus datos contables.
-              Mantenga estos archivos en un lugar seguro y actualizado.
+              Es recomendable realizar backups periódicos para proteger su información contable.
+              Los backups incluyen facturas, clientes, productos, asientos contables y movimientos de inventario.
             </AlertDescription>
           </Alert>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Crear Backup */}
+            {/* Información del Sistema */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Download className="w-5 h-5" />
-                  Crear Backup
-                </CardTitle>
-                <CardDescription>
-                  Genere una copia de seguridad completa de todos sus datos
-                </CardDescription>
+                <CardTitle className="text-lg">Estado Actual del Sistema</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  El backup incluirá:
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Todas las facturas emitidas</li>
-                    <li>Asientos contables</li>
-                    <li>Catálogo de productos</li>
-                    <li>Base de datos de clientes</li>
-                    <li>Configuraciones del sistema</li>
-                  </ul>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span>Facturas:</span>
+                  <Badge variant="outline">{backupInfo.facturas}</Badge>
                 </div>
-                
-                <Button 
-                  onClick={crearBackup} 
-                  disabled={isCreatingBackup}
-                  className="w-full"
-                >
-                  {isCreatingBackup ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Creando backup...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      Crear Backup Ahora
-                    </>
-                  )}
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  onClick={programarBackupAutomatico}
-                  className="w-full"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Programar Backup Automático
-                </Button>
+                <div className="flex justify-between items-center">
+                  <span>Clientes:</span>
+                  <Badge variant="outline">{backupInfo.clientes}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Productos:</span>
+                  <Badge variant="outline">{backupInfo.productos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Asientos Contables:</span>
+                  <Badge variant="outline">{backupInfo.asientos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Movimientos Inventario:</span>
+                  <Badge variant="outline">{backupInfo.movimientos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Proveedores:</span>
+                  <Badge variant="outline">{backupInfo.proveedores}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Compras:</span>
+                  <Badge variant="outline">{backupInfo.compras}</Badge>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Restaurar Backup */}
+            {/* Panel de Acciones */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
-                  Restaurar Backup
-                </CardTitle>
-                <CardDescription>
-                  Restaure sus datos desde un archivo de backup
-                </CardDescription>
+                <CardTitle className="text-lg">Acciones de Respaldo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Alert>
-                  <AlertTriangle className="w-4 h-4" />
-                  <AlertDescription>
-                    <strong>Atención:</strong> Restaurar un backup reemplazará todos los datos actuales.
-                    Esta acción no se puede deshacer.
-                  </AlertDescription>
-                </Alert>
-
+                {/* Exportar Backup */}
                 <div className="space-y-2">
-                  <Label htmlFor="backup-file">Seleccionar archivo de backup (.json)</Label>
+                  <Label>Exportar Backup</Label>
+                  <Button 
+                    onClick={exportBackup} 
+                    disabled={isExporting}
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {isExporting ? 'Exportando...' : 'Descargar Backup'}
+                  </Button>
+                  {isExporting && (
+                    <Progress value={exportProgress} className="w-full" />
+                  )}
+                </div>
+
+                {/* Importar Backup */}
+                <div className="space-y-2">
+                  <Label htmlFor="backup-file">Restaurar Backup</Label>
                   <Input
                     id="backup-file"
                     type="file"
                     accept=".json"
-                    onChange={restaurarBackup}
-                    disabled={isRestoring}
+                    onChange={importBackup}
+                    disabled={isImporting}
                   />
+                  {isImporting && (
+                    <Progress value={importProgress} className="w-full" />
+                  )}
                 </div>
 
-                {isRestoring && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4 animate-spin" />
-                    Restaurando backup...
-                  </div>
-                )}
+                {/* Limpiar Datos */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={clearAllData}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Eliminar Todos los Datos
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Historial de Backups */}
-          {backups.length > 0 && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Historial de Backups</CardTitle>
-                <CardDescription>
-                  Backups creados recientemente en esta sesión
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {backups.map((backup, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Database className="w-5 h-5 text-primary" />
-                        <div>
-                          <div className="font-medium">
-                            Backup {new Date(backup.fecha).toLocaleDateString('es-BO')}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(backup.fecha).toLocaleTimeString('es-BO')} - {backup.tamaño}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {backup.registros} registros
-                        </Badge>
-                        <Badge variant="secondary">
-                          v{backup.version}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+          {/* Instrucciones */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Instrucciones de Uso
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-2">Crear Backup:</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Haga clic en "Descargar Backup"</li>
+                    <li>• Se descargará un archivo JSON</li>
+                    <li>• Guarde el archivo en un lugar seguro</li>
+                    <li>• El backup incluye todos sus datos</li>
+                  </ul>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div>
+                  <h4 className="font-semibold mb-2">Restaurar Backup:</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Seleccione el archivo de backup (.json)</li>
+                    <li>• Los datos se restaurarán automáticamente</li>
+                    <li>• Recargue la página después de restaurar</li>
+                    <li>• Los datos actuales serán reemplazados</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </CardContent>
       </Card>
     </div>

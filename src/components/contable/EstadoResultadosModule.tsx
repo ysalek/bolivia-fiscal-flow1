@@ -7,51 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Download, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
 
 const EstadoResultadosModule = () => {
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
+  const { getIncomeStatementData } = useContabilidadIntegration();
 
-  // Datos de ejemplo para el Estado de Resultados
+  // Obtener datos reales del sistema contable
+  const datosReales = getIncomeStatementData();
+
+  // Estructura de datos completa para el Estado de Resultados
   const estadoResultados = {
     ingresos: {
-      total: 150000,
-      cuentas: [
-        { codigo: '4111', nombre: 'Ventas de Mercaderías', saldo: 120000 },
-        { codigo: '4112', nombre: 'Ventas de Servicios', saldo: 30000 }
-      ]
+      total: datosReales.ingresos.total,
+      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('41')) // Ingresos operacionales
     },
     costosVentas: {
-      total: 75000,
-      cuentas: [
-        { codigo: '5111', nombre: 'Costo de Ventas', saldo: 75000 }
-      ]
+      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51')).reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51'))
     },
     gastosOperativos: {
-      total: 45000,
-      cuentas: [
-        { codigo: '6111', nombre: 'Sueldos y Salarios', saldo: 25000 },
-        { codigo: '6112', nombre: 'Alquileres', saldo: 12000 },
-        { codigo: '6113', nombre: 'Servicios Básicos', saldo: 8000 }
-      ]
+      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') || c.codigo.startsWith('53')).reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') || c.codigo.startsWith('53'))
     },
     otrosIngresos: {
-      total: 5000,
-      cuentas: [
-        { codigo: '4211', nombre: 'Ingresos Financieros', saldo: 5000 }
-      ]
+      total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42')).reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42'))
     },
     otrosGastos: {
-      total: 3000,
-      cuentas: [
-        { codigo: '6211', nombre: 'Gastos Financieros', saldo: 3000 }
-      ]
+      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62')).reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62'))
     },
     impuestos: {
-      total: 8000,
-      cuentas: [
-        { codigo: '6311', nombre: 'Impuesto a las Utilidades', saldo: 8000 }
-      ]
+      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63')).reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63'))
     }
   };
 
@@ -112,7 +102,7 @@ const EstadoResultadosModule = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-success">
+                <div className="text-2xl font-bold text-green-600">
                   {margenBruto.toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground">Margen Bruto</div>
@@ -120,7 +110,7 @@ const EstadoResultadosModule = () => {
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-2xl font-bold text-blue-600">
                   {margenOperativo.toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground">Margen Operativo</div>
@@ -128,7 +118,7 @@ const EstadoResultadosModule = () => {
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
-                <div className={`text-2xl font-bold ${utilidadNeta >= 0 ? 'text-success' : 'text-destructive'}`}>
+                <div className={`text-2xl font-bold ${utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {margenNeto.toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground">Margen Neto</div>
@@ -159,7 +149,7 @@ const EstadoResultadosModule = () => {
                 </TableCell>
               </TableRow>
 
-              <TableRow className="font-bold text-success border-t-2">
+              <TableRow className="font-bold text-green-600 border-t-2">
                 <TableCell>UTILIDAD BRUTA</TableCell>
                 <TableCell className="text-right">{utilidadBruta.toFixed(2)}</TableCell>
                 <TableCell className="text-right">{margenBruto.toFixed(1)}%</TableCell>
@@ -173,7 +163,7 @@ const EstadoResultadosModule = () => {
                 </TableCell>
               </TableRow>
 
-              <TableRow className="font-bold text-primary border-t-2">
+              <TableRow className="font-bold text-blue-600 border-t-2">
                 <TableCell>UTILIDAD OPERATIVA</TableCell>
                 <TableCell className="text-right">{utilidadOperativa.toFixed(2)}</TableCell>
                 <TableCell className="text-right">{margenOperativo.toFixed(1)}%</TableCell>
@@ -195,7 +185,7 @@ const EstadoResultadosModule = () => {
                 </TableCell>
               </TableRow>
 
-              <TableRow className="font-bold text-warning border-t-2">
+              <TableRow className="font-bold text-orange-600 border-t-2">
                 <TableCell>UTILIDAD ANTES DE IMPUESTOS</TableCell>
                 <TableCell className="text-right">{utilidadAntesImpuestos.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
@@ -212,7 +202,7 @@ const EstadoResultadosModule = () => {
               </TableRow>
             </TableBody>
             <TableFooter>
-              <TableRow className={`font-bold text-lg border-t-4 ${utilidadNeta >= 0 ? 'text-success bg-success/10' : 'text-destructive bg-destructive/10'}`}>
+              <TableRow className={`font-bold text-lg border-t-4 ${utilidadNeta >= 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
                 <TableCell>UTILIDAD NETA</TableCell>
                 <TableCell className="text-right">{utilidadNeta.toFixed(2)}</TableCell>
                 <TableCell className="text-right">{margenNeto.toFixed(1)}%</TableCell>
