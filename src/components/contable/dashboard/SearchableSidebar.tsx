@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Sidebar,
@@ -115,18 +116,18 @@ const SearchableSidebar = ({ modules, activeModule, setActiveModule }: Searchabl
                       className={`
                         group relative px-3 py-2.5 rounded-lg transition-all duration-200
                         ${isActive 
-                          ? 'bg-primary text-primary-foreground shadow-kpi border-l-4 border-l-success' 
-                          : 'hover:bg-accent/50 hover:shadow-card'
+                          ? 'bg-primary/15 text-primary font-semibold shadow-sm border-l-4 border-l-primary' 
+                          : 'hover:bg-accent/50 hover:shadow-card text-foreground'
                         }
                       `}
                     >
                       <div className="flex items-center gap-3 w-full">
-                        <Icon className={`h-5 w-5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
-                        <span className={`font-medium ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                        <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={`font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>
                           {module.label}
                         </span>
                         {isActive && (
-                          <div className="absolute right-2 w-2 h-2 bg-success rounded-full animate-pulse" />
+                          <div className="absolute right-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
                         )}
                       </div>
                     </SidebarMenuButton>

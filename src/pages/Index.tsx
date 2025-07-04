@@ -1,4 +1,3 @@
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -181,20 +180,12 @@ const Index = () => {
       keywords: ["reportes", "informes", "análisis", "excel", "exportar"]
     },
     { 
-      id: "backup", 
-      label: "Backup y Restauración", 
-      icon: Database, 
-      component: BackupModule, 
-      permission: "configuracion",
-      keywords: ["backup", "respaldo", "restaurar", "seguridad", "datos"]
-    },
-    { 
       id: "configuracion", 
       label: "Configuración del Sistema", 
       icon: Settings, 
       component: ConfiguracionModule, 
       permission: "configuracion",
-      keywords: ["configuración", "ajustes", "sistema", "parámetros"]
+      keywords: ["configuración", "ajustes", "sistema", "parámetros", "backup", "respaldo"]
     },
     {
       id: "tutorial",

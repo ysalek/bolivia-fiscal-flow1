@@ -28,8 +28,8 @@ const EnhancedLayout = ({ children }: EnhancedLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Barra de estado PWA */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-700">
+      {/* Barra de estado PWA - z-index reducido */}
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-700">
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -79,7 +79,7 @@ const EnhancedLayout = ({ children }: EnhancedLayoutProps) => {
         {children}
       </div>
 
-      {/* Indicador de modo offline */}
+      {/* Indicador de modo offline - z-index alto para que sea visible */}
       {!isOnline && (
         <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-auto">
           <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 shadow-lg">
