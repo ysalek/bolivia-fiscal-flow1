@@ -45,10 +45,20 @@ const bancosBolivianos = [
   'Banco Bisa',
   'Banco Ganadero',
   'Banco Económico',
-  'Banco Fassil',
   'Banco Fortaleza',
   'Banco Solidario',
-  'Banco Pyme Ecofuturo'
+  'Banco Pyme Ecofuturo',
+  // Cooperativas de Ahorro y Crédito
+  'Cooperativa de Ahorro y Crédito Jesús Nazareno',
+  'Cooperativa de Ahorro y Crédito San Martín de Porres',
+  'Cooperativa de Ahorro y Crédito Fatima',
+  'Cooperativa de Ahorro y Crédito La Merced',
+  'Cooperativa de Ahorro y Crédito Potosí',
+  'Cooperativa de Ahorro y Crédito Univida',
+  'Cooperativa de Ahorro y Crédito Coopnor',
+  'Cooperativa de Ahorro y Crédito Mujeres en Desarrollo',
+  'Cooperativa de Ahorro y Crédito Inti Raymi',
+  'Cooperativa de Ahorro y Crédito Camiri'
 ];
 
 const BancosModule = () => {

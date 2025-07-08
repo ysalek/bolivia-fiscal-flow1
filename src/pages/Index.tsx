@@ -1,4 +1,3 @@
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -43,11 +42,13 @@ import CuentasPorCobrarPagar from "@/components/contable/CuentasPorCobrarPagar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
 import EnhancedLayout from "@/components/contable/dashboard/EnhancedLayout";
+import ActivosFijosModule from "@/components/contable/ActivosFijosModule";
 
 // Lazy load de módulos pesados
 const EstadoResultadosModule = lazy(() => import("@/components/contable/EstadoResultadosModule"));
 const KardexModule = lazy(() => import("@/components/contable/KardexModule"));
 const BackupModule = lazy(() => import("@/components/contable/BackupModule"));
+import DeclaracionesTributariasModule from "@/components/contable/DeclaracionesTributariasModule";
 
 const Index = () => {
   const { isAuthenticated, user, logout, hasPermission } = useAuth();
@@ -138,6 +139,14 @@ const Index = () => {
       permission: "cuentas_cobrar_pagar",
       keywords: ["cuentas", "cobrar", "pagar", "cartera", "deudores", "acreedores"]
     },
+    {
+      id: "activos-fijos",
+      label: "Activos Fijos",
+      icon: Building2,
+      component: ActivosFijosModule,
+      permission: "activos_fijos",
+      keywords: ["activos", "fijos", "depreciación", "bienes", "muebles", "inmuebles"]
+    },
     { 
       id: "plan-cuentas", 
       label: "Plan de Cuentas", 
@@ -209,6 +218,14 @@ const Index = () => {
       component: NotificationsCenter,
       permission: "notificaciones",
       keywords: ["notificaciones", "alertas", "recordatorios", "avisos", "centro"]
+    },
+    {
+      id: "declaraciones-tributarias",
+      label: "Declaraciones Tributarias",
+      icon: FileText,
+      component: DeclaracionesTributariasModule,
+      permission: "declaraciones_tributarias",
+      keywords: ["declaraciones", "tributarias", "iva", "it", "iue", "impuestos", "formularios"]
     },
     { 
       id: "configuracion", 
