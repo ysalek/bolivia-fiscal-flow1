@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,8 +43,15 @@ const AnalisisFinanciero = () => {
     const balanceData = getBalanceSheetData();
     const estadoResultados = getIncomeStatementData();
 
-    const activoCorriente = balanceData.activos.corrientes.total;
-    const pasivoCorriente = balanceData.pasivos.corrientes.total;
+    // Calcular activo corriente y pasivo corriente basado en códigos de cuenta
+    const activoCorriente = balanceData.activos.cuentas
+      .filter(cuenta => cuenta.codigo.startsWith('11')) // Activos corrientes
+      .reduce((sum, cuenta) => sum + cuenta.saldo, 0);
+    
+    const pasivoCorriente = balanceData.pasivos.cuentas
+      .filter(cuenta => cuenta.codigo.startsWith('21')) // Pasivos corrientes
+      .reduce((sum, cuenta) => sum + cuenta.saldo, 0);
+
     const totalActivos = balanceData.activos.total;
     const totalPasivos = balanceData.pasivos.total;
     const patrimonio = balanceData.patrimonio.total;

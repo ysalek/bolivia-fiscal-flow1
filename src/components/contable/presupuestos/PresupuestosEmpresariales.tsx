@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -206,7 +205,9 @@ const PresupuestosEmpresariales = () => {
     const variacionesData: VariacionPresupuestaria[] = meses.map((mes, index) => {
       const presupuestadoMes = detalles.reduce((sum, detalle) => {
         const monthKey = mes.toLowerCase() as keyof PresupuestoDetalle;
-        return sum + (detalle[monthKey] as number || 0);
+        const monthValue = detalle[monthKey];
+        // Ensure we only add numbers to the sum
+        return sum + (typeof monthValue === 'number' ? monthValue : 0);
       }, 0);
       
       const ejecutadoMes = presupuestadoMes * (0.8 + Math.random() * 0.4); // Simulación
@@ -245,9 +246,10 @@ const PresupuestosEmpresariales = () => {
   const agregarDetalle = () => {
     if (!presupuestoSeleccionado || !nuevoDetalle.subcategoria) return;
 
-    const total = Object.values(nuevoDetalle)
-      .filter((value, index) => index >= 3 && index <= 14) // Solo los meses
-      .reduce((sum, value) => sum + (typeof value === 'number' ? value : 0), 0);
+    const total = nuevoDetalle.enero + nuevoDetalle.febrero + nuevoDetalle.marzo + 
+                 nuevoDetalle.abril + nuevoDetalle.mayo + nuevoDetalle.junio +
+                 nuevoDetalle.julio + nuevoDetalle.agosto + nuevoDetalle.septiembre +
+                 nuevoDetalle.octubre + nuevoDetalle.noviembre + nuevoDetalle.diciembre;
 
     const detalle: PresupuestoDetalle = {
       id: Date.now().toString(),
