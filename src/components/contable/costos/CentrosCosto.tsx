@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Plus, PieChart, BarChart3, TrendingUp } from "lucide-react";
-import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 interface CentroCosto {
   id: string;
@@ -97,7 +96,7 @@ const CentrosCosto = () => {
         presupuesto: 60000,
         gastoReal: 58000,
         estado: "activo",
-        descripción: "Actividades de ventas y marketing"
+        descripcion: "Actividades de ventas y marketing"
       }
     ];
     setCentrosCosto(centrosDemo);
