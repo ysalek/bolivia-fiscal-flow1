@@ -1,3 +1,4 @@
+
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -15,6 +16,9 @@ import {
   HelpCircle,
   TrendingUp,
   Database,
+  Building2,
+  CreditCard,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -33,6 +37,9 @@ import ReportesModule from "@/components/contable/ReportesModule";
 import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
 import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
 import TutorialModule from "@/components/contable/TutorialModule";
+import NotificationsCenter from "@/components/contable/NotificationsCenter";
+import BancosModule from "@/components/contable/BancosModule";
+import CuentasPorCobrarPagar from "@/components/contable/CuentasPorCobrarPagar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
 import EnhancedLayout from "@/components/contable/dashboard/EnhancedLayout";
@@ -115,6 +122,22 @@ const Index = () => {
       permission: "compras",
       keywords: ["compras", "proveedores", "órdenes", "adquisiciones"]
     },
+    {
+      id: "bancos",
+      label: "Gestión Bancaria",
+      icon: Building2,
+      component: BancosModule,
+      permission: "bancos",
+      keywords: ["bancos", "conciliación", "cuentas", "movimientos", "bancario"]
+    },
+    {
+      id: "cuentas-cobrar-pagar",
+      label: "Cuentas por Cobrar/Pagar",
+      icon: CreditCard,
+      component: CuentasPorCobrarPagar,
+      permission: "cuentas_cobrar_pagar",
+      keywords: ["cuentas", "cobrar", "pagar", "cartera", "deudores", "acreedores"]
+    },
     { 
       id: "plan-cuentas", 
       label: "Plan de Cuentas", 
@@ -178,6 +201,14 @@ const Index = () => {
       component: ReportesModule, 
       permission: "reportes",
       keywords: ["reportes", "informes", "análisis", "excel", "exportar"]
+    },
+    {
+      id: "notificaciones",
+      label: "Centro de Notificaciones",
+      icon: Bell,
+      component: NotificationsCenter,
+      permission: "notificaciones",
+      keywords: ["notificaciones", "alertas", "recordatorios", "avisos", "centro"]
     },
     { 
       id: "configuracion", 
