@@ -1,3 +1,4 @@
+
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -18,6 +19,8 @@ import {
   Building2,
   CreditCard,
   Bell,
+  Target,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginForm from "@/components/auth/LoginForm";
@@ -226,6 +229,30 @@ const Index = () => {
       component: lazy(() => import("@/components/contable/costos/CentrosCosto")), 
       permission: "reportes",
       keywords: ["centros", "costo", "presupuesto", "asignación", "análisis", "distribución"]
+    },
+    {
+      id: "analisis-financiero",
+      label: "Análisis Financiero",
+      icon: TrendingUp,
+      component: lazy(() => import("@/components/contable/analisis/AnalisisFinanciero")),
+      permission: "reportes",
+      keywords: ["análisis", "financiero", "ratios", "rentabilidad", "liquidez", "indicadores"]
+    },
+    {
+      id: "presupuestos-empresariales",
+      label: "Presupuestos Empresariales",
+      icon: Target,
+      component: lazy(() => import("@/components/contable/presupuestos/PresupuestosEmpresariales")),
+      permission: "presupuestos",
+      keywords: ["presupuestos", "planificación", "proyección", "control", "variaciones", "seguimiento"]
+    },
+    {
+      id: "auditoria-transacciones",
+      label: "Auditoría de Transacciones",
+      icon: Shield,
+      component: lazy(() => import("@/components/contable/auditoria/AuditoriaTransacciones")),
+      permission: "auditoria",
+      keywords: ["auditoría", "controles", "seguridad", "riesgos", "transacciones", "monitoreo"]
     },
     { 
       id: "reportes", 
