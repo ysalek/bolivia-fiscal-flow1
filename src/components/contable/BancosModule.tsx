@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -341,15 +340,15 @@ const BancosModule = () => {
 
 // Componente para formulario de nueva cuenta
 const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBancaria, 'id'>) => void, onCancel: () => void }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<CuentaBancaria, 'id'>>({
     banco: '',
     numeroCuenta: '',
-    tipoCuenta: 'corriente' as const,
-    moneda: 'BOB' as const,
+    tipoCuenta: 'corriente',
+    moneda: 'BOB',
     saldoLibros: 0,
     saldoEstado: 0,
     fechaUltimaConciliacion: new Date().toISOString().slice(0, 10),
-    estado: 'activa' as const
+    estado: 'activa'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -456,12 +455,12 @@ const NewMovementForm = ({ cuentaId, onSave, onCancel }: {
   onSave: (movimiento: Omit<MovimientoBancario, 'id'>) => void, 
   onCancel: () => void 
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<MovimientoBancario, 'id'>>({
     cuentaId,
     fecha: new Date().toISOString().slice(0, 10),
     concepto: '',
     referencia: '',
-    tipo: 'deposito' as const,
+    tipo: 'deposito',
     monto: 0,
     saldo: 0,
     conciliado: false
@@ -488,7 +487,7 @@ const NewMovementForm = ({ cuentaId, onSave, onCancel }: {
 
         <div className="space-y-2">
           <Label htmlFor="tipo">Tipo de Movimiento</Label>
-          <Select onValueChange={(value: any) => setFormData(prev => ({ ...prev, tipo: value }))}>
+          <Select onValueChange={(value: 'deposito' | 'retiro' | 'transferencia' | 'comision' | 'interes') => setFormData(prev => ({ ...prev, tipo: value }))}>
             <SelectTrigger>
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
