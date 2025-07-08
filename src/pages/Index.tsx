@@ -204,6 +204,30 @@ const Index = () => {
       keywords: ["kardex", "movimientos", "fifo", "lifo", "promedio", "valoración"]
     },
     { 
+      id: "conciliacion-bancaria", 
+      label: "Conciliación Bancaria", 
+      icon: Building2, 
+      component: lazy(() => import("@/components/contable/bancario/ConciliacionBancaria")), 
+      permission: "bancos",
+      keywords: ["conciliación", "bancaria", "estado", "cuenta", "movimientos", "diferencias"]
+    },
+    { 
+      id: "flujo-caja", 
+      label: "Flujo de Caja", 
+      icon: TrendingUp, 
+      component: lazy(() => import("@/components/contable/finanzas/FlujoCaja")), 
+      permission: "reportes",
+      keywords: ["flujo", "caja", "liquidez", "proyección", "ingresos", "egresos"]
+    },
+    { 
+      id: "centros-costo", 
+      label: "Centros de Costo", 
+      icon: Building2, 
+      component: lazy(() => import("@/components/contable/costos/CentrosCosto")), 
+      permission: "reportes",
+      keywords: ["centros", "costo", "presupuesto", "asignación", "análisis", "distribución"]
+    },
+    { 
       id: "reportes", 
       label: "Reportes Contables", 
       icon: FileText, 
