@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,8 +136,28 @@ const CuentasPorCobrarPagar = () => {
       id: Date.now().toString()
     };
 
-    // Actualizar la cuenta correspondiente
+    // Actualizar la cuenta correspondiente y persistir cambios
     if (pago.tipo === 'cobro') {
+      // Actualizar el estado de la factura en localStorage
+      const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+      const facturaIndex = facturas.findIndex((f: any) => f.id === pago.cuentaId);
+      
+      if (facturaIndex !== -1) {
+        const cuenta = cuentasPorCobrar.find(c => c.id === pago.cuentaId);
+        if (cuenta) {
+          const nuevoMontoPagado = cuenta.montoPagado + pago.monto;
+          const nuevoSaldo = cuenta.montoOriginal - nuevoMontoPagado;
+          
+          // Si el saldo es cero o menos, marcar factura como pagada
+          if (nuevoSaldo <= 0) {
+            facturas[facturaIndex].estado = 'pagada';
+          }
+          
+          // Guardar facturas actualizadas
+          localStorage.setItem('facturas', JSON.stringify(facturas));
+        }
+      }
+
       setCuentasPorCobrar(prev => prev.map(c => {
         if (c.id === pago.cuentaId) {
           const nuevoMontoPagado = c.montoPagado + pago.monto;
@@ -153,6 +172,26 @@ const CuentasPorCobrarPagar = () => {
         return c;
       }));
     } else {
+      // Actualizar el estado de la compra en localStorage
+      const compras = JSON.parse(localStorage.getItem('compras') || '[]');
+      const compraIndex = compras.findIndex((c: any) => c.id === pago.cuentaId);
+      
+      if (compraIndex !== -1) {
+        const cuenta = cuentasPorPagar.find(c => c.id === pago.cuentaId);
+        if (cuenta) {
+          const nuevoMontoPagado = cuenta.montoPagado + pago.monto;
+          const nuevoSaldo = cuenta.montoOriginal - nuevoMontoPagado;
+          
+          // Si el saldo es cero o menos, marcar compra como pagada
+          if (nuevoSaldo <= 0) {
+            compras[compraIndex].estado = 'pagada';
+          }
+          
+          // Guardar compras actualizadas
+          localStorage.setItem('compras', JSON.stringify(compras));
+        }
+      }
+
       setCuentasPorPagar(prev => prev.map(c => {
         if (c.id === pago.cuentaId) {
           const nuevoMontoPagado = c.montoPagado + pago.monto;
@@ -215,10 +254,13 @@ const CuentasPorCobrarPagar = () => {
 
     toast({
       title: `${pago.tipo === 'cobro' ? 'Cobro' : 'Pago'} registrado`,
-      description: `Se registró el ${pago.tipo} por Bs. ${pago.monto.toFixed(2)}`,
+      description: `Se registró el ${pago.tipo} por Bs. ${pago.monto.toFixed(2)} y se actualizó el estado`,
     });
 
     setShowPagoDialog(null);
+    
+    // Recargar datos para reflejar cambios
+    setTimeout(() => cargarDatos(), 100);
   };
 
   const getEstadoColor = (estado: string) => {

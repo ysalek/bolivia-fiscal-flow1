@@ -1,4 +1,3 @@
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -293,6 +292,12 @@ const Index = () => {
       component: TutorialModule,
       permission: "tutorial",
       keywords: ["tutorial", "ayuda", "guía", "aprendizaje", "soporte"]
+    },
+    {
+      name: "Comprobantes",
+      icon: FileText,
+      component: () => import("../components/contable/comprobantes/ComprobantesModule"),
+      description: "Comprobantes de ingreso, egreso y traspasos"
     },
   ];
 
