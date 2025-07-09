@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { Plus, FileText, ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, DollarSign, Eye } from "lucide-react";
 import ComprobanteForm from "./ComprobanteForm";
+import ComprobantePreview from "./ComprobantePreview";
 
 interface CuentaContable {
   codigo: string;
@@ -41,6 +42,7 @@ const ComprobantesModule = () => {
     open: boolean;
     tipo: 'ingreso' | 'egreso' | 'traspaso' | null;
   }>({ open: false, tipo: null });
+  const [selectedComprobante, setSelectedComprobante] = useState<Comprobante | null>(null);
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const { toast } = useToast();
@@ -48,6 +50,11 @@ const ComprobantesModule = () => {
 
   useEffect(() => {
     cargarComprobantes();
+    // Cargar datos de ejemplo si no existen
+    const existingData = localStorage.getItem('comprobantes');
+    if (!existingData) {
+      cargarDatosEjemplo();
+    }
   }, []);
 
   const cargarComprobantes = () => {
@@ -55,6 +62,90 @@ const ComprobantesModule = () => {
     if (comprobantesGuardados) {
       setComprobantes(JSON.parse(comprobantesGuardados));
     }
+  };
+
+  const cargarDatosEjemplo = () => {
+    const datosEjemplo: Comprobante[] = [
+      {
+        id: "1",
+        tipo: "ingreso",
+        numero: "ING-0001",
+        fecha: "2024-01-15",
+        concepto: "Venta de mercadería según factura N° 001",
+        beneficiario: "Juan Pérez - Cliente",
+        monto: 5750.00,
+        metodoPago: "1112",
+        referencia: "FAC-001",
+        observaciones: "Pago al contado en efectivo",
+        estado: "autorizado",
+        creadoPor: "Ana García - Contadora",
+        fechaCreacion: "2024-01-15T10:30:00Z",
+        cuentas: [
+          { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 5750.00, haber: 0 },
+          { codigo: "4111", nombre: "Ventas", debe: 0, haber: 5750.00 }
+        ]
+      },
+      {
+        id: "2",
+        tipo: "egreso",
+        numero: "EGR-0001",
+        fecha: "2024-01-16",
+        concepto: "Pago de servicios básicos - Luz eléctrica",
+        beneficiario: "DELAPAZ - Distribuidora de Electricidad",
+        monto: 450.00,
+        metodoPago: "1111",
+        referencia: "RECIBO-789456",
+        observaciones: "Pago correspondiente al mes de diciembre 2023",
+        estado: "autorizado",
+        creadoPor: "Ana García - Contadora",
+        fechaCreacion: "2024-01-16T14:15:00Z",
+        cuentas: [
+          { codigo: "5231", nombre: "Servicios Básicos", debe: 450.00, haber: 0 },
+          { codigo: "1111", nombre: "Caja General", debe: 0, haber: 450.00 }
+        ]
+      },
+      {
+        id: "3",
+        tipo: "traspaso",
+        numero: "TRA-0001",
+        fecha: "2024-01-17",
+        concepto: "Transferencia entre cuentas bancarias",
+        beneficiario: "Banco Nacional de Bolivia",
+        monto: 10000.00,
+        metodoPago: "",
+        referencia: "TRANSF-123456",
+        observaciones: "Transferencia de fondos para mejor rentabilidad",
+        estado: "autorizado",
+        creadoPor: "Carlos López - Gerente",
+        fechaCreacion: "2024-01-17T09:45:00Z",
+        cuentas: [
+          { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", debe: 10000.00, haber: 0 },
+          { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 0, haber: 10000.00 }
+        ]
+      },
+      {
+        id: "4",
+        tipo: "ingreso",
+        numero: "ING-0002",
+        fecha: "2024-01-18",
+        concepto: "Cobro de cuenta pendiente - Cliente María Rodríguez",
+        beneficiario: "María Rodríguez - Cliente",
+        monto: 2100.00,
+        metodoPago: "1113",
+        referencia: "DEP-654321",
+        observaciones: "Pago de factura pendiente del mes anterior",
+        estado: "borrador",
+        creadoPor: "Ana García - Contadora",
+        fechaCreacion: "2024-01-18T11:20:00Z",
+        cuentas: [
+          { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", debe: 2100.00, haber: 0 },
+          { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", debe: 0, haber: 2100.00 }
+        ]
+      }
+    ];
+
+    setComprobantes(datosEjemplo);
+    localStorage.setItem('comprobantes', JSON.stringify(datosEjemplo));
   };
 
   const guardarComprobante = (datos: any) => {
@@ -336,7 +427,11 @@ const ComprobantesModule = () => {
                             Anular
                           </Button>
                         )}
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setSelectedComprobante(comprobante)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                       </div>
@@ -371,6 +466,21 @@ const ComprobantesModule = () => {
               tipo={showComprobanteDialog.tipo}
               onSave={guardarComprobante}
               onCancel={() => setShowComprobanteDialog({ open: false, tipo: null })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para previsualizar comprobante */}
+      <Dialog 
+        open={!!selectedComprobante} 
+        onOpenChange={(open) => !open && setSelectedComprobante(null)}
+      >
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+          {selectedComprobante && (
+            <ComprobantePreview
+              comprobante={selectedComprobante}
+              onClose={() => setSelectedComprobante(null)}
             />
           )}
         </DialogContent>

@@ -1,5 +1,6 @@
 
 import React, { Suspense, useState, useEffect, lazy } from 'react';
+import { initializarDatosEjemplo } from '@/utils/datosEjemplo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -110,6 +111,11 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Inicializar datos de ejemplo al cargar
+  useEffect(() => {
+    initializarDatosEjemplo();
+  }, []);
 
   const filteredModules = modules.filter(module => {
     const matchesSearch = module.label.toLowerCase().includes(searchTerm.toLowerCase()) ||

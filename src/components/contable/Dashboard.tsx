@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users } from 'lucide-react';
 import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
 import NotificationsIcon from './dashboard/NotificationsIcon';
+import SystemValidation from './dashboard/SystemValidation';
 
 const Dashboard = () => {
   const [fechaActual] = useState(new Date().toLocaleDateString('es-BO', {
@@ -183,6 +184,8 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        <SystemValidation />
       </div>
     </div>
   );
