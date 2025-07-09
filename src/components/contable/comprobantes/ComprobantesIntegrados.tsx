@@ -58,6 +58,8 @@ const ComprobantesIntegrados = () => {
   useEffect(() => {
     cargarComprobantes();
     calcularEstadisticasIntegracion();
+    // Inicializar el plan de cuentas si no existe
+    inicializarPlanCuentas();
   }, []);
 
   const cargarComprobantes = () => {
@@ -183,6 +185,27 @@ const ComprobantesIntegrados = () => {
 
     setComprobantes(datosEjemplo);
     localStorage.setItem('comprobantes_integrados', JSON.stringify(datosEjemplo));
+  };
+
+  const inicializarPlanCuentas = () => {
+    const planCuentasExistente = localStorage.getItem('planCuentas');
+    if (!planCuentasExistente) {
+      const planCuentasBasico = [
+        { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "1131", nombre: "Inventarios", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "2111", nombre: "Cuentas por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+        { codigo: "2112", nombre: "Documentos por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+        { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+        { codigo: "4111", nombre: "Ventas de Productos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+        { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+        { codigo: "511", nombre: "Costo de Productos Vendidos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true }
+      ];
+      localStorage.setItem('planCuentas', JSON.stringify(planCuentasBasico));
+    }
   };
 
   const validarIntegridadContable = (comprobante: Comprobante): boolean => {
