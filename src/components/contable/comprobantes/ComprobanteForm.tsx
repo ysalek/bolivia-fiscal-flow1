@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -93,6 +94,8 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
     ] : []
   });
 
+  const [conFactura, setConFactura] = useState(false);
+
   const agregarCuenta = () => {
     setFormData(prev => ({
       ...prev,
@@ -166,20 +169,52 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
           haber: formData.monto
         });
       } else {
-        // Débito a gastos
-        cuentasGeneradas.push({
-          codigo: "5191",
-          nombre: "Gastos Varios",
-          debe: formData.monto,
-          haber: 0
-        });
-        // Crédito a la cuenta de método de pago
-        cuentasGeneradas.push({
-          codigo: formData.metodoPago,
-          nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
-          debe: 0,
-          haber: formData.monto
-        });
+        // Egreso - determinar si es con factura o sin factura
+        if (conFactura) {
+          // Con factura: incluir crédito fiscal del 13%
+          const baseImponible = formData.monto / 1.13; // Monto sin IVA
+          const creditoFiscal = baseImponible * 0.13; // 13% de IVA
+          
+          // Débito a gastos (sin IVA)
+          cuentasGeneradas.push({
+            codigo: "5191",
+            nombre: "Gastos Varios",
+            debe: baseImponible,
+            haber: 0
+          });
+          
+          // Débito a IVA Crédito Fiscal
+          cuentasGeneradas.push({
+            codigo: "1142",
+            nombre: "IVA Crédito Fiscal",
+            debe: creditoFiscal,
+            haber: 0
+          });
+          
+          // Crédito a la cuenta de método de pago (total)
+          cuentasGeneradas.push({
+            codigo: formData.metodoPago,
+            nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
+            debe: 0,
+            haber: formData.monto
+          });
+        } else {
+          // Sin factura: asiento simple
+          // Débito a gastos
+          cuentasGeneradas.push({
+            codigo: "5191",
+            nombre: "Gastos Varios",
+            debe: formData.monto,
+            haber: 0
+          });
+          // Crédito a la cuenta de método de pago
+          cuentasGeneradas.push({
+            codigo: formData.metodoPago,
+            nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
+            debe: 0,
+            haber: formData.monto
+          });
+        }
       }
 
       formData.cuentas = cuentasGeneradas;
@@ -245,32 +280,62 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
       </div>
 
       {tipo !== 'traspaso' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="metodoPago">Método de Pago (Cuenta Contable)</Label>
-            <Select value={formData.metodoPago} onValueChange={(value) => setFormData(prev => ({ ...prev, metodoPago: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar cuenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {PLAN_CUENTAS.map(cuenta => (
-                  <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
-                    {cuenta.codigo} - {cuenta.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="metodoPago">Método de Pago (Cuenta Contable)</Label>
+              <Select value={formData.metodoPago} onValueChange={(value) => setFormData(prev => ({ ...prev, metodoPago: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar cuenta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLAN_CUENTAS.map(cuenta => (
+                    <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
+                      {cuenta.codigo} - {cuenta.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referencia">Referencia</Label>
+              <Input
+                id="referencia"
+                value={formData.referencia}
+                onChange={(e) => setFormData(prev => ({ ...prev, referencia: e.target.value }))}
+                placeholder="Número de cheque, boleta, etc."
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="referencia">Referencia</Label>
-            <Input
-              id="referencia"
-              value={formData.referencia}
-              onChange={(e) => setFormData(prev => ({ ...prev, referencia: e.target.value }))}
-              placeholder="Número de cheque, boleta, etc."
-            />
-          </div>
+          {tipo === 'egreso' && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="conFactura"
+                  checked={conFactura}
+                  onCheckedChange={(checked) => setConFactura(checked === true)}
+                />
+                <Label htmlFor="conFactura" className="text-sm font-medium">
+                  El gasto incluye factura con IVA (13% Crédito Fiscal)
+                </Label>
+              </div>
+              {conFactura && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Nota:</strong> El monto ingresado se considera que incluye el 13% de IVA. 
+                    Se generará automáticamente el asiento contable con:
+                  </p>
+                  <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                    <li>• Gasto (sin IVA): Bs. {(formData.monto / 1.13).toFixed(2)}</li>
+                    <li>• IVA Crédito Fiscal (13%): Bs. {((formData.monto / 1.13) * 0.13).toFixed(2)}</li>
+                    <li>• Total a pagar: Bs. {formData.monto.toFixed(2)}</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
