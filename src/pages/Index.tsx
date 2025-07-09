@@ -51,7 +51,7 @@ const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPo
 const DeclaracionesTributariasModule = lazy(() => import('@/components/contable/DeclaracionesTributariasModule'));
 const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
 const ConfiguracionModule = lazy(() => import('@/components/contable/ConfiguracionModule'));
-const TutorialModule = lazy(() => import('@/components/contable/TutorialModule'));
+const PuntoVentaModule = lazy(() => import('@/components/contable/PuntoVentaModule'));
 const BackupModule = lazy(() => import('@/components/contable/BackupModule'));
 const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
 const ActivosFijosModule = lazy(() => import('@/components/contable/ActivosFijosModule'));
@@ -95,7 +95,7 @@ const modules: Module[] = [
   
   { id: 'configuracion', label: 'Configuración', icon: Settings, component: ConfiguracionModule, category: 'configuracion', description: 'Configuración del sistema' },
   { id: 'backup', label: 'Respaldos', icon: HardDrive, component: BackupModule, category: 'configuracion', description: 'Copias de seguridad y restauración' },
-  { id: 'tutorial', label: 'Tutorial', icon: HelpCircle, component: TutorialModule, category: 'configuracion', description: 'Guía de uso del sistema' }
+  { id: 'punto-venta', label: 'Punto de Venta', icon: ShoppingCart, component: PuntoVentaModule, category: 'facturacion', description: 'Sistema POS integrado para ventas directas' }
 ];
 
 const categories = {
