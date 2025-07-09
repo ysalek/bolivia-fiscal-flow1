@@ -95,6 +95,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
   });
 
   const [conFactura, setConFactura] = useState(false);
+  const [conFacturaIngreso, setConFacturaIngreso] = useState(false);
 
   const agregarCuenta = () => {
     setFormData(prev => ({
@@ -154,20 +155,61 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
       const cuentasGeneradas: CuentaContable[] = [];
 
       if (tipo === 'ingreso') {
-        // Débito a la cuenta de método de pago
-        cuentasGeneradas.push({
-          codigo: formData.metodoPago,
-          nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
-          debe: formData.monto,
-          haber: 0
-        });
-        // Crédito a ingresos
-        cuentasGeneradas.push({
-          codigo: "4191",
-          nombre: "Otros Ingresos",
-          debe: 0,
-          haber: formData.monto
-        });
+        // Ingreso - determinar si es con factura o sin factura
+        if (conFacturaIngreso) {
+          // Con factura: incluir débito fiscal del 13% e IT del 3%
+          const baseImponible = formData.monto / 1.16; // Monto sin IVA ni IT
+          const debitoFiscal = baseImponible * 0.13; // 13% de IVA
+          const impuestoTransacciones = baseImponible * 0.03; // 3% de IT
+          
+          // Débito a la cuenta de método de pago (total)
+          cuentasGeneradas.push({
+            codigo: formData.metodoPago,
+            nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
+            debe: formData.monto,
+            haber: 0
+          });
+          
+          // Crédito a ventas (sin impuestos)
+          cuentasGeneradas.push({
+            codigo: "4111",
+            nombre: "Ventas",
+            debe: 0,
+            haber: baseImponible
+          });
+          
+          // Crédito a IVA Débito Fiscal
+          cuentasGeneradas.push({
+            codigo: "2131",
+            nombre: "IVA Débito Fiscal",
+            debe: 0,
+            haber: debitoFiscal
+          });
+          
+          // Crédito a IT por Pagar
+          cuentasGeneradas.push({
+            codigo: "2141",
+            nombre: "IT por Pagar",
+            debe: 0,
+            haber: impuestoTransacciones
+          });
+        } else {
+          // Sin factura: asiento simple
+          // Débito a la cuenta de método de pago
+          cuentasGeneradas.push({
+            codigo: formData.metodoPago,
+            nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
+            debe: formData.monto,
+            haber: 0
+          });
+          // Crédito a ingresos
+          cuentasGeneradas.push({
+            codigo: "4191",
+            nombre: "Otros Ingresos",
+            debe: 0,
+            haber: formData.monto
+          });
+        }
       } else {
         // Egreso - determinar si es con factura o sin factura
         if (conFactura) {
@@ -308,6 +350,35 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
               />
             </div>
           </div>
+
+          {tipo === 'ingreso' && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="conFacturaIngreso"
+                  checked={conFacturaIngreso}
+                  onCheckedChange={(checked) => setConFacturaIngreso(checked === true)}
+                />
+                <Label htmlFor="conFacturaIngreso" className="text-sm font-medium">
+                  El ingreso incluye factura con IVA (13% Débito Fiscal) e IT (3%)
+                </Label>
+              </div>
+              {conFacturaIngreso && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-sm text-green-800">
+                    <strong>Nota:</strong> El monto ingresado se considera que incluye el 13% de IVA y 3% de IT. 
+                    Se generará automáticamente el asiento contable con:
+                  </p>
+                  <ul className="text-sm text-green-700 mt-2 space-y-1">
+                    <li>• Venta (sin impuestos): Bs. {(formData.monto / 1.16).toFixed(2)}</li>
+                    <li>• IVA Débito Fiscal (13%): Bs. {((formData.monto / 1.16) * 0.13).toFixed(2)}</li>
+                    <li>• IT por Pagar (3%): Bs. {((formData.monto / 1.16) * 0.03).toFixed(2)}</li>
+                    <li>• Total a cobrar: Bs. {formData.monto.toFixed(2)}</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
           {tipo === 'egreso' && (
             <div className="space-y-3">
