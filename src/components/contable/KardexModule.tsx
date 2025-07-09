@@ -41,17 +41,23 @@ const KardexModule = () => {
   ).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
 
   const calcularKardex = () => {
-    let saldoAcumulado = 0;
-    let valorAcumulado = 0;
-    let costoPromedio = 0;
+    if (!movimientosProducto.length || !producto) return [];
+
+    let saldoAcumulado = producto.stockActual || 0;
+    let valorAcumulado = (producto.stockActual || 0) * (producto.costoUnitario || 0);
+    let costoPromedio = producto.costoUnitario || 0;
 
     const kardex = movimientosProducto.map((mov, index) => {
       const cantidadMovimiento = mov.tipo === 'entrada' ? mov.cantidad : -mov.cantidad;
-      const valorMovimiento = mov.tipo === 'entrada' ? mov.valorMovimiento : mov.cantidad * costoPromedio;
+      const valorMovimiento = mov.tipo === 'entrada' 
+        ? (mov.valorMovimiento || mov.cantidad * (mov.costoUnitario || 0))
+        : mov.cantidad * costoPromedio;
+
+      const saldoAnterior = saldoAcumulado;
 
       if (mov.tipo === 'entrada') {
-        saldoAcumulado += cantidadMovimiento;
         valorAcumulado += valorMovimiento;
+        saldoAcumulado += cantidadMovimiento;
         costoPromedio = saldoAcumulado > 0 ? valorAcumulado / saldoAcumulado : 0;
       } else {
         saldoAcumulado += cantidadMovimiento;
@@ -60,11 +66,11 @@ const KardexModule = () => {
 
       return {
         ...mov,
-        saldoAnterior: index === 0 ? (producto?.stockActual || 0) - saldoAcumulado : 0,
+        saldoAnterior,
         saldoAcumulado: Math.max(0, saldoAcumulado),
         valorAcumulado: Math.max(0, valorAcumulado),
-        costoPromedio: costoPromedio,
-        valorMovimiento: valorMovimiento
+        costoPromedio: costoPromedio || 0,
+        valorMovimiento: valorMovimiento || 0
       };
     });
 

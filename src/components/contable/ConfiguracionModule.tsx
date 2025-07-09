@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useBackup } from "@/hooks/useBackup";
+import UserManagement from "./users/UserManagement";
 
 const ConfiguracionModule = () => {
   const { toast } = useToast();
@@ -56,7 +57,10 @@ const ConfiguracionModule = () => {
     decimalesMontos: 2,
     numeracionAutomatica: true,
     backupAutomatico: true,
-    notificacionesEmail: true
+    notificacionesEmail: true,
+    posHabilitado: true,
+    posAutoimpresion: false,
+    posRequiereAutorizacion: false
   });
 
   // Estado para configuración SIN
@@ -247,11 +251,12 @@ const ConfiguracionModule = () => {
       </div>
 
       <Tabs defaultValue="empresa" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           <TabsTrigger value="fiscal">Configuración Fiscal</TabsTrigger>
           <TabsTrigger value="sin">Integración SIN</TabsTrigger>
           <TabsTrigger value="sistema">Sistema</TabsTrigger>
+          <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
           <TabsTrigger value="backup">Backup</TabsTrigger>
         </TabsList>
 
@@ -718,6 +723,43 @@ const ConfiguracionModule = () => {
                     onCheckedChange={(checked) => setConfigSistema({...configSistema, notificacionesEmail: checked})}
                   />
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Punto de Venta (POS)</Label>
+                    <p className="text-sm text-slate-500">Habilitar módulo de punto de venta</p>
+                  </div>
+                  <Switch
+                    checked={configSistema.posHabilitado}
+                    onCheckedChange={(checked) => setConfigSistema({...configSistema, posHabilitado: checked})}
+                  />
+                </div>
+
+                {configSistema.posHabilitado && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Autoimpresión POS</Label>
+                        <p className="text-sm text-slate-500">Imprimir automáticamente al procesar venta</p>
+                      </div>
+                      <Switch
+                        checked={configSistema.posAutoimpresion}
+                        onCheckedChange={(checked) => setConfigSistema({...configSistema, posAutoimpresion: checked})}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Autorización Requerida</Label>
+                        <p className="text-sm text-slate-500">Requerir autorización para descuentos especiales</p>
+                      </div>
+                      <Switch
+                        checked={configSistema.posRequiereAutorizacion}
+                        onCheckedChange={(checked) => setConfigSistema({...configSistema, posRequiereAutorizacion: checked})}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <Button onClick={() => guardarConfiguracion("Sistema")} className="w-full">
@@ -726,6 +768,11 @@ const ConfiguracionModule = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Gestión de Usuarios */}
+        <TabsContent value="usuarios" className="space-y-4">
+          <UserManagement />
         </TabsContent>
 
         {/* Backup y Restauración */}
