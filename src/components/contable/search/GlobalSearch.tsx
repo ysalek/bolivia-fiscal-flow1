@@ -216,20 +216,21 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
         </PopoverTrigger>
         
         <PopoverContent className="w-[400px] p-0" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Buscar en todo el sistema..."
               value={searchTerm}
               onValueChange={setSearchTerm}
             />
             
-            {!searchTerm && recentSearches.length > 0 && (
+            {!searchTerm && recentSearches && recentSearches.length > 0 && (
               <CommandGroup heading="Búsquedas recientes">
                 {recentSearches.map((recent, index) => (
                   <CommandItem
-                    key={index}
+                    key={`recent-${index}`}
                     onSelect={() => setSearchTerm(recent)}
                     className="flex items-center gap-2"
+                    value={recent}
                   >
                     <Clock className="w-4 h-4 text-muted-foreground" />
                     {recent}
@@ -242,7 +243,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
               <CommandEmpty>No se encontraron resultados.</CommandEmpty>
             )}
 
-            {results.length > 0 && (
+            {results && results.length > 0 && (
               <CommandGroup heading={`Resultados (${results.length})`}>
                 {results.map((result) => {
                   const badge = getResultBadge(result.type);
@@ -251,6 +252,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
                       key={`${result.type}-${result.id}`}
                       onSelect={() => handleResultSelect(result)}
                       className="flex items-center gap-3 p-3"
+                      value={`${result.title} ${result.subtitle}`}
                     >
                       {getResultIcon(result.type)}
                       <div className="flex-1 min-w-0">

@@ -33,7 +33,8 @@ import {
   Bookmark,
   Bell,
   Search,
-  DollarSign
+  DollarSign,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -71,6 +72,9 @@ const PresupuestosEmpresariales = lazy(() => import('@/components/contable/presu
 const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
 const CentrosCostoModule = lazy(() => import('@/components/contable/costos/CentrosCostoModule'));
 const TutorialInteractivo = lazy(() => import('@/components/contable/tutorial/TutorialInteractivo'));
+const AuditoriaTransacciones = lazy(() => import('@/components/contable/auditoria/AuditoriaTransacciones'));
+const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
+const AdvancesManagement = lazy(() => import('@/components/contable/advances/AdvancesManagement'));
 
 interface Module {
   id: string;
@@ -118,7 +122,10 @@ const modules: Module[] = [
   { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' },
   { id: 'rrhh', label: 'Recursos Humanos', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de personal y recursos humanos' },
   { id: 'centros-costo', label: 'Centros de Costo', icon: Building, component: CentrosCostoModule, category: 'herramientas', description: 'Gestión y control de centros de costo empresariales' },
-  { id: 'tutorial', label: 'Tutorial Interactivo', icon: HelpCircle, component: TutorialInteractivo, category: 'configuracion', description: 'Aprende a usar el sistema paso a paso' }
+  { id: 'tutorial', label: 'Tutorial Interactivo', icon: HelpCircle, component: TutorialInteractivo, category: 'configuracion', description: 'Aprende a usar el sistema paso a paso' },
+  { id: 'auditoria', label: 'Auditoría y Control', icon: Shield, component: AuditoriaTransacciones, category: 'herramientas', description: 'Monitoreo y auditoría de transacciones del sistema' },
+  { id: 'analisis-financiero', label: 'Análisis Financiero', icon: TrendingUp, component: AnalisisFinanciero, category: 'reportes', description: 'Análisis detallado de indicadores financieros' },
+  { id: 'anticipos', label: 'Gestión de Anticipos', icon: CreditCard, component: AdvancesManagement, category: 'herramientas', description: 'Administración de anticipos y préstamos a empleados' }
 ];
 
 const categories = {
