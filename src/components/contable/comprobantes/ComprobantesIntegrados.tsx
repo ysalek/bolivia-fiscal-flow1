@@ -109,8 +109,8 @@ const ComprobantesIntegrados = () => {
         fechaCreacion: "2024-01-15T10:30:00Z",
         cuentas: [
           { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 5750.00, haber: 0 },
-          { codigo: "4111", nombre: "Ventas de Mercaderías", debe: 0, haber: 5000.00 },
-          { codigo: "2141", nombre: "IVA por Pagar", debe: 0, haber: 750.00 }
+          { codigo: "4111", nombre: "Ventas de Productos", debe: 0, haber: 5000.00 },
+          { codigo: "2113", nombre: "IVA por Pagar", debe: 0, haber: 750.00 }
         ],
         asientoGenerado: true,
         asientoId: "ASI-001"
@@ -151,7 +151,7 @@ const ComprobantesIntegrados = () => {
         creadoPor: "Carlos López - Gerente",
         fechaCreacion: "2024-01-17T09:45:00Z",
         cuentas: [
-          { codigo: "1131", nombre: "Inventario de Mercaderías", debe: 7565.22, haber: 0 },
+          { codigo: "1131", nombre: "Inventarios", debe: 7565.22, haber: 0 },
           { codigo: "1142", nombre: "IVA Crédito Fiscal", debe: 1134.78, haber: 0 },
           { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 0, haber: 8700.00 }
         ],

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,18 +35,24 @@ const PlanCuentasModule = () => {
   });
   const { toast } = useToast();
 
+  // Guardar el plan de cuentas en localStorage al cargar
+  useEffect(() => {
+    localStorage.setItem('planCuentas', JSON.stringify(cuentas));
+  }, []);
+
   const cuentas: Cuenta[] = [
     // ACTIVOS (1000-1999)
     { codigo: "1", nombre: "ACTIVOS", tipo: "activo", nivel: 1, naturaleza: "deudora", saldo: 150000, activa: true },
     { codigo: "11", nombre: "ACTIVO CORRIENTE", tipo: "activo", nivel: 2, padre: "1", naturaleza: "deudora", saldo: 75000, activa: true },
     { codigo: "111", nombre: "DISPONIBLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 25000, activa: true },
-    { codigo: "1111", nombre: "Caja", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 5000, activa: true },
-    { codigo: "1112", nombre: "Caja Chica", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 1000, activa: true },
-    { codigo: "1121", nombre: "Bancos", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 19000, activa: true },
+    { codigo: "1111", nombre: "Caja General", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 5000, activa: true },
+    { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 15000, activa: true },
+    { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 5000, activa: true },
     
     { codigo: "112", nombre: "EXIGIBLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 30000, activa: true },
     { codigo: "1121", nombre: "Cuentas por Cobrar", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 25000, activa: true },
     { codigo: "1122", nombre: "Documentos por Cobrar", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 5000, activa: true },
+    { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 0, activa: true },
     
     { codigo: "113", nombre: "REALIZABLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 20000, activa: true },
     { codigo: "1131", nombre: "Inventarios", tipo: "activo", nivel: 4, padre: "113", naturaleza: "deudora", saldo: 20000, activa: true },
@@ -64,6 +70,7 @@ const PlanCuentasModule = () => {
     { codigo: "2111", nombre: "Cuentas por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 25000, activa: true },
     { codigo: "2112", nombre: "Documentos por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 10000, activa: true },
     { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 5000, activa: true },
+    { codigo: "2141", nombre: "IVA Débito Fiscal", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 0, activa: true },
     
     { codigo: "22", nombre: "PASIVO NO CORRIENTE", tipo: "pasivo", nivel: 2, padre: "2", naturaleza: "acreedora", saldo: 20000, activa: true },
     { codigo: "221", nombre: "DEUDAS A LARGO PLAZO", tipo: "pasivo", nivel: 3, padre: "22", naturaleza: "acreedora", saldo: 20000, activa: true },
@@ -90,6 +97,7 @@ const PlanCuentasModule = () => {
     { codigo: "521", nombre: "Gastos Administrativos", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true },
     { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
     { codigo: "5212", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
+    { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
     { codigo: "522", nombre: "Gastos de Ventas", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true },
   ];
 
