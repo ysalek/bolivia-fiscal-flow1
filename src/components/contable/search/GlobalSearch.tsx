@@ -58,79 +58,85 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
     try {
       // Buscar en productos
       const productos = JSON.parse(localStorage.getItem('productos') || '[]');
-      productos.forEach((producto: any) => {
-        if (
-          producto.nombre.toLowerCase().includes(query.toLowerCase()) ||
-          producto.codigo.toLowerCase().includes(query.toLowerCase())
-        ) {
-          searchResults.push({
-            id: producto.id,
-            type: 'producto',
-            title: producto.nombre,
-            subtitle: `Código: ${producto.codigo} - Stock: ${producto.stockActual}`,
-            data: producto,
-            module: 'productos'
-          });
-        }
-      });
+      if (Array.isArray(productos)) {
+        productos.forEach((producto: any) => {
+          if (producto && producto.nombre && producto.codigo && 
+              (producto.nombre.toLowerCase().includes(query.toLowerCase()) ||
+               producto.codigo.toLowerCase().includes(query.toLowerCase()))) {
+            searchResults.push({
+              id: producto.id || Math.random().toString(),
+              type: 'producto',
+              title: producto.nombre || 'Sin nombre',
+              subtitle: `Código: ${producto.codigo || 'N/A'} - Stock: ${producto.stockActual || 0}`,
+              data: producto,
+              module: 'productos'
+            });
+          }
+        });
+      }
 
       // Buscar en clientes
       const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-      clientes.forEach((cliente: any) => {
-        if (
-          cliente.nombre.toLowerCase().includes(query.toLowerCase()) ||
-          cliente.nit.includes(query)
-        ) {
-          searchResults.push({
-            id: cliente.id,
-            type: 'cliente',
-            title: cliente.nombre,
-            subtitle: `NIT: ${cliente.nit} - Tel: ${cliente.telefono}`,
-            data: cliente,
-            module: 'clientes'
-          });
-        }
-      });
+      if (Array.isArray(clientes)) {
+        clientes.forEach((cliente: any) => {
+          if (cliente && cliente.nombre && 
+              (cliente.nombre.toLowerCase().includes(query.toLowerCase()) ||
+               (cliente.nit && cliente.nit.includes(query)))) {
+            searchResults.push({
+              id: cliente.id || Math.random().toString(),
+              type: 'cliente',
+              title: cliente.nombre || 'Sin nombre',
+              subtitle: `NIT: ${cliente.nit || 'N/A'} - Tel: ${cliente.telefono || 'N/A'}`,
+              data: cliente,
+              module: 'clientes'
+            });
+          }
+        });
+      }
 
       // Buscar en facturas
       const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-      facturas.forEach((factura: any) => {
-        if (
-          factura.numero.toLowerCase().includes(query.toLowerCase()) ||
-          factura.cliente.nombre.toLowerCase().includes(query.toLowerCase())
-        ) {
-          searchResults.push({
-            id: factura.id,
-            type: 'factura',
-            title: `Factura ${factura.numero}`,
-            subtitle: `Cliente: ${factura.cliente.nombre} - Total: Bs. ${factura.total}`,
-            data: factura,
-            module: 'facturacion'
-          });
-        }
-      });
+      if (Array.isArray(facturas)) {
+        facturas.forEach((factura: any) => {
+          if (factura && factura.numero && 
+              (factura.numero.toLowerCase().includes(query.toLowerCase()) ||
+               (factura.cliente && factura.cliente.nombre && 
+                factura.cliente.nombre.toLowerCase().includes(query.toLowerCase())))) {
+            searchResults.push({
+              id: factura.id || Math.random().toString(),
+              type: 'factura',
+              title: `Factura ${factura.numero || 'N/A'}`,
+              subtitle: `Cliente: ${factura.cliente?.nombre || 'N/A'} - Total: Bs. ${factura.total || 0}`,
+              data: factura,
+              module: 'facturacion'
+            });
+          }
+        });
+      }
 
       // Buscar en asientos contables
       const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
-      asientos.forEach((asiento: any) => {
-        if (
-          asiento.concepto.toLowerCase().includes(query.toLowerCase()) ||
-          asiento.referencia.toLowerCase().includes(query.toLowerCase())
-        ) {
-          searchResults.push({
-            id: asiento.id,
-            type: 'transaccion',
-            title: asiento.concepto,
-            subtitle: `Ref: ${asiento.referencia} - Fecha: ${asiento.fecha}`,
-            data: asiento,
-            module: 'libro-diario'
-          });
-        }
-      });
+      if (Array.isArray(asientos)) {
+        asientos.forEach((asiento: any) => {
+          if (asiento && asiento.concepto && 
+              (asiento.concepto.toLowerCase().includes(query.toLowerCase()) ||
+               (asiento.referencia && asiento.referencia.toLowerCase().includes(query.toLowerCase())))) {
+            searchResults.push({
+              id: asiento.id || Math.random().toString(),
+              type: 'transaccion',
+              title: asiento.concepto || 'Sin concepto',
+              subtitle: `Ref: ${asiento.referencia || 'N/A'} - Fecha: ${asiento.fecha || 'N/A'}`,
+              data: asiento,
+              module: 'libro-diario'
+            });
+          }
+        });
+      }
 
       setResults(searchResults.slice(0, 10)); // Limitar a 10 resultados
     } catch (error) {
       console.error('Error en búsqueda:', error);
+      setResults([]);
     } finally {
       setIsLoading(false);
     }

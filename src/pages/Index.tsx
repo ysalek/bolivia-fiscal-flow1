@@ -69,6 +69,8 @@ const AnalisisRentabilidad = lazy(() => import('@/components/contable/rentabilid
 const ConciliacionBancaria = lazy(() => import('@/components/contable/bancario/ConciliacionBancaria'));
 const PresupuestosEmpresariales = lazy(() => import('@/components/contable/presupuestos/PresupuestosEmpresariales'));
 const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
+const CentrosCostoModule = lazy(() => import('@/components/contable/costos/CentrosCostoModule'));
+const TutorialInteractivo = lazy(() => import('@/components/contable/tutorial/TutorialInteractivo'));
 
 interface Module {
   id: string;
@@ -114,7 +116,9 @@ const modules: Module[] = [
   { id: 'conciliacion-bancaria', label: 'Conciliación Bancaria', icon: Banknote, component: ConciliacionBancaria, category: 'herramientas', description: 'Conciliación automática de extractos bancarios' },
   { id: 'presupuestos', label: 'Presupuestos Empresariales', icon: Factory, component: PresupuestosEmpresariales, category: 'reportes', description: 'Gestión y control de presupuestos empresariales' },
   { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' },
-  { id: 'rrhh', label: 'Recursos Humanos', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de personal y recursos humanos' }
+  { id: 'rrhh', label: 'Recursos Humanos', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de personal y recursos humanos' },
+  { id: 'centros-costo', label: 'Centros de Costo', icon: Building, component: CentrosCostoModule, category: 'herramientas', description: 'Gestión y control de centros de costo empresariales' },
+  { id: 'tutorial', label: 'Tutorial Interactivo', icon: HelpCircle, component: TutorialInteractivo, category: 'configuracion', description: 'Aprende a usar el sistema paso a paso' }
 ];
 
 const categories = {
