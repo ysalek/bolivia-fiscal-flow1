@@ -3,8 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Search, 
@@ -15,35 +13,25 @@ import {
   Calculator,
   TrendingUp,
   Clock,
-  Filter
+  Filter,
+  ChevronRight
 } from "lucide-react";
 
 interface SearchResult {
   id: string;
-  type: 'producto' | 'cliente' | 'factura' | 'comprobante' | 'transaccion';
-  title: string;
-  subtitle: string;
-  data: any;
-  module: string;
+  name: string;
+  keywords: string[];
 }
 
 interface GlobalSearchProps {
-  onNavigate: (moduleId: string, itemId?: string) => void;
+  onNavigate: (moduleId: string) => void;
 }
 
 const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // Cargar búsquedas recientes del localStorage
-  useEffect(() => {
-    const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-    setRecentSearches(recent);
-  }, []);
 
   // Lista de módulos del sistema
   const modules = [
@@ -77,253 +65,116 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
     { id: 'rentabilidad', name: 'Análisis de Rentabilidad', keywords: ['rentabilidad', 'beneficios'] }
   ];
 
-  // Función de búsqueda solo en módulos
-  const performSearch = async (query: string) => {
-    if (!query || !query.trim()) {
+  // Cargar búsquedas recientes del localStorage
+  useEffect(() => {
+    const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    setRecentSearches(recent);
+  }, []);
+
+  // Función de búsqueda en módulos
+  useEffect(() => {
+    if (!searchTerm.trim()) {
       setResults([]);
       return;
     }
 
-    setIsLoading(true);
-    const searchResults: SearchResult[] = [];
+    const searchQuery = searchTerm.toLowerCase();
+    const filteredModules = modules.filter((module) => {
+      const matchesName = module.name.toLowerCase().includes(searchQuery);
+      const matchesKeywords = module.keywords.some(keyword => 
+        keyword.toLowerCase().includes(searchQuery)
+      );
+      return matchesName || matchesKeywords;
+    });
 
-    try {
-      const searchQuery = query.toLowerCase();
-      
-      modules.forEach((module) => {
-        const matchesName = module.name.toLowerCase().includes(searchQuery);
-        const matchesKeywords = module.keywords.some(keyword => 
-          keyword.toLowerCase().includes(searchQuery)
-        );
-        
-        if (matchesName || matchesKeywords) {
-          searchResults.push({
-            id: module.id,
-            type: 'transaccion',
-            title: module.name,
-            subtitle: `Módulo del sistema - ${module.keywords.join(', ')}`,
-            data: module,
-            module: module.id
-          });
-        }
-      });
-
-      setResults(searchResults.slice(0, 8)); // Limitar a 8 resultados
-    } catch (error) {
-      console.error('Error en búsqueda:', error);
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Manejar cambio en el input de búsqueda
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (searchTerm && searchTerm.trim().length > 0) {
-        performSearch(searchTerm);
-      } else {
-        setResults([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
+    setResults(filteredModules.slice(0, 6));
   }, [searchTerm]);
 
   // Manejar selección de resultado
-  const handleResultSelect = (result: SearchResult) => {
+  const handleResultSelect = (module: SearchResult) => {
     // Agregar a búsquedas recientes
-    const updatedRecent = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5);
+    const updatedRecent = [module.name, ...recentSearches.filter(s => s !== module.name)].slice(0, 5);
     setRecentSearches(updatedRecent);
     localStorage.setItem('recentSearches', JSON.stringify(updatedRecent));
 
-    // Navegar al módulo correspondiente
-    onNavigate(result.module, result.id);
+    // Navegar al módulo
+    onNavigate(module.id);
     setIsOpen(false);
     setSearchTerm("");
   };
 
-  const getResultIcon = (type: string) => {
-    switch (type) {
-      case 'producto': return <Package className="w-4 h-4 text-blue-500" />;
-      case 'cliente': return <Users className="w-4 h-4 text-green-500" />;
-      case 'factura': return <Receipt className="w-4 h-4 text-purple-500" />;
-      case 'transaccion': return <Calculator className="w-4 h-4 text-orange-500" />;
-      default: return <FileText className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getResultBadge = (type: string) => {
-    const badges = {
-      'producto': { label: 'Producto', color: 'bg-blue-100 text-blue-800' },
-      'cliente': { label: 'Cliente', color: 'bg-green-100 text-green-800' },
-      'factura': { label: 'Factura', color: 'bg-purple-100 text-purple-800' },
-      'transaccion': { label: 'Asiento', color: 'bg-orange-100 text-orange-800' }
-    };
-    
-    return badges[type as keyof typeof badges] || { label: 'Documento', color: 'bg-gray-100 text-gray-800' };
+  const handleRecentSelect = (recent: string) => {
+    setSearchTerm(recent);
+    setIsOpen(true);
   };
 
   return (
-    <>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <div className="relative flex-1 max-w-lg">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Buscar módulos del sistema..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onClick={() => setIsOpen(true)}
-              className="pl-10 pr-4 bg-background/50 backdrop-blur-sm border-primary/20 focus:border-primary/50"
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvanced(true)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 px-2"
-              >
-                <Filter className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
-        </PopoverTrigger>
-        
-        <PopoverContent className="w-[400px] p-0" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Buscar en todo el sistema..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-            />
-            
-            {!searchTerm && recentSearches && recentSearches.length > 0 && (
-              <CommandGroup heading="Búsquedas recientes">
+    <div className="relative flex-1 max-w-lg">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+      <Input
+        placeholder="Buscar módulos del sistema..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        className="pl-10 pr-4 bg-background/50 backdrop-blur-sm border-primary/20 focus:border-primary/50"
+      />
+      
+      {isOpen && (
+        <Card className="absolute top-full left-0 right-0 mt-1 z-50 shadow-lg border-primary/20">
+          <CardContent className="p-0 max-h-96 overflow-y-auto">
+            {!searchTerm && recentSearches.length > 0 && (
+              <div className="p-2 border-b">
+                <div className="text-xs font-medium text-muted-foreground mb-2 px-2">Búsquedas recientes</div>
                 {recentSearches.map((recent, index) => (
-                  <CommandItem
-                    key={`recent-${index}`}
-                    onSelect={() => setSearchTerm(recent)}
-                    className="flex items-center gap-2"
-                    value={recent}
+                  <div
+                    key={index}
+                    onClick={() => handleRecentSelect(recent)}
+                    className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
                   >
                     <Clock className="w-4 h-4 text-muted-foreground" />
-                    {recent}
-                  </CommandItem>
+                    <span className="text-sm">{recent}</span>
+                  </div>
                 ))}
-              </CommandGroup>
+              </div>
             )}
 
-            {searchTerm && !isLoading && results.length === 0 && (
-              <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+            {searchTerm && results.length === 0 && (
+              <div className="p-4 text-center text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No se encontraron módulos</p>
+              </div>
             )}
 
-            {results && results.length > 0 && (
-              <CommandGroup heading={`Resultados (${results.length})`}>
-                {results.map((result) => {
-                  const badge = getResultBadge(result.type);
-                  return (
-                    <CommandItem
-                      key={`${result.type}-${result.id}`}
-                      onSelect={() => handleResultSelect(result)}
-                      className="flex items-center gap-3 p-3"
-                      value={`${result.title} ${result.subtitle}`}
-                    >
-                      {getResultIcon(result.type)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium truncate">{result.title}</p>
-                          <Badge className={`text-xs ${badge.color}`}>
-                            {badge.label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {result.subtitle}
+            {results.length > 0 && (
+              <div className="p-2">
+                <div className="text-xs font-medium text-muted-foreground mb-2 px-2">
+                  Módulos ({results.length})
+                </div>
+                {results.map((result) => (
+                  <div
+                    key={result.id}
+                    onClick={() => handleResultSelect(result)}
+                    className="flex items-center justify-between p-3 hover:bg-accent rounded cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="font-medium text-sm">{result.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {result.keywords.slice(0, 3).join(', ')}
                         </p>
                       </div>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            )}
-
-            {isLoading && (
-              <div className="p-4 text-center text-muted-foreground">
-                Buscando...
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                  </div>
+                ))}
               </div>
             )}
-          </Command>
-        </PopoverContent>
-      </Popover>
-
-      {/* Modal de búsqueda avanzada */}
-      <Dialog open={showAdvanced} onOpenChange={setShowAdvanced}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Búsqueda Avanzada</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Tipo de documento</label>
-                <Command className="border rounded-md">
-                  <CommandInput placeholder="Seleccionar tipo..." />
-                  <CommandGroup>
-                    <CommandItem>Productos</CommandItem>
-                    <CommandItem>Clientes</CommandItem>
-                    <CommandItem>Facturas</CommandItem>
-                    <CommandItem>Asientos contables</CommandItem>
-                    <CommandItem>Comprobantes</CommandItem>
-                  </CommandGroup>
-                </Command>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Rango de fechas</label>
-                <div className="flex gap-2">
-                  <Input type="date" placeholder="Desde" />
-                  <Input type="date" placeholder="Hasta" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Estado</label>
-                <Command className="border rounded-md">
-                  <CommandInput placeholder="Seleccionar estado..." />
-                  <CommandGroup>
-                    <CommandItem>Activo</CommandItem>
-                    <CommandItem>Inactivo</CommandItem>
-                    <CommandItem>Pendiente</CommandItem>
-                    <CommandItem>Completado</CommandItem>
-                  </CommandGroup>
-                </Command>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Monto</label>
-                <div className="flex gap-2">
-                  <Input type="number" placeholder="Mínimo" />
-                  <Input type="number" placeholder="Máximo" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowAdvanced(false)} className="flex-1">
-                Cancelar
-              </Button>
-              <Button className="flex-1">
-                <Search className="w-4 h-4 mr-2" />
-                Buscar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 
