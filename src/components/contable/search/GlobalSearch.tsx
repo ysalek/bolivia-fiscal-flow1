@@ -47,7 +47,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
 
   // Función de búsqueda global
   const performSearch = async (query: string) => {
-    if (!query.trim()) {
+    if (!query || !query.trim()) {
       setResults([]);
       return;
     }
@@ -139,7 +139,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
   // Manejar cambio en el input de búsqueda
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      if (searchTerm) {
+      if (searchTerm && searchTerm.trim().length > 0) {
         performSearch(searchTerm);
       } else {
         setResults([]);

@@ -113,7 +113,8 @@ const modules: Module[] = [
   { id: 'analisis-rentabilidad', label: 'Análisis de Rentabilidad', icon: Target, component: AnalisisRentabilidad, category: 'reportes', description: 'Análisis detallado de rentabilidad por productos y categorías' },
   { id: 'conciliacion-bancaria', label: 'Conciliación Bancaria', icon: Banknote, component: ConciliacionBancaria, category: 'herramientas', description: 'Conciliación automática de extractos bancarios' },
   { id: 'presupuestos', label: 'Presupuestos Empresariales', icon: Factory, component: PresupuestosEmpresariales, category: 'reportes', description: 'Gestión y control de presupuestos empresariales' },
-  { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' }
+  { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' },
+  { id: 'rrhh', label: 'Recursos Humanos', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de personal y recursos humanos' }
 ];
 
 const categories = {
