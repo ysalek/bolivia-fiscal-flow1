@@ -1,446 +1,368 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, FileText, Calculator } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { AsientoContable, CuentaAsiento, planCuentas, asientosIniciales, generarNumeroAsiento } from "./diary/DiaryData";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BookOpen, Calendar, Edit, Trash2, Plus, Eye } from 'lucide-react';
+import { useAsientos } from '@/hooks/useAsientos';
+import { AsientoContable } from './diary/DiaryData';
+import { useToast } from '@/hooks/use-toast';
 
 const LibroDiario = () => {
-  const [asientos, setAsientos] = useState<AsientoContable[]>(asientosIniciales);
-  const [showNewEntry, setShowNewEntry] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterPeriod, setFilterPeriod] = useState("mes-actual");
-  const [newAsiento, setNewAsiento] = useState({
-    fecha: new Date().toISOString().slice(0, 10),
-    concepto: "",
-    referencia: "",
-    cuentas: [
-      { codigo: "", nombre: "", debe: 0, haber: 0 },
-      { codigo: "", nombre: "", debe: 0, haber: 0 }
-    ] as CuentaAsiento[]
-  });
+  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
+  const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [asientoEditando, setAsientoEditando] = useState<AsientoContable | null>(null);
+  const { getAsientos, guardarAsiento } = useAsientos();
   const { toast } = useToast();
 
-  const addCuenta = () => {
-    setNewAsiento(prev => ({
-      ...prev,
-      cuentas: [...prev.cuentas, { codigo: "", nombre: "", debe: 0, haber: 0 }]
-    }));
+  const [asientos, setAsientos] = useState<AsientoContable[]>([]);
+
+  useEffect(() => {
+    cargarAsientos();
+  }, []);
+
+  const cargarAsientos = () => {
+    const asientosData = getAsientos();
+    setAsientos(asientosData);
   };
 
-  const updateCuenta = (index: number, field: string, value: any) => {
-    setNewAsiento(prev => {
-      const newCuentas = [...prev.cuentas];
+  const filtrarAsientos = () => {
+    return asientos.filter(asiento => {
+      const fechaAsiento = new Date(asiento.fecha);
+      const fechaInicioObj = new Date(fechaInicio);
+      const fechaFinObj = new Date(fechaFin);
       
-      if (field === 'codigo') {
-        const cuenta = planCuentas.find(c => c.codigo === value);
-        if (cuenta) {
-          newCuentas[index] = { ...newCuentas[index], codigo: value, nombre: cuenta.nombre };
-        }
-      } else {
-        newCuentas[index] = { ...newCuentas[index], [field]: value };
-      }
+      const cumpleFecha = fechaAsiento >= fechaInicioObj && fechaAsiento <= fechaFinObj;
+      const cumpleEstado = filtroEstado === 'todos' || asiento.estado === filtroEstado;
       
-      return { ...prev, cuentas: newCuentas };
+      return cumpleFecha && cumpleEstado;
     });
   };
 
-  const removeCuenta = (index: number) => {
-    if (newAsiento.cuentas.length > 2) {
-      setNewAsiento(prev => ({
-        ...prev,
-        cuentas: prev.cuentas.filter((_, i) => i !== index)
-      }));
-    }
+  const editarAsiento = (asiento: AsientoContable) => {
+    setAsientoEditando({ ...asiento });
+    setShowEditDialog(true);
   };
 
-  const calculateTotals = () => {
-    const debe = newAsiento.cuentas.reduce((sum, cuenta) => sum + (cuenta.debe || 0), 0);
-    const haber = newAsiento.cuentas.reduce((sum, cuenta) => sum + (cuenta.haber || 0), 0);
-    return { debe, haber };
-  };
-
-  const isBalanced = () => {
-    const { debe, haber } = calculateTotals();
-    return Math.abs(debe - haber) < 0.01 && debe > 0;
-  };
-
-  const handleSaveAsiento = () => {
-    if (!isBalanced()) {
+  const eliminarAsiento = (asientoId: string) => {
+    if (confirm('¿Está seguro de eliminar este asiento? Esta acción no se puede deshacer.')) {
+      const asientosActualizados = asientos.filter(a => a.id !== asientoId);
+      setAsientos(asientosActualizados);
+      localStorage.setItem('asientosContables', JSON.stringify(asientosActualizados));
+      
       toast({
-        title: "Error en el asiento",
-        description: "El asiento debe estar balanceado (Debe = Haber) y ser mayor a 0.",
+        title: "Asiento eliminado",
+        description: "El asiento contable ha sido eliminado exitosamente",
         variant: "destructive"
       });
-      return;
     }
+  };
 
-    if (!newAsiento.concepto.trim()) {
-      toast({
-        title: "Error en el asiento",
-        description: "El concepto es obligatorio.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const { debe, haber } = calculateTotals();
-    const ultimoNumero = asientos.length > 0 ? parseInt(asientos[0].numero.split('-')[1]) : 0;
+  const cambiarEstadoAsiento = (asientoId: string, nuevoEstado: 'borrador' | 'registrado' | 'anulado') => {
+    const asientosActualizados = asientos.map(a => 
+      a.id === asientoId ? { ...a, estado: nuevoEstado } : a
+    );
+    setAsientos(asientosActualizados);
+    localStorage.setItem('asientosContables', JSON.stringify(asientosActualizados));
     
-    const nuevoAsiento: AsientoContable = {
-      id: Date.now().toString(),
-      numero: generarNumeroAsiento(ultimoNumero),
-      fecha: newAsiento.fecha,
-      concepto: newAsiento.concepto,
-      referencia: newAsiento.referencia,
-      debe,
-      haber,
-      estado: 'registrado',
-      cuentas: newAsiento.cuentas.filter(c => c.codigo && (c.debe > 0 || c.haber > 0))
-    };
-
-    setAsientos(prev => [nuevoAsiento, ...prev]);
-
     toast({
-      title: "Asiento guardado",
-      description: `Asiento ${nuevoAsiento.numero} registrado correctamente.`,
-    });
-    
-    setShowNewEntry(false);
-    setNewAsiento({
-      fecha: new Date().toISOString().slice(0, 10),
-      concepto: "",
-      referencia: "",
-      cuentas: [
-        { codigo: "", nombre: "", debe: 0, haber: 0 },
-        { codigo: "", nombre: "", debe: 0, haber: 0 }
-      ]
+      title: "Estado actualizado",
+      description: `El asiento ha sido ${nuevoEstado === 'anulado' ? 'anulado' : nuevoEstado}`,
     });
   };
 
-  const filteredAsientos = asientos.filter(asiento => {
-    const matchesSearch = asiento.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         asiento.numero.includes(searchTerm) ||
-                         asiento.referencia.includes(searchTerm);
-    return matchesSearch;
-  });
+  const guardarEdicion = () => {
+    if (!asientoEditando) return;
+
+    const asientosActualizados = asientos.map(a => 
+      a.id === asientoEditando.id ? asientoEditando : a
+    );
+    setAsientos(asientosActualizados);
+    localStorage.setItem('asientosContables', JSON.stringify(asientosActualizados));
+    
+    toast({
+      title: "Asiento actualizado",
+      description: "Los cambios han sido guardados exitosamente",
+    });
+    
+    setShowEditDialog(false);
+    setAsientoEditando(null);
+  };
+
+  const asientosFiltrados = filtrarAsientos();
+  const totalDebe = asientosFiltrados.reduce((sum, asiento) => sum + asiento.debe, 0);
+  const totalHaber = asientosFiltrados.reduce((sum, asiento) => sum + asiento.haber, 0);
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'registrado': return 'bg-green-100 text-green-800';
+      case 'anulado': return 'bg-red-100 text-red-800';
+      default: return 'bg-yellow-100 text-yellow-800';
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Libro Diario</h2>
-          <p className="text-slate-600">Registro cronológico de todas las transacciones contables</p>
-        </div>
-        
-        <Dialog open={showNewEntry} onOpenChange={setShowNewEntry}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Asiento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Nuevo Asiento Contable</DialogTitle>
-              <DialogDescription>
-                Registre un nuevo asiento en el libro diario
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6 py-4">
-              {/* Datos generales */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fecha">Fecha</Label>
-                  <Input
-                    id="fecha"
-                    type="date"
-                    value={newAsiento.fecha}
-                    onChange={(e) => setNewAsiento(prev => ({ ...prev, fecha: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="concepto">Concepto</Label>
-                  <Input
-                    id="concepto"
-                    value={newAsiento.concepto}
-                    onChange={(e) => setNewAsiento(prev => ({ ...prev, concepto: e.target.value }))}
-                    placeholder="Descripción del asiento contable"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="referencia">Referencia</Label>
-                  <Input
-                    id="referencia"
-                    value={newAsiento.referencia}
-                    onChange={(e) => setNewAsiento(prev => ({ ...prev, referencia: e.target.value }))}
-                    placeholder="Documento de referencia"
-                  />
-                </div>
-              </div>
-
-              {/* Cuentas */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Cuentas Contables</h3>
-                  <Button onClick={addCuenta} size="sm" variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar Cuenta
-                  </Button>
-                </div>
-
-                <div className="border rounded-lg">
-                  <div className="grid grid-cols-7 gap-2 p-3 bg-gray-50 border-b font-medium text-sm">
-                    <div>Código</div>
-                    <div className="col-span-2">Cuenta</div>
-                    <div>Debe</div>
-                    <div>Haber</div>
-                    <div>Acciones</div>
-                  </div>
-                  
-                  {newAsiento.cuentas.map((cuenta, index) => (
-                    <div key={index} className="grid grid-cols-7 gap-2 p-3 border-b">
-                      <div>
-                        <Select 
-                          value={cuenta.codigo} 
-                          onValueChange={(value) => updateCuenta(index, 'codigo', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Código" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {planCuentas.map(c => (
-                              <SelectItem key={c.codigo} value={c.codigo}>
-                                {c.codigo}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          value={cuenta.nombre}
-                          readOnly
-                          placeholder="Seleccione una cuenta"
-                          className="bg-gray-50"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          type="number"
-                          value={cuenta.debe}
-                          onChange={(e) => updateCuenta(index, 'debe', parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                          step="0.01"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          type="number"
-                          value={cuenta.haber}
-                          onChange={(e) => updateCuenta(index, 'haber', parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                          step="0.01"
-                        />
-                      </div>
-                      <div>
-                        {newAsiento.cuentas.length > 2 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeCuenta(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Totales */}
-                  <div className="grid grid-cols-7 gap-2 p-3 bg-gray-50 font-bold">
-                    <div className="col-span-3">TOTALES:</div>
-                    <div>Bs. {calculateTotals().debe.toFixed(2)}</div>
-                    <div>Bs. {calculateTotals().haber.toFixed(2)}</div>
-                    <div>
-                      {isBalanced() ? (
-                        <Badge className="bg-green-100 text-green-800">✓ Balanceado</Badge>
-                      ) : (
-                        <Badge className="bg-red-100 text-red-800">✗ No balanceado</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowNewEntry(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveAsiento} disabled={!isBalanced()}>
-                  Guardar Asiento
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar asientos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mes-actual">Mes Actual</SelectItem>
-                <SelectItem value="trimestre">Último Trimestre</SelectItem>
-                <SelectItem value="año">Año Actual</SelectItem>
-                <SelectItem value="todos">Todos</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">
-                {filteredAsientos.length} asiento(s)
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Lista de asientos */}
       <Card>
         <CardHeader>
-          <CardTitle>Asientos Contables</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="w-6 h-6" />
+            Libro Diario - Modo Administrador
+          </CardTitle>
           <CardDescription>
-            Registro cronológico de movimientos contables
+            Registro cronológico de transacciones contables con capacidad de edición
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredAsientos.map((asiento) => (
-              <div key={asiento.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className="font-mono">
-                      {asiento.numero}
-                    </Badge>
-                    <div>
-                      <div className="font-medium">{asiento.concepto}</div>
-                      <div className="text-sm text-gray-500">
-                        {asiento.fecha} • Ref: {asiento.referencia}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">Bs. {asiento.debe.toFixed(2)}</div>
-                    <Badge className="bg-green-100 text-green-800">
+          {/* Filtros */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <Label htmlFor="fecha-inicio">Desde:</Label>
+              <Input
+                id="fecha-inicio"
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="w-auto"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="fecha-fin">Hasta:</Label>
+              <Input
+                id="fecha-fin"
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="w-auto"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label>Estado:</Label>
+              <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="borrador">Borrador</SelectItem>
+                  <SelectItem value="registrado">Registrado</SelectItem>
+                  <SelectItem value="anulado">Anulado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Resumen */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  Bs. {totalDebe.toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground">Total Debe</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  Bs. {totalHaber.toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground">Total Haber</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold ${Math.abs(totalDebe - totalHaber) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                  Bs. {Math.abs(totalDebe - totalHaber).toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground">Diferencia</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Table */}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>N° Asiento</TableHead>
+                <TableHead>Concepto</TableHead>
+                <TableHead>Referencia</TableHead>
+                <TableHead className="text-right">Debe (Bs.)</TableHead>
+                <TableHead className="text-right">Haber (Bs.)</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {asientosFiltrados.map((asiento) => (
+                <TableRow key={asiento.id}>
+                  <TableCell>{new Date(asiento.fecha).toLocaleDateString('es-BO')}</TableCell>
+                  <TableCell className="font-mono">{asiento.numero}</TableCell>
+                  <TableCell>{asiento.concepto}</TableCell>
+                  <TableCell>{asiento.referencia}</TableCell>
+                  <TableCell className="text-right font-semibold text-green-600">
+                    {asiento.debe.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-red-600">
+                    {asiento.haber.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getEstadoColor(asiento.estado)}>
                       {asiento.estado}
                     </Badge>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="grid grid-cols-4 gap-2 text-sm font-medium mb-2">
-                    <div>Código</div>
-                    <div>Cuenta</div>
-                    <div className="text-right">Debe</div>
-                    <div className="text-right">Haber</div>
-                  </div>
-                  {asiento.cuentas.map((cuenta, index) => (
-                    <div key={index} className="grid grid-cols-4 gap-2 text-sm py-1">
-                      <div className="font-mono">{cuenta.codigo}</div>
-                      <div>{cuenta.nombre}</div>
-                      <div className="text-right">
-                        {cuenta.debe > 0 ? `Bs. ${cuenta.debe.toFixed(2)}` : '—'}
-                      </div>
-                      <div className="text-right">
-                        {cuenta.haber > 0 ? `Bs. ${cuenta.haber.toFixed(2)}` : '—'}
-                      </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => editarAsiento(asiento)}
+                        disabled={asiento.estado === 'anulado'}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      
+                      {asiento.estado === 'borrador' && (
+                        <Button
+                          size="sm"
+                          onClick={() => cambiarEstadoAsiento(asiento.id, 'registrado')}
+                        >
+                          Registrar
+                        </Button>
+                      )}
+                      
+                      {asiento.estado === 'registrado' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => cambiarEstadoAsiento(asiento.id, 'anulado')}
+                        >
+                          Anular
+                        </Button>
+                      )}
+                      
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => eliminarAsiento(asiento.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  ))}
-                </div>
-                
-                <div className="flex justify-end gap-2 mt-3">
-                  <Button size="sm" variant="outline">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <FileText className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Calculator className="h-8 w-8 text-blue-600" />
+      {/* Dialog de edición */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Asiento Contable</DialogTitle>
+            <DialogDescription>
+              Modifique los datos del asiento contable
+            </DialogDescription>
+          </DialogHeader>
+          
+          {asientoEditando && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input
+                    type="date"
+                    value={asientoEditando.fecha}
+                    onChange={(e) => setAsientoEditando({
+                      ...asientoEditando,
+                      fecha: e.target.value
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Número</Label>
+                  <Input
+                    value={asientoEditando.numero}
+                    onChange={(e) => setAsientoEditando({
+                      ...asientoEditando,
+                      numero: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+              
               <div>
-                <p className="text-2xl font-bold">{asientos.length}</p>
-                <p className="text-sm text-gray-600">Total Asientos</p>
+                <Label>Concepto</Label>
+                <Input
+                  value={asientoEditando.concepto}
+                  onChange={(e) => setAsientoEditando({
+                    ...asientoEditando,
+                    concepto: e.target.value
+                  })}
+                />
+              </div>
+              
+              <div>
+                <Label>Referencia</Label>
+                <Input
+                  value={asientoEditando.referencia}
+                  onChange={(e) => setAsientoEditando({
+                    ...asientoEditando,
+                    referencia: e.target.value
+                  })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Debe (Bs.)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={asientoEditando.debe}
+                    onChange={(e) => setAsientoEditando({
+                      ...asientoEditando,
+                      debe: parseFloat(e.target.value) || 0
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Haber (Bs.)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={asientoEditando.haber}
+                    onChange={(e) => setAsientoEditando({
+                      ...asientoEditando,
+                      haber: parseFloat(e.target.value) || 0
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={guardarEdicion}>
+                  Guardar Cambios
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Calculator className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  Bs. {asientos.reduce((sum, a) => sum + a.debe, 0).toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-600">Total Movimientos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <FileText className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">100%</p>
-                <p className="text-sm text-gray-600">Asientos Balanceados</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

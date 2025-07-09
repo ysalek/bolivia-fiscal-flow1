@@ -1,360 +1,240 @@
 
-import { useState, useEffect, lazy, Suspense } from "react";
+import React, { Suspense, useState, useEffect, lazy } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Calculator,
-  FileText,
-  Users,
-  Package,
-  BarChart3,
-  Receipt,
-  Settings,
-  FolderTree,
-  BookCopy,
-  Scale,
-  Landmark,
-  ShoppingCart,
-  HelpCircle,
-  TrendingUp,
-  Database,
-  Building2,
+  Calculator, 
+  FileText, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  TrendingUp, 
+  Scale, 
+  BookOpen, 
+  Building, 
+  Settings, 
+  HelpCircle, 
+  Banknote,
+  FileBarChart,
   CreditCard,
-  Bell,
+  Factory,
+  Archive,
+  ClipboardList,
   Target,
-  Shield,
-} from "lucide-react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import LoginForm from "@/components/auth/LoginForm";
-import OnboardingTour from "@/components/contable/dashboard/OnboardingTour";
-import Dashboard from "@/components/contable/Dashboard";
-import FacturacionModule from "@/components/contable/FacturacionModule";
-import ClientesModule from "@/components/contable/ClientesModule";
-import ProductosModule from "@/components/contable/ProductosModule";
-import InventarioModule from "@/components/contable/InventarioModule";
-import ComprasModule from "@/components/contable/ComprasModule";
-import JournalView from "@/components/contable/journal/JournalView";
-import GeneralLedgerView from "@/components/contable/ledger/GeneralLedgerView";
-import BalanceComprobacionModule from "@/components/contable/BalanceComprobacionModule";
-import BalanceGeneralModule from "@/components/contable/BalanceGeneralModule";
-import ReportesModule from "@/components/contable/ReportesModule";
-import ConfiguracionModule from "@/components/contable/ConfiguracionModule";
-import PlanCuentasModule from "@/components/contable/PlanCuentasModule";
-import TutorialModule from "@/components/contable/TutorialModule";
-import NotificationsCenter from "@/components/contable/NotificationsCenter";
-import BancosModule from "@/components/contable/BancosModule";
-import CuentasPorCobrarPagar from "@/components/contable/CuentasPorCobrarPagar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
-import EnhancedLayout from "@/components/contable/dashboard/EnhancedLayout";
-import ActivosFijosModule from "@/components/contable/ActivosFijosModule";
-import ComprobantesModule from "@/components/contable/comprobantes/ComprobantesModule";
+  PiggyBank,
+  UserCheck,
+  Receipt,
+  BarChart3,
+  HardDrive,
+  Zap,
+  FileCheck,
+  Bookmark
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Lazy load de módulos pesados
-const EstadoResultadosModule = lazy(() => import("@/components/contable/EstadoResultadosModule"));
-const KardexModule = lazy(() => import("@/components/contable/KardexModule"));
-const BackupModule = lazy(() => import("@/components/contable/BackupModule"));
-import DeclaracionesTributariasModule from "@/components/contable/DeclaracionesTributariasModule";
+// Lazy load components
+const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
+const LibroDiario = lazy(() => import('@/components/contable/LibroDiario'));
+const BalanceComprobacionModule = lazy(() => import('@/components/contable/BalanceComprobacionModule'));
+const BalanceGeneralModule = lazy(() => import('@/components/contable/BalanceGeneralModule'));
+const EstadoResultadosModule = lazy(() => import('@/components/contable/EstadoResultadosModule'));
+const ProductosModule = lazy(() => import('@/components/contable/ProductosModule'));
+const FacturacionModule = lazy(() => import('@/components/contable/FacturacionModule'));
+const ComprasModule = lazy(() => import('@/components/contable/ComprasModule'));
+const ClientesModule = lazy(() => import('@/components/contable/ClientesModule'));
+const InventarioModule = lazy(() => import('@/components/contable/InventarioModule'));
+const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPorCobrarPagar'));
+const DeclaracionesTributariasModule = lazy(() => import('@/components/contable/DeclaracionesTributariasModule'));
+const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
+const ConfiguracionModule = lazy(() => import('@/components/contable/ConfiguracionModule'));
+const TutorialModule = lazy(() => import('@/components/contable/TutorialModule'));
+const BackupModule = lazy(() => import('@/components/contable/BackupModule'));
+const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
+const ActivosFijosModule = lazy(() => import('@/components/contable/ActivosFijosModule'));
+const KardexModule = lazy(() => import('@/components/contable/KardexModule'));
+const PlanCuentasModule = lazy(() => import('@/components/contable/PlanCuentasModule'));
+const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesModule'));
+
+interface Module {
+  id: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  component: React.ComponentType<any>;
+  category: 'contabilidad' | 'facturacion' | 'inventario' | 'reportes' | 'configuracion' | 'herramientas';
+  description?: string;
+  keywords?: string[];
+}
+
+const modules: Module[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, category: 'contabilidad', description: 'Panel principal con métricas y resumen' },
+  { id: 'libro-diario', label: 'Libro Diario', icon: BookOpen, component: LibroDiario, category: 'contabilidad', description: 'Registro cronológico de transacciones' },
+  { id: 'balance-comprobacion', label: 'Balance de Comprobación', icon: Scale, component: BalanceComprobacionModule, category: 'contabilidad', description: 'Verificación de saldos contables' },
+  { id: 'balance-general', label: 'Balance General', icon: FileBarChart, component: BalanceGeneralModule, category: 'contabilidad', description: 'Estado de situación financiera' },
+  { id: 'estado-resultados', label: 'Estado de Resultados', icon: TrendingUp, component: EstadoResultadosModule, category: 'contabilidad', description: 'Estado de ganancias y pérdidas' },
+  { id: 'plan-cuentas', label: 'Plan de Cuentas', icon: Bookmark, component: PlanCuentasModule, category: 'contabilidad', description: 'Estructura del plan contable' },
+  { id: 'comprobantes', label: 'Comprobantes', icon: FileCheck, component: ComprobantesModule, category: 'contabilidad', description: 'Comprobantes de ingreso, egreso y traspaso' },
+  
+  { id: 'productos', label: 'Productos', icon: Package, component: ProductosModule, category: 'inventario', description: 'Gestión del catálogo de productos' },
+  { id: 'inventario', label: 'Inventario', icon: Archive, component: InventarioModule, category: 'inventario', description: 'Control de stock y movimientos' },
+  { id: 'kardex', label: 'Kardex', icon: ClipboardList, component: KardexModule, category: 'inventario', description: 'Seguimiento detallado de inventarios' },
+  
+  { id: 'facturacion', label: 'Facturación', icon: Receipt, component: FacturacionModule, category: 'facturacion', description: 'Emisión de facturas y documentos' },
+  { id: 'compras', label: 'Compras', icon: ShoppingCart, component: ComprasModule, category: 'facturacion', description: 'Registro de compras a proveedores' },
+  { id: 'clientes', label: 'Clientes', icon: Users, component: ClientesModule, category: 'facturacion', description: 'Gestión de base de clientes' },
+  { id: 'cuentas-cobrar-pagar', label: 'Cuentas por Cobrar/Pagar', icon: CreditCard, component: CuentasPorCobrarPagar, category: 'facturacion', description: 'Control de cuentas pendientes' },
+  
+  { id: 'bancos', label: 'Bancos', icon: PiggyBank, component: BancosModule, category: 'herramientas', description: 'Conciliación y control bancario' },
+  { id: 'activos-fijos', label: 'Activos Fijos', icon: Building, component: ActivosFijosModule, category: 'herramientas', description: 'Gestión de bienes de uso' },
+  
+  { id: 'reportes', label: 'Reportes Avanzados', icon: FileText, component: ReportesModule, category: 'reportes', description: 'Informes y análisis detallados' },
+  { id: 'declaraciones', label: 'Declaraciones Tributarias', icon: Calculator, component: DeclaracionesTributariasModule, category: 'reportes', description: 'Declaraciones fiscales y tributarias' },
+  
+  { id: 'configuracion', label: 'Configuración', icon: Settings, component: ConfiguracionModule, category: 'configuracion', description: 'Configuración del sistema' },
+  { id: 'backup', label: 'Respaldos', icon: HardDrive, component: BackupModule, category: 'configuracion', description: 'Copias de seguridad y restauración' },
+  { id: 'tutorial', label: 'Tutorial', icon: HelpCircle, component: TutorialModule, category: 'configuracion', description: 'Guía de uso del sistema' }
+];
+
+const categories = {
+  'contabilidad': { label: 'Contabilidad', icon: Calculator, color: 'bg-blue-500' },
+  'inventario': { label: 'Inventario', icon: Package, color: 'bg-green-500' },
+  'facturacion': { label: 'Facturación', icon: Receipt, color: 'bg-purple-500' },
+  'herramientas': { label: 'Herramientas', icon: Zap, color: 'bg-orange-500' },
+  'reportes': { label: 'Reportes', icon: FileText, color: 'bg-red-500' },
+  'configuracion': { label: 'Configuración', icon: Settings, color: 'bg-gray-500' }
+};
 
 const Index = () => {
-  const { isAuthenticated, user, logout, hasPermission } = useAuth();
-  const [activeModule, setActiveModule] = useState("dashboard");
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [activeModule, setActiveModule] = useState<string>('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Check if onboarding should be shown
-  useEffect(() => {
-    if (isAuthenticated) {
-      const hasCompletedOnboarding = localStorage.getItem('onboarding-completed');
-      if (!hasCompletedOnboarding) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [isAuthenticated]);
+  const filteredModules = modules.filter(module => {
+    const matchesSearch = module.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         module.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         module.keywords?.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = selectedCategory === 'all' || module.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
 
-  // Si no está autenticado, mostrar formulario de login
-  if (!isAuthenticated) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
-        <LoginForm />
-      </div>
-    );
-  }
-
-  const modules = [
-    { 
-      id: "dashboard", 
-      label: "Escritorio Financiero", 
-      icon: BarChart3, 
-      component: Dashboard, 
-      permission: "dashboard",
-      keywords: ["dashboard", "resumen", "finanzas", "kpi", "métricas", "ventas"]
-    },
-    { 
-      id: "facturacion", 
-      label: "Facturación Electrónica", 
-      icon: Receipt, 
-      component: FacturacionModule, 
-      permission: "facturacion",
-      keywords: ["facturación", "facturas", "siat", "QR", "electrónica", "fiscal"]
-    },
-    { 
-      id: "clientes", 
-      label: "Gestión de Clientes", 
-      icon: Users, 
-      component: ClientesModule, 
-      permission: "clientes",
-      keywords: ["clientes", "contactos", "nit", "ci", "gestión"]
-    },
-    { 
-      id: "productos", 
-      label: "Catálogo de Productos", 
-      icon: Package, 
-      component: ProductosModule, 
-      permission: "productos",
-      keywords: ["productos", "servicios", "catálogo", "precios", "gestión"]
-    },
-    { 
-      id: "inventario", 
-      label: "Control de Inventario", 
-      icon: Calculator, 
-      component: InventarioModule, 
-      permission: "inventario",
-      keywords: ["inventario", "stock", "almacén", "movimientos", "control"]
-    },
-    { 
-      id: "compras", 
-      label: "Gestión de Compras", 
-      icon: ShoppingCart, 
-      component: ComprasModule, 
-      permission: "compras",
-      keywords: ["compras", "proveedores", "órdenes", "adquisiciones"]
-    },
-    {
-      id: "bancos",
-      label: "Gestión Bancaria",
-      icon: Building2,
-      component: BancosModule,
-      permission: "bancos",
-      keywords: ["bancos", "conciliación", "cuentas", "movimientos", "bancario"]
-    },
-    {
-      id: "cuentas-cobrar-pagar",
-      label: "Cuentas por Cobrar/Pagar",
-      icon: CreditCard,
-      component: CuentasPorCobrarPagar,
-      permission: "cuentas_cobrar_pagar",
-      keywords: ["cuentas", "cobrar", "pagar", "cartera", "deudores", "acreedores"]
-    },
-    {
-      id: "activos-fijos",
-      label: "Activos Fijos",
-      icon: Building2,
-      component: ActivosFijosModule,
-      permission: "activos_fijos",
-      keywords: ["activos", "fijos", "depreciación", "bienes", "muebles", "inmuebles"]
-    },
-    {
-      id: "comprobantes",
-      label: "Comprobantes",
-      icon: FileText,
-      component: ComprobantesModule,
-      permission: "comprobantes",
-      keywords: ["comprobantes", "ingreso", "egreso", "traspasos", "asientos"]
-    },
-    { 
-      id: "plan-cuentas", 
-      label: "Plan de Cuentas", 
-      icon: FolderTree, 
-      component: PlanCuentasModule, 
-      permission: "plan_cuentas",
-      keywords: ["plan", "cuentas", "contabilidad", "estructura", "código"]
-    },
-    { 
-      id: "libro-diario", 
-      label: "Libro Diario", 
-      icon: FileText, 
-      component: JournalView, 
-      permission: "libro_diario",
-      keywords: ["libro", "diario", "asientos", "contabilidad", "registros"]
-    },
-    { 
-      id: "libro-mayor", 
-      label: "Libro Mayor", 
-      icon: BookCopy, 
-      component: GeneralLedgerView, 
-      permission: "libro_mayor",
-      keywords: ["libro", "mayor", "cuentas", "saldos", "movimientos"]
-    },
-    { 
-      id: "balance", 
-      label: "Balance de Comprobación", 
-      icon: Scale, 
-      component: BalanceComprobacionModule, 
-      permission: "balance",
-      keywords: ["balance", "comprobación", "sumas", "saldos", "verificación"]
-    },
-    { 
-      id: "balance-general", 
-      label: "Balance General", 
-      icon: Landmark, 
-      component: BalanceGeneralModule, 
-      permission: "balance_general",
-      keywords: ["balance", "general", "estados", "financieros", "situación"]
-    },
-    { 
-      id: "estado-resultados", 
-      label: "Estado de Resultados", 
-      icon: TrendingUp, 
-      component: EstadoResultadosModule, 
-      permission: "reportes",
-      keywords: ["estado", "resultados", "ganancias", "pérdidas", "utilidad"]
-    },
-    { 
-      id: "kardex", 
-      label: "Kardex por Producto", 
-      icon: Calculator, 
-      component: KardexModule, 
-      permission: "inventario",
-      keywords: ["kardex", "movimientos", "fifo", "lifo", "promedio", "valoración"]
-    },
-    { 
-      id: "conciliacion-bancaria", 
-      label: "Conciliación Bancaria", 
-      icon: Building2, 
-      component: lazy(() => import("@/components/contable/bancario/ConciliacionBancaria")), 
-      permission: "bancos",
-      keywords: ["conciliación", "bancaria", "estado", "cuenta", "movimientos", "diferencias"]
-    },
-    { 
-      id: "flujo-caja", 
-      label: "Flujo de Caja", 
-      icon: TrendingUp, 
-      component: lazy(() => import("@/components/contable/finanzas/FlujoCaja")), 
-      permission: "reportes",
-      keywords: ["flujo", "caja", "liquidez", "proyección", "ingresos", "egresos"]
-    },
-    { 
-      id: "centros-costo", 
-      label: "Centros de Costo", 
-      icon: Building2, 
-      component: lazy(() => import("@/components/contable/costos/CentrosCosto")), 
-      permission: "reportes",
-      keywords: ["centros", "costo", "presupuesto", "asignación", "análisis", "distribución"]
-    },
-    {
-      id: "analisis-financiero",
-      label: "Análisis Financiero",
-      icon: TrendingUp,
-      component: lazy(() => import("@/components/contable/analisis/AnalisisFinanciero")),
-      permission: "reportes",
-      keywords: ["análisis", "financiero", "ratios", "rentabilidad", "liquidez", "indicadores"]
-    },
-    {
-      id: "presupuestos-empresariales",
-      label: "Presupuestos Empresariales",
-      icon: Target,
-      component: lazy(() => import("@/components/contable/presupuestos/PresupuestosEmpresariales")),
-      permission: "presupuestos",
-      keywords: ["presupuestos", "planificación", "proyección", "control", "variaciones", "seguimiento"]
-    },
-    {
-      id: "auditoria-transacciones",
-      label: "Auditoría de Transacciones",
-      icon: Shield,
-      component: lazy(() => import("@/components/contable/auditoria/AuditoriaTransacciones")),
-      permission: "auditoria",
-      keywords: ["auditoría", "controles", "seguridad", "riesgos", "transacciones", "monitoreo"]
-    },
-    { 
-      id: "reportes", 
-      label: "Reportes Contables", 
-      icon: FileText, 
-      component: ReportesModule, 
-      permission: "reportes",
-      keywords: ["reportes", "informes", "análisis", "excel", "exportar"]
-    },
-    {
-      id: "notificaciones",
-      label: "Centro de Notificaciones",
-      icon: Bell,
-      component: NotificationsCenter,
-      permission: "notificaciones",
-      keywords: ["notificaciones", "alertas", "recordatorios", "avisos", "centro"]
-    },
-    {
-      id: "declaraciones-tributarias",
-      label: "Declaraciones Tributarias",
-      icon: FileText,
-      component: DeclaracionesTributariasModule,
-      permission: "declaraciones_tributarias",
-      keywords: ["declaraciones", "tributarias", "iva", "it", "iue", "impuestos", "formularios"]
-    },
-    { 
-      id: "configuracion", 
-      label: "Configuración del Sistema", 
-      icon: Settings, 
-      component: ConfiguracionModule, 
-      permission: "configuracion",
-      keywords: ["configuración", "ajustes", "sistema", "parámetros", "backup", "respaldo"]
-    },
-    {
-      id: "tutorial",
-      label: "Centro de Ayuda",
-      icon: HelpCircle,
-      component: TutorialModule,
-      permission: "tutorial",
-      keywords: ["tutorial", "ayuda", "guía", "aprendizaje", "soporte"]
-    }
-  ];
-
-  // Filtrar módulos según permisos del usuario
-  const allowedModules = modules.filter(module => 
-    module.permission === 'tutorial' || hasPermission(module.permission)
-  );
-
-  const activeModuleData = allowedModules.find(m => m.id === activeModule);
-  const ActiveComponent = activeModuleData?.component || Dashboard;
-  const activeModuleLabel = activeModuleData?.label || 'Dashboard';
+  const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
 
   return (
-    <SidebarProvider>
-      <EnhancedLayout>
-        <div className="min-h-screen w-full flex bg-muted/40">
-          <SearchableSidebar
-            modules={allowedModules}
-            activeModule={activeModule}
-            setActiveModule={setActiveModule}
-          />
-          <div className="flex-1 flex flex-col">
-            <header className="bg-gradient-card/95 backdrop-blur supports-[backdrop-filter]:bg-gradient-card/90 sticky top-0 z-40 w-full border-b shadow-card">
-              <div className="container flex h-16 items-center px-6">
-                <SidebarTrigger className="mr-4 lg:hidden hover:bg-primary/10 rounded-lg transition-colors" />
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-4 h-4 text-white" />
-                  </div>
-                  <h1 className="text-xl font-bold text-foreground">
-                    {activeModuleLabel}
-                  </h1>
-                </div>
-              </div>
-            </header>
-            <main className="p-6 flex-1 bg-gradient-card/30">
-              <div className="animate-in fade-in-50 duration-300">
-                <Suspense fallback={<div className="flex items-center justify-center h-64">Cargando...</div>}>
-                  <ActiveComponent key={activeModule} />
-                </Suspense>
-              </div>
-            </main>
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-80 border-r bg-card">
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold text-primary">Sistema Contable</h1>
+            <p className="text-sm text-muted-foreground">Gestión empresarial integral</p>
           </div>
+          
+          <div className="p-4 space-y-4">
+            <Input
+              placeholder="Buscar módulos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+            
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory('all')}
+              >
+                Todos
+              </Button>
+              {Object.entries(categories).map(([key, category]) => (
+                <Button
+                  key={key}
+                  variant={selectedCategory === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(key)}
+                  className="flex items-center gap-1"
+                >
+                  <category.icon className="w-3 h-3" />
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-200px)]">
+            <div className="p-2">
+              {Object.entries(categories).map(([categoryKey, category]) => {
+                const categoryModules = filteredModules.filter(m => m.category === categoryKey);
+                if (categoryModules.length === 0 && selectedCategory === 'all') return null;
+                
+                return (
+                  <div key={categoryKey} className="mb-4">
+                    {selectedCategory === 'all' && (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground">
+                        <div className={`w-3 h-3 rounded-full ${category.color}`} />
+                        {category.label}
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      {(selectedCategory === 'all' ? categoryModules : filteredModules).map((module) => {
+                        const IconComponent = module.icon;
+                        return (
+                          <Card
+                            key={module.id}
+                            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              activeModule === module.id ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
+                            }`}
+                            onClick={() => setActiveModule(module.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${activeModule === module.id ? 'bg-primary text-primary-foreground' : 'bg-accent'}`}>
+                                  <IconComponent className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-sm">{module.label}</h3>
+                                  {module.description && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {module.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
         </div>
 
-        {/* Onboarding Tour */}
-        <OnboardingTour
-          isOpen={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-          onNavigateToModule={(moduleId) => setActiveModule(moduleId)}
-        />
-      </EnhancedLayout>
-    </SidebarProvider>
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">
+            <Suspense fallback={
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-64 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Skeleton className="h-32" />
+                  <Skeleton className="h-32" />
+                  <Skeleton className="h-32" />
+                </div>
+              </div>
+            }>
+              <ActiveComponent />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

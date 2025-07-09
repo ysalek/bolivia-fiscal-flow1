@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { TrendingUp, Download, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
+import * as XLSX from 'xlsx';
 
 const EstadoResultadosModule = () => {
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
@@ -21,7 +21,7 @@ const EstadoResultadosModule = () => {
   const estadoResultados = {
     ingresos: {
       total: datosReales.ingresos.total,
-      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('41')) // Ingresos operacionales
+      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('41'))
     },
     costosVentas: {
       total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51')).reduce((sum, c) => sum + c.saldo, 0),
@@ -55,7 +55,33 @@ const EstadoResultadosModule = () => {
   const margenNeto = estadoResultados.ingresos.total > 0 ? (utilidadNeta / estadoResultados.ingresos.total) * 100 : 0;
 
   const exportarExcel = () => {
-    console.log('Exportando Estado de Resultados a Excel...');
+    const datos = [
+      ['ESTADO DE RESULTADOS'],
+      [`Período: ${fechaInicio} al ${fechaFin}`],
+      [''],
+      ['Concepto', 'Importe (Bs.)', '% de Ventas'],
+      ['INGRESOS', estadoResultados.ingresos.total.toFixed(2), '100.0%'],
+      ['(-) COSTO DE VENTAS', `(${estadoResultados.costosVentas.total.toFixed(2)})`, 
+       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.costosVentas.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['UTILIDAD BRUTA', utilidadBruta.toFixed(2), `${margenBruto.toFixed(1)}%`],
+      ['(-) GASTOS OPERATIVOS', `(${estadoResultados.gastosOperativos.total.toFixed(2)})`,
+       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.gastosOperativos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['UTILIDAD OPERATIVA', utilidadOperativa.toFixed(2), `${margenOperativo.toFixed(1)}%`],
+      ['(+) OTROS INGRESOS', estadoResultados.otrosIngresos.total.toFixed(2),
+       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosIngresos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['(-) OTROS GASTOS', `(${estadoResultados.otrosGastos.total.toFixed(2)})`,
+       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosGastos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['UTILIDAD ANTES DE IMPUESTOS', utilidadAntesImpuestos.toFixed(2),
+       estadoResultados.ingresos.total > 0 ? `${((utilidadAntesImpuestos / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['(-) IMPUESTOS', `(${estadoResultados.impuestos.total.toFixed(2)})`,
+       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['UTILIDAD NETA', utilidadNeta.toFixed(2), `${margenNeto.toFixed(1)}%`]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Estado de Resultados');
+    XLSX.writeFile(wb, `Estado_Resultados_${fechaInicio}_${fechaFin}.xlsx`);
   };
 
   return (

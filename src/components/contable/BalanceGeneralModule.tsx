@@ -1,106 +1,245 @@
 
-import { useContabilidadIntegration, BalanceSheetAccount } from '@/hooks/useContabilidadIntegration';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Landmark, AlertTriangle, BadgeCheck } from 'lucide-react';
-
-const AccountTable = ({ title, accounts, total }: { title: string; accounts: BalanceSheetAccount[]; total: number }) => (
-    <div className="border rounded-md">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[120px]">Código</TableHead>
-                    <TableHead>{title}</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {accounts.map((cuenta) => (
-                    <TableRow key={cuenta.codigo}>
-                        <TableCell>{cuenta.codigo}</TableCell>
-                        <TableCell>{cuenta.nombre}</TableCell>
-                        <TableCell className="text-right">Bs. {cuenta.saldo.toFixed(2)}</TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-            <TableFooter>
-                <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}>Total {title}</TableCell>
-                    <TableCell className="text-right">Bs. {total.toFixed(2)}</TableCell>
-                </TableRow>
-            </TableFooter>
-        </Table>
-    </div>
-);
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Scale, Download, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
+import * as XLSX from 'xlsx';
 
 const BalanceGeneralModule = () => {
-    const { getBalanceSheetData } = useContabilidadIntegration();
-    const { activos, pasivos, patrimonio, totalPasivoPatrimonio, ecuacionCuadrada } = getBalanceSheetData();
+  const [fechaCorte, setFechaCorte] = useState(new Date().toISOString().slice(0, 10));
+  const { getBalanceSheetData } = useContabilidadIntegration();
 
-    const hasData = activos.cuentas.length > 0 || pasivos.cuentas.length > 0 || patrimonio.cuentas.length > 0;
+  const balanceData = getBalanceSheetData();
+  const { activos, pasivos, patrimonio, totalPasivoPatrimonio, ecuacionCuadrada } = balanceData;
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Landmark className="w-6 h-6" />
-                    Balance General
-                </CardTitle>
-                <CardDescription>
-                    Presenta la situación financiera de la empresa en una fecha determinada, mostrando activos, pasivos y patrimonio.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {!hasData ? (
-                    <div className="text-center py-10 text-muted-foreground">
-                        <p>No hay datos suficientes para generar el balance general.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {ecuacionCuadrada ? (
-                            <div className="p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-3 text-green-800">
-                                <BadgeCheck className="w-5 h-5" />
-                                <div>
-                                    <h4 className="font-bold">Ecuación Contable Balanceada</h4>
-                                    <p className="text-sm">Total Activos = Total Pasivos + Patrimonio.</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-md flex items-center gap-3 text-red-800">
-                                <AlertTriangle className="w-5 h-5" />
-                                <div>
-                                    <h4 className="font-bold">¡Descuadre Contable Grave!</h4>
-                                    <p className="text-sm">El total de activos no coincide con el total de pasivos y patrimonio. Revise los asientos.</p>
-                                </div>
-                            </div>
-                        )}
+  const exportarExcel = () => {
+    const datos = [
+      ['BALANCE GENERAL'],
+      [`Al ${fechaCorte}`],
+      [''],
+      ['ACTIVOS', '', 'Bs.'],
+      ...activos.cuentas.map(cuenta => [cuenta.codigo, cuenta.nombre, cuenta.saldo.toFixed(2)]),
+      ['', 'TOTAL ACTIVOS', activos.total.toFixed(2)],
+      [''],
+      ['PASIVOS', '', 'Bs.'],
+      ...pasivos.cuentas.map(cuenta => [cuenta.codigo, cuenta.nombre, cuenta.saldo.toFixed(2)]),
+      ['', 'TOTAL PASIVOS', pasivos.total.toFixed(2)],
+      [''],
+      ['PATRIMONIO', '', 'Bs.'],
+      ...patrimonio.cuentas.map(cuenta => [cuenta.codigo, cuenta.nombre, cuenta.saldo.toFixed(2)]),
+      ['', 'TOTAL PATRIMONIO', patrimonio.total.toFixed(2)],
+      [''],
+      ['', 'TOTAL PASIVO + PATRIMONIO', totalPasivoPatrimonio.toFixed(2)],
+      [''],
+      ['Ecuación Contable:', ecuacionCuadrada ? 'BALANCEADA' : 'DESBALANCEADA']
+    ];
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                            <div className="space-y-4">
-                                <AccountTable title="Activos" accounts={activos.cuentas} total={activos.total} />
-                            </div>
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Balance General');
+    XLSX.writeFile(wb, `Balance_General_${fechaCorte}.xlsx`);
+  };
 
-                            <div className="space-y-6">
-                                <AccountTable title="Pasivos" accounts={pasivos.cuentas} total={pasivos.total} />
-                                <AccountTable title="Patrimonio" accounts={patrimonio.cuentas} total={patrimonio.total} />
-                                
-                                <Card className="bg-muted/50">
-                                    <CardHeader className="p-4">
-                                        <div className="flex justify-between items-center font-bold text-lg">
-                                            <span>Total Pasivo + Patrimonio</span>
-                                            <span className={`${!ecuacionCuadrada ? 'text-red-500' : ''}`}>
-                                                Bs. {totalPasivoPatrimonio.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </CardHeader>
-                                </Card>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="w-6 h-6" />
+            Balance General
+          </CardTitle>
+          <CardDescription>
+            Estado de situación financiera a una fecha determinada
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <Label htmlFor="fecha-corte">Fecha de Corte:</Label>
+              <Input
+                id="fecha-corte"
+                type="date"
+                value={fechaCorte}
+                onChange={(e) => setFechaCorte(e.target.value)}
+                className="w-auto"
+              />
+            </div>
+            <Button onClick={exportarExcel} variant="outline" className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Exportar Excel
+            </Button>
+          </div>
+
+          <div className="mb-6">
+            <Badge 
+              variant={ecuacionCuadrada ? "default" : "destructive"}
+              className="flex items-center gap-2"
+            >
+              {ecuacionCuadrada ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Balance Cuadrado
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4" />
+                  Balance Descuadrado
+                </>
+              )}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* ACTIVOS */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">ACTIVOS</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Cuenta</TableHead>
+                      <TableHead className="text-right">Saldo (Bs.)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activos.cuentas.map((cuenta) => (
+                      <TableRow key={cuenta.codigo}>
+                        <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
+                        <TableCell>{cuenta.nombre}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {cuenta.saldo.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="bg-blue-50">
+                      <TableCell colSpan={2} className="font-bold">TOTAL ACTIVOS</TableCell>
+                      <TableCell className="text-right font-bold text-blue-600">
+                        Bs. {activos.total.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* PASIVOS Y PATRIMONIO */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">PASIVOS Y PATRIMONIO</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* PASIVOS */}
+                  <div>
+                    <h4 className="font-semibold mb-3 text-red-600">PASIVOS</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Cuenta</TableHead>
+                          <TableHead className="text-right">Saldo (Bs.)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pasivos.cuentas.map((cuenta) => (
+                          <TableRow key={cuenta.codigo}>
+                            <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
+                            <TableCell>{cuenta.nombre}</TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {cuenta.saldo.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow className="bg-red-50">
+                          <TableCell colSpan={2} className="font-bold">TOTAL PASIVOS</TableCell>
+                          <TableCell className="text-right font-bold text-red-600">
+                            Bs. {pasivos.total.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+
+                  {/* PATRIMONIO */}
+                  <div>
+                    <h4 className="font-semibold mb-3 text-green-600">PATRIMONIO</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Cuenta</TableHead>
+                          <TableHead className="text-right">Saldo (Bs.)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {patrimonio.cuentas.map((cuenta) => (
+                          <TableRow key={cuenta.codigo}>
+                            <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
+                            <TableCell>{cuenta.nombre}</TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {cuenta.saldo.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow className="bg-green-50">
+                          <TableCell colSpan={2} className="font-bold">TOTAL PATRIMONIO</TableCell>
+                          <TableCell className="text-right font-bold text-green-600">
+                            Bs. {patrimonio.total.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+
+                  {/* TOTAL PASIVO + PATRIMONIO */}
+                  <div className="border-t-2 pt-4">
+                    <Table>
+                      <TableFooter>
+                        <TableRow className={`${ecuacionCuadrada ? 'bg-green-100' : 'bg-red-100'}`}>
+                          <TableCell colSpan={2} className="font-bold text-lg">
+                            TOTAL PASIVO + PATRIMONIO
+                          </TableCell>
+                          <TableCell className={`text-right font-bold text-lg ${ecuacionCuadrada ? 'text-green-600' : 'text-red-600'}`}>
+                            Bs. {totalPasivoPatrimonio.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <h3 className="font-semibold mb-2">Verificación de la Ecuación Contable</h3>
+            <div className="text-sm space-y-1">
+              <p>Activos: Bs. {activos.total.toFixed(2)}</p>
+              <p>Pasivos + Patrimonio: Bs. {totalPasivoPatrimonio.toFixed(2)}</p>
+              <p className={`font-semibold ${ecuacionCuadrada ? 'text-green-600' : 'text-red-600'}`}>
+                Diferencia: Bs. {Math.abs(activos.total - totalPasivoPatrimonio).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default BalanceGeneralModule;

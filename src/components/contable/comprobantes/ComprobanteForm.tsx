@@ -36,7 +36,7 @@ interface ComprobanteFormProps {
   onCancel: () => void;
 }
 
-// Plan de cuentas simplificado para Bolivia
+// Plan de cuentas completo para Bolivia
 const PLAN_CUENTAS = [
   { codigo: "1111", nombre: "Caja General" },
   { codigo: "1112", nombre: "Banco Nacional de Bolivia" },
@@ -46,6 +46,7 @@ const PLAN_CUENTAS = [
   { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales" },
   { codigo: "1131", nombre: "Inventarios - Mercaderías" },
   { codigo: "1141", nombre: "Gastos Pagados por Anticipado" },
+  { codigo: "1142", nombre: "IVA Crédito Fiscal" },
   { codigo: "1211", nombre: "Muebles y Enseres" },
   { codigo: "1212", nombre: "Equipos de Computación" },
   { codigo: "1213", nombre: "Vehículos" },
@@ -71,16 +72,6 @@ const PLAN_CUENTAS = [
   { codigo: "5281", nombre: "Gastos de Viaje" },
   { codigo: "5291", nombre: "Gastos Financieros" },
   { codigo: "5191", nombre: "Gastos Varios" }
-];
-
-const METODOS_PAGO = [
-  { codigo: "1111", nombre: "Efectivo - Caja General" },
-  { codigo: "1112", nombre: "Banco Nacional de Bolivia" },
-  { codigo: "1113", nombre: "Banco Mercantil Santa Cruz" },
-  { codigo: "1114", nombre: "Banco Sol" },
-  { codigo: "1115", nombre: "Banco Unión" },
-  { codigo: "1121", nombre: "Cuentas por Cobrar" },
-  { codigo: "2111", nombre: "Cuentas por Pagar" }
 ];
 
 const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
@@ -139,7 +130,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
   const validarBalance = () => {
     const totalDebe = formData.cuentas.reduce((sum, cuenta) => sum + cuenta.debe, 0);
     const totalHaber = formData.cuentas.reduce((sum, cuenta) => sum + cuenta.haber, 0);
-    return Math.abs(totalDebe - totalHaber) < 0.01; // Tolerancia para decimales
+    return Math.abs(totalDebe - totalHaber) < 0.01;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -156,7 +147,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
 
     // Generar cuentas automáticamente para ingreso y egreso
     if (tipo !== 'traspaso') {
-      const metodoPagoSeleccionado = METODOS_PAGO.find(m => m.codigo === formData.metodoPago);
+      const metodoPagoSeleccionado = PLAN_CUENTAS.find(m => m.codigo === formData.metodoPago);
       const cuentasGeneradas: CuentaContable[] = [];
 
       if (tipo === 'ingreso') {
@@ -262,9 +253,9 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                 <SelectValue placeholder="Seleccionar cuenta" />
               </SelectTrigger>
               <SelectContent>
-                {METODOS_PAGO.map(metodo => (
-                  <SelectItem key={metodo.codigo} value={metodo.codigo}>
-                    {metodo.codigo} - {metodo.nombre}
+                {PLAN_CUENTAS.map(cuenta => (
+                  <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
+                    {cuenta.codigo} - {cuenta.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>
