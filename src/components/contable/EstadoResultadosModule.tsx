@@ -17,7 +17,7 @@ const EstadoResultadosModule = () => {
   // Obtener datos reales del sistema contable
   const datosReales = getIncomeStatementData();
   
-  // Obtener datos del balance de comprobación para incluir IVA Crédito Fiscal
+  // Obtener datos del balance de comprobación para incluir IT por Pagar
   const { details } = getTrialBalanceData();
   
   // Estructura de datos completa para el Estado de Resultados
@@ -42,9 +42,9 @@ const EstadoResultadosModule = () => {
       total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62')).reduce((sum, c) => sum + c.saldo, 0),
       cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62'))
     },
-    creditoFiscal: {
-      total: details.filter(c => c.codigo === '1142').reduce((sum, c) => sum + c.saldoDeudor, 0),
-      cuentas: details.filter(c => c.codigo === '1142').map(c => ({
+    impuestoTransacciones: {
+      total: details.filter(c => c.codigo === '5211').reduce((sum, c) => sum + c.saldoDeudor, 0),
+      cuentas: details.filter(c => c.codigo === '5211').map(c => ({
         codigo: c.codigo,
         nombre: c.nombre,
         saldo: c.saldoDeudor
@@ -57,7 +57,7 @@ const EstadoResultadosModule = () => {
   };
 
   const utilidadBruta = estadoResultados.ingresos.total - estadoResultados.costosVentas.total;
-  const utilidadOperativa = utilidadBruta - estadoResultados.gastosOperativos.total - estadoResultados.creditoFiscal.total;
+  const utilidadOperativa = utilidadBruta - estadoResultados.gastosOperativos.total - estadoResultados.impuestoTransacciones.total;
   const utilidadAntesImpuestos = utilidadOperativa + estadoResultados.otrosIngresos.total - estadoResultados.otrosGastos.total;
   const utilidadNeta = utilidadAntesImpuestos - estadoResultados.impuestos.total;
 
@@ -77,8 +77,8 @@ const EstadoResultadosModule = () => {
       ['UTILIDAD BRUTA', utilidadBruta.toFixed(2), `${margenBruto.toFixed(1)}%`],
        ['(-) GASTOS OPERATIVOS', `(${estadoResultados.gastosOperativos.total.toFixed(2)})`,
         estadoResultados.ingresos.total > 0 ? `${((estadoResultados.gastosOperativos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
-       ['(-) IVA CRÉDITO FISCAL', `(${estadoResultados.creditoFiscal.total.toFixed(2)})`,
-        estadoResultados.ingresos.total > 0 ? `${((estadoResultados.creditoFiscal.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+       ['(-) IMPUESTO A LAS TRANSACCIONES', `(${estadoResultados.impuestoTransacciones.total.toFixed(2)})`,
+        estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
        ['UTILIDAD OPERATIVA', utilidadOperativa.toFixed(2), `${margenOperativo.toFixed(1)}%`],
       ['(+) OTROS INGRESOS', estadoResultados.otrosIngresos.total.toFixed(2),
        estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosIngresos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
@@ -203,10 +203,10 @@ const EstadoResultadosModule = () => {
               </TableRow>
 
               <TableRow className="font-medium bg-muted/50">
-                <TableCell>(-) IVA CRÉDITO FISCAL</TableCell>
-                <TableCell className="text-right">({estadoResultados.creditoFiscal.total.toFixed(2)})</TableCell>
+                <TableCell>(-) IMPUESTO A LAS TRANSACCIONES</TableCell>
+                <TableCell className="text-right">({estadoResultados.impuestoTransacciones.total.toFixed(2)})</TableCell>
                 <TableCell className="text-right">
-                  {estadoResultados.ingresos.total > 0 ? ((estadoResultados.creditoFiscal.total / estadoResultados.ingresos.total) * 100).toFixed(1) : '0.0'}%
+                  {estadoResultados.ingresos.total > 0 ? ((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.total) * 100).toFixed(1) : '0.0'}%
                 </TableCell>
               </TableRow>
 
