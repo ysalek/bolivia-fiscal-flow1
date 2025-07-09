@@ -1,17 +1,22 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { Plus, FileText, ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Calendar, DollarSign, Printer, Eye } from "lucide-react";
+import { Plus, FileText, ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, DollarSign, Eye } from "lucide-react";
+import ComprobanteForm from "./ComprobanteForm";
+
+interface CuentaContable {
+  codigo: string;
+  nombre: string;
+  debe: number;
+  haber: number;
+}
 
 interface Comprobante {
   id: string;
@@ -27,8 +32,7 @@ interface Comprobante {
   estado: 'borrador' | 'autorizado' | 'anulado';
   creadoPor: string;
   fechaCreacion: string;
-  cuentaOrigen?: string;
-  cuentaDestino?: string;
+  cuentas: CuentaContable[];
 }
 
 const ComprobantesModule = () => {
@@ -36,7 +40,6 @@ const ComprobantesModule = () => {
   const [showComprobanteDialog, setShowComprobanteDialog] = useState<{
     open: boolean;
     tipo: 'ingreso' | 'egreso' | 'traspaso' | null;
-    comprobante?: Comprobante;
   }>({ open: false, tipo: null });
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
@@ -54,12 +57,15 @@ const ComprobantesModule = () => {
     }
   };
 
-  const guardarComprobante = (datos: Omit<Comprobante, 'id' | 'fechaCreacion' | 'creadoPor'>) => {
+  const guardarComprobante = (datos: any) => {
     const nuevoComprobante: Comprobante = {
       ...datos,
       id: Date.now().toString(),
       fechaCreacion: new Date().toISOString(),
-      creadoPor: 'Usuario Sistema'
+      creadoPor: 'Usuario Sistema',
+      monto: datos.tipo === 'traspaso' ? 
+        datos.cuentas.reduce((sum: number, cuenta: CuentaContable) => sum + cuenta.debe, 0) : 
+        datos.monto
     };
 
     // Generar número automático
@@ -67,7 +73,7 @@ const ComprobantesModule = () => {
     const prefijo = datos.tipo === 'ingreso' ? 'ING' : datos.tipo === 'egreso' ? 'EGR' : 'TRA';
     nuevoComprobante.numero = `${prefijo}-${contadorTipo.toString().padStart(4, '0')}`;
 
-    // Generar asiento contable
+    // Generar asiento contable si está autorizado
     if (datos.estado === 'autorizado') {
       generarAsientoContable(nuevoComprobante);
     }
@@ -85,61 +91,6 @@ const ComprobantesModule = () => {
   };
 
   const generarAsientoContable = (comprobante: Comprobante) => {
-    let cuentas = [];
-
-    switch (comprobante.tipo) {
-      case 'ingreso':
-        cuentas = [
-          {
-            codigo: "1111",
-            nombre: "Caja y Bancos",
-            debe: comprobante.monto,
-            haber: 0
-          },
-          {
-            codigo: "4191",
-            nombre: "Otros Ingresos",
-            debe: 0,
-            haber: comprobante.monto
-          }
-        ];
-        break;
-
-      case 'egreso':
-        cuentas = [
-          {
-            codigo: "5191",
-            nombre: "Gastos Varios",
-            debe: comprobante.monto,
-            haber: 0
-          },
-          {
-            codigo: "1111",
-            nombre: "Caja y Bancos",
-            debe: 0,
-            haber: comprobante.monto
-          }
-        ];
-        break;
-
-      case 'traspaso':
-        cuentas = [
-          {
-            codigo: comprobante.cuentaDestino || "1112",
-            nombre: "Cuenta Destino",
-            debe: comprobante.monto,
-            haber: 0
-          },
-          {
-            codigo: comprobante.cuentaOrigen || "1111",
-            nombre: "Cuenta Origen",
-            debe: 0,
-            haber: comprobante.monto
-          }
-        ];
-        break;
-    }
-
     const asiento = {
       id: Date.now().toString(),
       numero: `COMP-${comprobante.numero}`,
@@ -149,7 +100,7 @@ const ComprobantesModule = () => {
       debe: comprobante.monto,
       haber: comprobante.monto,
       estado: 'registrado' as const,
-      cuentas
+      cuentas: comprobante.cuentas
     };
 
     guardarAsiento(asiento);
@@ -223,7 +174,7 @@ const ComprobantesModule = () => {
           <div>
             <h2 className="text-2xl font-bold">Comprobantes Contables</h2>
             <p className="text-slate-600">
-              Gestión de comprobantes de ingreso, egreso y traspasos
+              Gestión de comprobantes de ingreso, egreso y traspasos con plan de cuentas
             </p>
           </div>
         </div>
@@ -326,7 +277,7 @@ const ComprobantesModule = () => {
         <CardHeader>
           <CardTitle>Lista de Comprobantes</CardTitle>
           <CardDescription>
-            Historial de todos los comprobantes generados
+            Historial de todos los comprobantes generados con detalle contable
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -398,201 +349,33 @@ const ComprobantesModule = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog para crear/editar comprobante */}
+      {/* Dialog para crear comprobante */}
       <Dialog 
         open={showComprobanteDialog.open} 
         onOpenChange={(open) => !open && setShowComprobanteDialog({ open: false, tipo: null })}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Nuevo Comprobante de {showComprobanteDialog.tipo?.charAt(0).toUpperCase() + showComprobanteDialog.tipo?.slice(1)}
             </DialogTitle>
             <DialogDescription>
-              Complete la información del comprobante
+              {showComprobanteDialog.tipo === 'traspaso' ? 
+                'Configure las cuentas contables manualmente para el asiento' :
+                'Se generará automáticamente el asiento contable según el plan de cuentas'
+              }
             </DialogDescription>
           </DialogHeader>
-          <ComprobanteForm
-            tipo={showComprobanteDialog.tipo!}
-            onSave={guardarComprobante}
-            onCancel={() => setShowComprobanteDialog({ open: false, tipo: null })}
-          />
+          {showComprobanteDialog.tipo && (
+            <ComprobanteForm
+              tipo={showComprobanteDialog.tipo}
+              onSave={guardarComprobante}
+              onCancel={() => setShowComprobanteDialog({ open: false, tipo: null })}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
-  );
-};
-
-// Componente para formulario de comprobante
-const ComprobanteForm = ({ tipo, onSave, onCancel }: {
-  tipo: 'ingreso' | 'egreso' | 'traspaso';
-  onSave: (comprobante: Omit<Comprobante, 'id' | 'fechaCreacion' | 'creadoPor'>) => void;
-  onCancel: () => void;
-}) => {
-  const [formData, setFormData] = useState<{
-    tipo: 'ingreso' | 'egreso' | 'traspaso';
-    numero: string;
-    fecha: string;
-    concepto: string;
-    beneficiario: string;
-    monto: number;
-    metodoPago: string;
-    referencia: string;
-    observaciones: string;
-    estado: 'borrador' | 'autorizado';
-    cuentaOrigen: string;
-    cuentaDestino: string;
-  }>({
-    tipo,
-    numero: '',
-    fecha: new Date().toISOString().slice(0, 10),
-    concepto: '',
-    beneficiario: '',
-    monto: 0,
-    metodoPago: 'efectivo',
-    referencia: '',
-    observaciones: '',
-    estado: 'borrador',
-    cuentaOrigen: '',
-    cuentaDestino: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="fecha">Fecha</Label>
-          <Input
-            id="fecha"
-            type="date"
-            value={formData.fecha}
-            onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="monto">Monto</Label>
-          <Input
-            id="monto"
-            type="number"
-            step="0.01"
-            value={formData.monto}
-            onChange={(e) => setFormData(prev => ({ ...prev, monto: parseFloat(e.target.value) || 0 }))}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="concepto">Concepto</Label>
-        <Input
-          id="concepto"
-          value={formData.concepto}
-          onChange={(e) => setFormData(prev => ({ ...prev, concepto: e.target.value }))}
-          placeholder="Descripción del movimiento"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="beneficiario">Beneficiario/Pagador</Label>
-        <Input
-          id="beneficiario"
-          value={formData.beneficiario}
-          onChange={(e) => setFormData(prev => ({ ...prev, beneficiario: e.target.value }))}
-          placeholder="Nombre del beneficiario o pagador"
-          required
-        />
-      </div>
-
-      {tipo === 'traspaso' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="cuentaOrigen">Cuenta Origen</Label>
-            <Input
-              id="cuentaOrigen"
-              value={formData.cuentaOrigen}
-              onChange={(e) => setFormData(prev => ({ ...prev, cuentaOrigen: e.target.value }))}
-              placeholder="Cuenta de origen"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cuentaDestino">Cuenta Destino</Label>
-            <Input
-              id="cuentaDestino"
-              value={formData.cuentaDestino}
-              onChange={(e) => setFormData(prev => ({ ...prev, cuentaDestino: e.target.value }))}
-              placeholder="Cuenta de destino"
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="metodoPago">Método de Pago</Label>
-          <Select value={formData.metodoPago} onValueChange={(value) => setFormData(prev => ({ ...prev, metodoPago: value }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="efectivo">Efectivo</SelectItem>
-              <SelectItem value="cheque">Cheque</SelectItem>
-              <SelectItem value="transferencia">Transferencia</SelectItem>
-              <SelectItem value="tarjeta">Tarjeta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="referencia">Referencia</Label>
-          <Input
-            id="referencia"
-            value={formData.referencia}
-            onChange={(e) => setFormData(prev => ({ ...prev, referencia: e.target.value }))}
-            placeholder="Número de cheque, etc."
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="observaciones">Observaciones</Label>
-        <Textarea
-          id="observaciones"
-          value={formData.observaciones}
-          onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-          placeholder="Observaciones adicionales"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="estado">Estado</Label>
-        <Select value={formData.estado} onValueChange={(value: 'borrador' | 'autorizado') => setFormData(prev => ({ ...prev, estado: value }))}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="borrador">Borrador</SelectItem>
-            <SelectItem value="autorizado">Autorizado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit">
-          Guardar Comprobante
-        </Button>
-      </div>
-    </form>
   );
 };
 
