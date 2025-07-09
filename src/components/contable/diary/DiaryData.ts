@@ -7,7 +7,7 @@ export interface AsientoContable {
   referencia: string;
   debe: number;
   haber: number;
-  estado: 'registrado' | 'anulado';
+  estado: 'borrador' | 'registrado' | 'anulado';
   cuentas: CuentaAsiento[];
 }
 
