@@ -98,7 +98,7 @@ const ProductosModule = () => {
 
   const productosActivos = productos.filter(p => p.activo).length;
   const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo && p.activo).length;
-  const valorInventario = productos.reduce((sum, p) => sum + (p.stockActual * p.costoUnitario), 0);
+  const valorInventario = productos.reduce((sum, p) => sum + ((p.stockActual || 0) * (p.costoUnitario || 0)), 0);
 
   if (showForm) {
     return (
@@ -212,7 +212,7 @@ const ProductosModule = () => {
                         <Badge variant={producto.activo ? "default" : "secondary"}>
                             {producto.activo ? "Activo" : "Inactivo"}
                         </Badge>
-                        {producto.stockActual <= producto.stockMinimo && producto.activo && (
+                        {(producto.stockActual || 0) <= (producto.stockMinimo || 0) && producto.activo && (
                             <Badge variant="destructive">Stock Bajo</Badge>
                         )}
                         </div>
@@ -226,17 +226,17 @@ const ProductosModule = () => {
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Stock Actual:</span>
-                            <p className={producto.stockActual <= producto.stockMinimo ? "text-red-600" : "text-muted-foreground"}>
-                            {producto.stockActual} {producto.unidadMedida}
+                            <p className={(producto.stockActual || 0) <= (producto.stockMinimo || 0) ? "text-red-600" : "text-muted-foreground"}>
+                            {producto.stockActual || 0} {producto.unidadMedida || 'PZA'}
                             </p>
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Precio Venta:</span>
-                            <p className="text-muted-foreground">Bs. {producto.precioVenta.toFixed(2)}</p>
+                            <p className="text-muted-foreground">Bs. {(producto.precioVenta || 0).toFixed(2)}</p>
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Costo:</span>
-                            <p className="text-muted-foreground">Bs. {producto.costoUnitario.toFixed(2)}</p>
+                            <p className="text-muted-foreground">Bs. {(producto.costoUnitario || 0).toFixed(2)}</p>
                         </div>
                         </div>
                         
