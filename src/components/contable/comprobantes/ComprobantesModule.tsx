@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -430,7 +429,20 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: {
   onSave: (comprobante: Omit<Comprobante, 'id' | 'fechaCreacion' | 'creadoPor'>) => void;
   onCancel: () => void;
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    tipo: 'ingreso' | 'egreso' | 'traspaso';
+    numero: string;
+    fecha: string;
+    concepto: string;
+    beneficiario: string;
+    monto: number;
+    metodoPago: string;
+    referencia: string;
+    observaciones: string;
+    estado: 'borrador' | 'autorizado';
+    cuentaOrigen: string;
+    cuentaDestino: string;
+  }>({
     tipo,
     numero: '',
     fecha: new Date().toISOString().slice(0, 10),
@@ -440,7 +452,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: {
     metodoPago: 'efectivo',
     referencia: '',
     observaciones: '',
-    estado: 'borrador' as const,
+    estado: 'borrador',
     cuentaOrigen: '',
     cuentaDestino: ''
   });

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, lazy, Suspense } from "react";
 import { 
   Calculator,
@@ -45,6 +46,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import SearchableSidebar from "@/components/contable/dashboard/SearchableSidebar";
 import EnhancedLayout from "@/components/contable/dashboard/EnhancedLayout";
 import ActivosFijosModule from "@/components/contable/ActivosFijosModule";
+import ComprobantesModule from "@/components/contable/comprobantes/ComprobantesModule";
 
 // Lazy load de módulos pesados
 const EstadoResultadosModule = lazy(() => import("@/components/contable/EstadoResultadosModule"));
@@ -148,6 +150,14 @@ const Index = () => {
       component: ActivosFijosModule,
       permission: "activos_fijos",
       keywords: ["activos", "fijos", "depreciación", "bienes", "muebles", "inmuebles"]
+    },
+    {
+      id: "comprobantes",
+      label: "Comprobantes",
+      icon: FileText,
+      component: ComprobantesModule,
+      permission: "comprobantes",
+      keywords: ["comprobantes", "ingreso", "egreso", "traspasos", "asientos"]
     },
     { 
       id: "plan-cuentas", 
@@ -292,13 +302,7 @@ const Index = () => {
       component: TutorialModule,
       permission: "tutorial",
       keywords: ["tutorial", "ayuda", "guía", "aprendizaje", "soporte"]
-    },
-    {
-      name: "Comprobantes",
-      icon: FileText,
-      component: () => import("../components/contable/comprobantes/ComprobantesModule"),
-      description: "Comprobantes de ingreso, egreso y traspasos"
-    },
+    }
   ];
 
   // Filtrar módulos según permisos del usuario
