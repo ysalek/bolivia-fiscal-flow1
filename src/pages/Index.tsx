@@ -133,10 +133,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-80 border-r bg-card">
-          <div className="p-4 border-b">
-            <h1 className="text-xl font-bold text-primary">Sistema Contable</h1>
-            <p className="text-sm text-muted-foreground">Gestión empresarial integral</p>
+        <div className="w-80 border-r bg-card shadow-lg">
+          <div className="p-4 border-b bg-gradient-to-r from-primary to-primary/90">
+            <h1 className="text-xl font-bold text-primary-foreground">Sistema Contable</h1>
+            <p className="text-sm text-primary-foreground/80">Gestión empresarial integral</p>
           </div>
           
           <div className="p-4 space-y-4">
@@ -170,53 +170,88 @@ const Index = () => {
             </div>
           </div>
 
-          <ScrollArea className="h-[calc(100vh-200px)]">
+          <ScrollArea className="h-[calc(100vh-220px)]">
             <div className="p-2">
-              {Object.entries(categories).map(([categoryKey, category]) => {
-                const categoryModules = filteredModules.filter(m => m.category === categoryKey);
-                if (categoryModules.length === 0 && selectedCategory === 'all') return null;
-                
-                return (
-                  <div key={categoryKey} className="mb-4">
-                    {selectedCategory === 'all' && (
+              {selectedCategory === 'all' ? (
+                Object.entries(categories).map(([categoryKey, category]) => {
+                  const categoryModules = filteredModules.filter(m => m.category === categoryKey);
+                  if (categoryModules.length === 0) return null;
+                  
+                  return (
+                    <div key={categoryKey} className="mb-6">
                       <div className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground">
                         <div className={`w-3 h-3 rounded-full ${category.color}`} />
                         {category.label}
                       </div>
-                    )}
-                    <div className="space-y-1">
-                      {(selectedCategory === 'all' ? categoryModules : filteredModules).map((module) => {
-                        const IconComponent = module.icon;
-                        return (
-                          <Card
-                            key={module.id}
-                            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                              activeModule === module.id ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
-                            }`}
-                            onClick={() => setActiveModule(module.id)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${activeModule === module.id ? 'bg-primary text-primary-foreground' : 'bg-accent'}`}>
-                                  <IconComponent className="w-4 h-4" />
+                      <div className="space-y-2">
+                        {categoryModules.map((module) => {
+                          const IconComponent = module.icon;
+                          return (
+                            <Card
+                              key={module.id}
+                              className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                                activeModule === module.id ? 'bg-primary/10 border-primary shadow-md' : 'hover:bg-accent'
+                              }`}
+                              onClick={() => setActiveModule(module.id)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-lg transition-colors ${
+                                    activeModule === module.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                  }`}>
+                                    <IconComponent className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-sm leading-tight">{module.label}</h3>
+                                    {module.description && (
+                                      <p className="text-xs text-muted-foreground truncate mt-1">
+                                        {module.description}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-medium text-sm">{module.label}</h3>
-                                  {module.description && (
-                                    <p className="text-xs text-muted-foreground truncate">
-                                      {module.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="space-y-2">
+                  {filteredModules.map((module) => {
+                    const IconComponent = module.icon;
+                    return (
+                      <Card
+                        key={module.id}
+                        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                          activeModule === module.id ? 'bg-primary/10 border-primary shadow-md' : 'hover:bg-accent'
+                        }`}
+                        onClick={() => setActiveModule(module.id)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg transition-colors ${
+                              activeModule === module.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                            }`}>
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm leading-tight">{module.label}</h3>
+                              {module.description && (
+                                <p className="text-xs text-muted-foreground truncate mt-1">
+                                  {module.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>

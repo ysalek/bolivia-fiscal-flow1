@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, DollarSign, Percent } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useReportesContables } from "@/hooks/useReportesContables";
 
 interface RatioFinanciero {
   nombre: string;
@@ -31,7 +31,7 @@ const AnalisisFinanciero = () => {
   const [ratios, setRatios] = useState<RatioFinanciero[]>([]);
   const [tendencias, setTendencias] = useState<TendenciaFinanciera[]>([]);
   const [alertas, setAlertas] = useState<string[]>([]);
-  const { getBalanceSheetData, getIncomeStatementData } = useContabilidadIntegration();
+  const { getBalanceSheetData, getIncomeStatementData } = useReportesContables();
 
   useEffect(() => {
     calcularRatiosFinancieros();
