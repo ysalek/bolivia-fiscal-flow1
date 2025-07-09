@@ -253,23 +253,62 @@ export const useReportesContables = () => {
 
   const getIncomeStatementData = (): IncomeStatementData => {
     const { details } = getTrialBalanceData();
-
+    const comprobantes = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
+    
     const ingresos = { cuentas: [] as { codigo: string, nombre: string, saldo: number }[], total: 0 };
     const gastos = { cuentas: [] as { codigo: string, nombre: string, saldo: number }[], total: 0 };
 
+    // Procesar datos del libro mayor
     details.forEach(cuenta => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('4')) { // Ingresos
         const saldoAcreedor = -saldo;
-        ingresos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoAcreedor });
-        ingresos.total += saldoAcreedor;
-      } else if (cuenta.codigo.startsWith('5')) { // Gastos
+        if (saldoAcreedor > 0.01) { // Solo mostrar cuentas con saldo significativo
+          ingresos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoAcreedor });
+          ingresos.total += saldoAcreedor;
+        }
+      } else if (cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) { // Gastos
         const saldoDeudor = saldo;
-        gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
-        gastos.total += saldoDeudor;
+        if (saldoDeudor > 0.01) { // Solo mostrar cuentas con saldo significativo
+          gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
+          gastos.total += saldoDeudor;
+        }
       }
     });
+
+    // Integrar comprobantes autorizados que no hayan generado asientos aún
+    comprobantes
+      .filter((c: any) => c.estado === 'autorizado' && !c.asientoGenerado)
+      .forEach((comprobante: any) => {
+        if (comprobante.tipo === 'ingreso') {
+          // Buscar cuenta de ingresos en el comprobante
+          comprobante.cuentas.forEach((cuenta: any) => {
+            if (cuenta.codigo.startsWith('4') && cuenta.haber > 0) {
+              let cuentaExistente = ingresos.cuentas.find(c => c.codigo === cuenta.codigo);
+              if (!cuentaExistente) {
+                cuentaExistente = { codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: 0 };
+                ingresos.cuentas.push(cuentaExistente);
+              }
+              cuentaExistente.saldo += cuenta.haber;
+              ingresos.total += cuenta.haber;
+            }
+          });
+        } else if (comprobante.tipo === 'egreso') {
+          // Buscar cuenta de gastos en el comprobante
+          comprobante.cuentas.forEach((cuenta: any) => {
+            if ((cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) && cuenta.debe > 0) {
+              let cuentaExistente = gastos.cuentas.find(c => c.codigo === cuenta.codigo);
+              if (!cuentaExistente) {
+                cuentaExistente = { codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: 0 };
+                gastos.cuentas.push(cuentaExistente);
+              }
+              cuentaExistente.saldo += cuenta.debe;
+              gastos.total += cuenta.debe;
+            }
+          });
+        }
+      });
 
     const utilidadNeta = ingresos.total - gastos.total;
 

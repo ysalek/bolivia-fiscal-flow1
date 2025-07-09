@@ -62,7 +62,7 @@ const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
 const ActivosFijosModule = lazy(() => import('@/components/contable/ActivosFijosModule'));
 const KardexModule = lazy(() => import('@/components/contable/KardexModule'));
 const PlanCuentasModule = lazy(() => import('@/components/contable/PlanCuentasModule'));
-const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesModule'));
+const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesIntegrados'));
 const NotificationCenter = lazy(() => import('@/components/contable/notifications/NotificationCenter'));
 const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
 const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
