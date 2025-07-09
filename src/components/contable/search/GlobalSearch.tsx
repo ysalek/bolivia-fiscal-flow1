@@ -45,7 +45,39 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
     setRecentSearches(recent);
   }, []);
 
-  // Función de búsqueda global
+  // Lista de módulos del sistema
+  const modules = [
+    { id: 'dashboard', name: 'Dashboard', keywords: ['inicio', 'panel', 'dashboard'] },
+    { id: 'productos', name: 'Productos', keywords: ['inventario', 'stock', 'artículos'] },
+    { id: 'clientes', name: 'Clientes', keywords: ['clientes', 'contactos'] },
+    { id: 'facturacion', name: 'Facturación', keywords: ['facturas', 'ventas', 'cobros'] },
+    { id: 'compras', name: 'Compras', keywords: ['compras', 'proveedores', 'gastos'] },
+    { id: 'libro-diario', name: 'Libro Diario', keywords: ['asientos', 'contabilidad', 'diario'] },
+    { id: 'plan-cuentas', name: 'Plan de Cuentas', keywords: ['cuentas', 'plan contable'] },
+    { id: 'balance-comprobacion', name: 'Balance de Comprobación', keywords: ['balance', 'comprobación'] },
+    { id: 'balance-general', name: 'Balance General', keywords: ['balance general', 'estados financieros'] },
+    { id: 'estado-resultados', name: 'Estado de Resultados', keywords: ['pérdidas', 'ganancias', 'resultados'] },
+    { id: 'reportes', name: 'Reportes', keywords: ['informes', 'reportes'] },
+    { id: 'bancos', name: 'Bancos', keywords: ['bancos', 'conciliación'] },
+    { id: 'kardex', name: 'Kardex', keywords: ['kardex', 'movimientos'] },
+    { id: 'punto-venta', name: 'Punto de Venta', keywords: ['pos', 'venta', 'caja'] },
+    { id: 'inventario', name: 'Inventario', keywords: ['inventario', 'stock'] },
+    { id: 'declaraciones-tributarias', name: 'Declaraciones Tributarias', keywords: ['impuestos', 'iva', 'declaraciones'] },
+    { id: 'activos-fijos', name: 'Activos Fijos', keywords: ['activos', 'depreciación'] },
+    { id: 'backup', name: 'Respaldo', keywords: ['backup', 'respaldo', 'copia'] },
+    { id: 'configuracion', name: 'Configuración', keywords: ['configurar', 'ajustes'] },
+    { id: 'tutorial', name: 'Tutorial', keywords: ['ayuda', 'tutorial', 'guía'] },
+    { id: 'auditoria', name: 'Auditoría y Control', keywords: ['auditoría', 'control', 'revisión'] },
+    { id: 'analisis-financiero', name: 'Análisis Financiero', keywords: ['análisis', 'financiero', 'indicadores'] },
+    { id: 'anticipos', name: 'Gestión de Anticipos', keywords: ['anticipos', 'adelantos'] },
+    { id: 'nomina', name: 'Nómina', keywords: ['nómina', 'sueldos', 'salarios', 'gestora'] },
+    { id: 'centros-costo', name: 'Centros de Costo', keywords: ['centros', 'costo', 'departamentos'] },
+    { id: 'flujo-caja', name: 'Flujo de Caja', keywords: ['flujo', 'caja', 'efectivo'] },
+    { id: 'presupuestos', name: 'Presupuestos', keywords: ['presupuesto', 'planificación'] },
+    { id: 'rentabilidad', name: 'Análisis de Rentabilidad', keywords: ['rentabilidad', 'beneficios'] }
+  ];
+
+  // Función de búsqueda solo en módulos
   const performSearch = async (query: string) => {
     if (!query || !query.trim()) {
       setResults([]);
@@ -56,84 +88,27 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
     const searchResults: SearchResult[] = [];
 
     try {
-      // Buscar en productos
-      const productos = JSON.parse(localStorage.getItem('productos') || '[]');
-      if (Array.isArray(productos)) {
-        productos.forEach((producto: any) => {
-          if (producto && producto.nombre && producto.codigo && 
-              (producto.nombre.toLowerCase().includes(query.toLowerCase()) ||
-               producto.codigo.toLowerCase().includes(query.toLowerCase()))) {
-            searchResults.push({
-              id: producto.id || Math.random().toString(),
-              type: 'producto',
-              title: producto.nombre || 'Sin nombre',
-              subtitle: `Código: ${producto.codigo || 'N/A'} - Stock: ${producto.stockActual || 0}`,
-              data: producto,
-              module: 'productos'
-            });
-          }
-        });
-      }
+      const searchQuery = query.toLowerCase();
+      
+      modules.forEach((module) => {
+        const matchesName = module.name.toLowerCase().includes(searchQuery);
+        const matchesKeywords = module.keywords.some(keyword => 
+          keyword.toLowerCase().includes(searchQuery)
+        );
+        
+        if (matchesName || matchesKeywords) {
+          searchResults.push({
+            id: module.id,
+            type: 'transaccion',
+            title: module.name,
+            subtitle: `Módulo del sistema - ${module.keywords.join(', ')}`,
+            data: module,
+            module: module.id
+          });
+        }
+      });
 
-      // Buscar en clientes
-      const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-      if (Array.isArray(clientes)) {
-        clientes.forEach((cliente: any) => {
-          if (cliente && cliente.nombre && 
-              (cliente.nombre.toLowerCase().includes(query.toLowerCase()) ||
-               (cliente.nit && cliente.nit.includes(query)))) {
-            searchResults.push({
-              id: cliente.id || Math.random().toString(),
-              type: 'cliente',
-              title: cliente.nombre || 'Sin nombre',
-              subtitle: `NIT: ${cliente.nit || 'N/A'} - Tel: ${cliente.telefono || 'N/A'}`,
-              data: cliente,
-              module: 'clientes'
-            });
-          }
-        });
-      }
-
-      // Buscar en facturas
-      const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-      if (Array.isArray(facturas)) {
-        facturas.forEach((factura: any) => {
-          if (factura && factura.numero && 
-              (factura.numero.toLowerCase().includes(query.toLowerCase()) ||
-               (factura.cliente && factura.cliente.nombre && 
-                factura.cliente.nombre.toLowerCase().includes(query.toLowerCase())))) {
-            searchResults.push({
-              id: factura.id || Math.random().toString(),
-              type: 'factura',
-              title: `Factura ${factura.numero || 'N/A'}`,
-              subtitle: `Cliente: ${factura.cliente?.nombre || 'N/A'} - Total: Bs. ${factura.total || 0}`,
-              data: factura,
-              module: 'facturacion'
-            });
-          }
-        });
-      }
-
-      // Buscar en asientos contables
-      const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
-      if (Array.isArray(asientos)) {
-        asientos.forEach((asiento: any) => {
-          if (asiento && asiento.concepto && 
-              (asiento.concepto.toLowerCase().includes(query.toLowerCase()) ||
-               (asiento.referencia && asiento.referencia.toLowerCase().includes(query.toLowerCase())))) {
-            searchResults.push({
-              id: asiento.id || Math.random().toString(),
-              type: 'transaccion',
-              title: asiento.concepto || 'Sin concepto',
-              subtitle: `Ref: ${asiento.referencia || 'N/A'} - Fecha: ${asiento.fecha || 'N/A'}`,
-              data: asiento,
-              module: 'libro-diario'
-            });
-          }
-        });
-      }
-
-      setResults(searchResults.slice(0, 10)); // Limitar a 10 resultados
+      setResults(searchResults.slice(0, 8)); // Limitar a 8 resultados
     } catch (error) {
       console.error('Error en búsqueda:', error);
       setResults([]);
@@ -196,7 +171,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
           <div className="relative flex-1 max-w-lg">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Buscar productos, clientes, facturas..."
+              placeholder="Buscar módulos del sistema..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onClick={() => setIsOpen(true)}
