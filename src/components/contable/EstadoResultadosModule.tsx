@@ -6,18 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Download, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
+import { useReportesContables } from '@/hooks/useReportesContables';
 import * as XLSX from 'xlsx';
 
 const EstadoResultadosModule = () => {
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
-  const { getIncomeStatementData, getTrialBalanceData } = useContabilidadIntegration();
+  const { getIncomeStatementData, getTrialBalanceData } = useReportesContables();
 
-  // Obtener datos reales del sistema contable
+  // Obtener datos reales del sistema contable integrado con comprobantes
   const datosReales = getIncomeStatementData();
   
-  // Obtener datos del balance de comprobación para incluir IT por Pagar
+  // Obtener datos del balance de comprobación para el IT
   const { details } = getTrialBalanceData();
   
   // Estructura de datos completa para el Estado de Resultados
@@ -43,12 +43,8 @@ const EstadoResultadosModule = () => {
       cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62'))
     },
     impuestoTransacciones: {
-      total: details.filter(c => c.codigo === '5211').reduce((sum, c) => sum + c.saldoDeudor, 0),
-      cuentas: details.filter(c => c.codigo === '5211').map(c => ({
-        codigo: c.codigo,
-        nombre: c.nombre,
-        saldo: c.saldoDeudor
-      }))
+      total: datosReales.gastos.cuentas.filter(c => c.codigo === '5211').reduce((sum, c) => sum + c.saldo, 0),
+      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo === '5211')
     },
     impuestos: {
       total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63')).reduce((sum, c) => sum + c.saldo, 0),

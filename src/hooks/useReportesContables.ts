@@ -282,31 +282,63 @@ export const useReportesContables = () => {
       .filter((c: any) => c.estado === 'autorizado' && !c.asientoGenerado)
       .forEach((comprobante: any) => {
         if (comprobante.tipo === 'ingreso') {
-          // Buscar cuenta de ingresos en el comprobante
-          comprobante.cuentas.forEach((cuenta: any) => {
-            if (cuenta.codigo.startsWith('4') && cuenta.haber > 0) {
-              let cuentaExistente = ingresos.cuentas.find(c => c.codigo === cuenta.codigo);
-              if (!cuentaExistente) {
-                cuentaExistente = { codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: 0 };
-                ingresos.cuentas.push(cuentaExistente);
-              }
-              cuentaExistente.saldo += cuenta.haber;
-              ingresos.total += cuenta.haber;
+          if (comprobante.conFactura) {
+            // Para ingresos con factura, separar base imponible del IVA y IT
+            const montoTotal = comprobante.monto;
+            const baseImponible = montoTotal / 1.16; // Base sin IVA (13%) ni IT (3%)
+            const impuestoTransacciones = baseImponible * 0.03;
+            
+            // Registrar ingreso sin impuestos
+            let cuentaIngreso = ingresos.cuentas.find(c => c.codigo === comprobante.cuentaIngreso);
+            if (!cuentaIngreso) {
+              cuentaIngreso = { codigo: comprobante.cuentaIngreso, nombre: 'Ingresos por Ventas', saldo: 0 };
+              ingresos.cuentas.push(cuentaIngreso);
             }
-          });
+            cuentaIngreso.saldo += baseImponible;
+            ingresos.total += baseImponible;
+
+            // Registrar IT como gasto
+            let cuentaIT = gastos.cuentas.find(c => c.codigo === '5211');
+            if (!cuentaIT) {
+              cuentaIT = { codigo: '5211', nombre: 'Impuesto a las Transacciones', saldo: 0 };
+              gastos.cuentas.push(cuentaIT);
+            }
+            cuentaIT.saldo += impuestoTransacciones;
+            gastos.total += impuestoTransacciones;
+          } else {
+            // Ingreso sin factura - monto completo
+            let cuentaIngreso = ingresos.cuentas.find(c => c.codigo === comprobante.cuentaIngreso);
+            if (!cuentaIngreso) {
+              cuentaIngreso = { codigo: comprobante.cuentaIngreso, nombre: 'Ingresos', saldo: 0 };
+              ingresos.cuentas.push(cuentaIngreso);
+            }
+            cuentaIngreso.saldo += comprobante.monto;
+            ingresos.total += comprobante.monto;
+          }
         } else if (comprobante.tipo === 'egreso') {
-          // Buscar cuenta de gastos en el comprobante
-          comprobante.cuentas.forEach((cuenta: any) => {
-            if ((cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) && cuenta.debe > 0) {
-              let cuentaExistente = gastos.cuentas.find(c => c.codigo === cuenta.codigo);
-              if (!cuentaExistente) {
-                cuentaExistente = { codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: 0 };
-                gastos.cuentas.push(cuentaExistente);
-              }
-              cuentaExistente.saldo += cuenta.debe;
-              gastos.total += cuenta.debe;
+          if (comprobante.conFactura) {
+            // Para egresos con factura, solo el 87% va como gasto (sin IVA)
+            const montoTotal = comprobante.monto;
+            const baseImponible = montoTotal / 1.13; // Base sin IVA (13%)
+            
+            // Registrar solo la base imponible como gasto
+            let cuentaGasto = gastos.cuentas.find(c => c.codigo === comprobante.cuentaGasto);
+            if (!cuentaGasto) {
+              cuentaGasto = { codigo: comprobante.cuentaGasto, nombre: 'Gastos', saldo: 0 };
+              gastos.cuentas.push(cuentaGasto);
             }
-          });
+            cuentaGasto.saldo += baseImponible;
+            gastos.total += baseImponible;
+          } else {
+            // Gasto sin factura - monto completo
+            let cuentaGasto = gastos.cuentas.find(c => c.codigo === comprobante.cuentaGasto);
+            if (!cuentaGasto) {
+              cuentaGasto = { codigo: comprobante.cuentaGasto, nombre: 'Gastos', saldo: 0 };
+              gastos.cuentas.push(cuentaGasto);
+            }
+            cuentaGasto.saldo += comprobante.monto;
+            gastos.total += comprobante.monto;
+          }
         }
       });
 
