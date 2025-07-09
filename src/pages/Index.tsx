@@ -64,6 +64,11 @@ const PlanCuentasModule = lazy(() => import('@/components/contable/PlanCuentasMo
 const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesModule'));
 const NotificationCenter = lazy(() => import('@/components/contable/notifications/NotificationCenter'));
 const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
+const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
+const AnalisisRentabilidad = lazy(() => import('@/components/contable/rentabilidad/AnalisisRentabilidad'));
+const ConciliacionBancaria = lazy(() => import('@/components/contable/bancario/ConciliacionBancaria'));
+const PresupuestosEmpresariales = lazy(() => import('@/components/contable/presupuestos/PresupuestosEmpresariales'));
+const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
 
 interface Module {
   id: string;
@@ -103,7 +108,12 @@ const modules: Module[] = [
   { id: 'backup', label: 'Respaldos', icon: HardDrive, component: BackupModule, category: 'configuracion', description: 'Copias de seguridad y restauración' },
   { id: 'punto-venta', label: 'Punto de Venta', icon: ShoppingCart, component: PuntoVentaModule, category: 'facturacion', description: 'Sistema POS integrado para ventas directas' },
   { id: 'notificaciones', label: 'Notificaciones', icon: Bell, component: NotificationCenter, category: 'herramientas', description: 'Centro de alertas y notificaciones del sistema' },
-  { id: 'flujo-caja-avanzado', label: 'Flujo de Caja Avanzado', icon: DollarSign, component: AdvancedCashFlowModule, category: 'herramientas', description: 'Gestión avanzada de flujo de efectivo con proyecciones' }
+  { id: 'flujo-caja-avanzado', label: 'Flujo de Caja Avanzado', icon: DollarSign, component: AdvancedCashFlowModule, category: 'herramientas', description: 'Gestión avanzada de flujo de efectivo con proyecciones' },
+  { id: 'nomina', label: 'Nómina', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de empleados y cálculo de planillas' },
+  { id: 'analisis-rentabilidad', label: 'Análisis de Rentabilidad', icon: Target, component: AnalisisRentabilidad, category: 'reportes', description: 'Análisis detallado de rentabilidad por productos y categorías' },
+  { id: 'conciliacion-bancaria', label: 'Conciliación Bancaria', icon: Banknote, component: ConciliacionBancaria, category: 'herramientas', description: 'Conciliación automática de extractos bancarios' },
+  { id: 'presupuestos', label: 'Presupuestos Empresariales', icon: Factory, component: PresupuestosEmpresariales, category: 'reportes', description: 'Gestión y control de presupuestos empresariales' },
+  { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' }
 ];
 
 const categories = {

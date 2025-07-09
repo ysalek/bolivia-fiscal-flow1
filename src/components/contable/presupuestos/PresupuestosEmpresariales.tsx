@@ -1,620 +1,499 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import { Calendar, Plus, TrendingUp, TrendingDown, Target, AlertCircle, CheckCircle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import { Plus, Edit, Eye, AlertTriangle, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface PresupuestoMaestro {
+interface PresupuestoItem {
   id: string;
-  nombre: string;
-  año: number;
-  estado: 'borrador' | 'aprobado' | 'ejecutandose' | 'cerrado';
-  fechaCreacion: string;
-  fechaAprobacion?: string;
-  totalPresupuestado: number;
-  totalEjecutado: number;
-  descripcion: string;
-}
-
-interface PresupuestoDetalle {
-  id: string;
-  presupuestoId: string;
-  categoria: 'ingresos' | 'gastos_operativos' | 'gastos_administrativos' | 'inversiones';
-  subcategoria: string;
-  cuenta: string;
-  enero: number;
-  febrero: number;
-  marzo: number;
-  abril: number;
-  mayo: number;
-  junio: number;
-  julio: number;
-  agosto: number;
-  septiembre: number;
-  octubre: number;
-  noviembre: number;
-  diciembre: number;
-  total: number;
-  ejecutado: number;
-  observaciones: string;
-}
-
-interface VariacionPresupuestaria {
-  mes: string;
+  concepto: string;
+  categoria: string;
   presupuestado: number;
   ejecutado: number;
   variacion: number;
-  variacionPorcentual: number;
+  porcentajeEjecucion: number;
+}
+
+interface Presupuesto {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  periodo: string;
+  estado: 'borrador' | 'aprobado' | 'en_ejecucion' | 'cerrado';
+  totalPresupuestado: number;
+  totalEjecutado: number;
+  fechaInicio: string;
+  fechaFin: string;
+  responsable: string;
 }
 
 const PresupuestosEmpresariales = () => {
-  const [presupuestos, setPresupuestos] = useState<PresupuestoMaestro[]>([]);
-  const [detalles, setDetalles] = useState<PresupuestoDetalle[]>([]);
-  const [variaciones, setVariaciones] = useState<VariacionPresupuestaria[]>([]);
-  const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState<string>("");
-  const [dialogAbierto, setDialogAbierto] = useState(false);
-  const [modoEdicion, setModoEdicion] = useState(false);
-  
-  const [nuevoPresupuesto, setNuevoPresupuesto] = useState({
-    nombre: "",
-    año: new Date().getFullYear(),
-    descripcion: ""
-  });
+  const { toast } = useToast();
+  const [selectedPresupuesto, setSelectedPresupuesto] = useState<string>('');
+  const [showDialog, setShowDialog] = useState(false);
 
-  const [nuevoDetalle, setNuevoDetalle] = useState({
-    categoria: "ingresos" as "ingresos" | "gastos_operativos" | "gastos_administrativos" | "inversiones",
-    subcategoria: "",
-    cuenta: "",
-    enero: 0,
-    febrero: 0,
-    marzo: 0,
-    abril: 0,
-    mayo: 0,
-    junio: 0,
-    julio: 0,
-    agosto: 0,
-    septiembre: 0,
-    octubre: 0,
-    noviembre: 0,
-    diciembre: 0,
-    observaciones: ""
-  });
-
-  useEffect(() => {
-    cargarDatosDemo();
-  }, []);
-
-  useEffect(() => {
-    if (presupuestoSeleccionado) {
-      cargarDetallesPresupuesto();
-      calcularVariaciones();
+  const [presupuestos] = useState<Presupuesto[]>([
+    {
+      id: '1',
+      nombre: 'Presupuesto Anual 2024',
+      descripcion: 'Presupuesto general para el ejercicio fiscal 2024',
+      periodo: '2024',
+      estado: 'en_ejecucion',
+      totalPresupuestado: 500000,
+      totalEjecutado: 325000,
+      fechaInicio: '2024-01-01',
+      fechaFin: '2024-12-31',
+      responsable: 'María González'
+    },
+    {
+      id: '2',
+      nombre: 'Presupuesto Marketing Q1',
+      descripcion: 'Presupuesto del área de marketing para el primer trimestre',
+      periodo: 'Q1 2024',
+      estado: 'aprobado',
+      totalPresupuestado: 75000,
+      totalEjecutado: 45000,
+      fechaInicio: '2024-01-01',
+      fechaFin: '2024-03-31',
+      responsable: 'Carlos Mendoza'
     }
-  }, [presupuestoSeleccionado]);
+  ]);
 
-  const cargarDatosDemo = () => {
-    const presupuestosDemo: PresupuestoMaestro[] = [
-      {
-        id: "1",
-        nombre: "Presupuesto Anual 2024",
-        año: 2024,
-        estado: "ejecutandose",
-        fechaCreacion: "2023-12-01",
-        fechaAprobacion: "2023-12-15",
-        totalPresupuestado: 1200000,
-        totalEjecutado: 600000,
-        descripcion: "Presupuesto maestro para el ejercicio fiscal 2024"
-      },
-      {
-        id: "2",
-        nombre: "Presupuesto 2025 - Borrador",
-        año: 2025,
-        estado: "borrador",
-        fechaCreacion: "2024-10-01",
-        totalPresupuestado: 1350000,
-        totalEjecutado: 0,
-        descripcion: "Presupuesto preliminar para 2025"
-      }
-    ];
-    setPresupuestos(presupuestosDemo);
-    setPresupuestoSeleccionado("1");
+  const [itemsPresupuesto] = useState<PresupuestoItem[]>([
+    {
+      id: '1',
+      concepto: 'Gastos de Personal',
+      categoria: 'Recursos Humanos',
+      presupuestado: 200000,
+      ejecutado: 150000,
+      variacion: -50000,
+      porcentajeEjecucion: 75
+    },
+    {
+      id: '2',
+      concepto: 'Gastos de Marketing',
+      categoria: 'Ventas y Marketing',
+      presupuestado: 80000,
+      ejecutado: 95000,
+      variacion: 15000,
+      porcentajeEjecucion: 118.75
+    },
+    {
+      id: '3',
+      concepto: 'Gastos Operativos',
+      categoria: 'Operaciones',
+      presupuestado: 120000,
+      ejecutado: 80000,
+      variacion: -40000,
+      porcentajeEjecucion: 66.67
+    }
+  ]);
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'borrador': return 'bg-gray-100 text-gray-800';
+      case 'aprobado': return 'bg-blue-100 text-blue-800';
+      case 'en_ejecucion': return 'bg-green-100 text-green-800';
+      case 'cerrado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const cargarDetallesPresupuesto = () => {
-    const detallesDemo: PresupuestoDetalle[] = [
-      {
-        id: "1",
-        presupuestoId: presupuestoSeleccionado,
-        categoria: "ingresos",
-        subcategoria: "Ventas",
-        cuenta: "4111 - Ventas de Productos",
-        enero: 80000,
-        febrero: 82000,
-        marzo: 85000,
-        abril: 87000,
-        mayo: 90000,
-        junio: 92000,
-        julio: 95000,
-        agosto: 97000,
-        septiembre: 100000,
-        octubre: 102000,
-        noviembre: 105000,
-        diciembre: 110000,
-        total: 1125000,
-        ejecutado: 562500,
-        observaciones: "Crecimiento proyectado del 8% anual"
-      },
-      {
-        id: "2",
-        presupuestoId: presupuestoSeleccionado,
-        categoria: "gastos_operativos",
-        subcategoria: "Personal",
-        cuenta: "5111 - Sueldos y Salarios",
-        enero: 35000,
-        febrero: 35000,
-        marzo: 35000,
-        abril: 35000,
-        mayo: 35000,
-        junio: 35000,
-        julio: 35000,
-        agosto: 35000,
-        septiembre: 35000,
-        octubre: 35000,
-        noviembre: 35000,
-        diciembre: 50000,
-        total: 435000,
-        ejecutado: 210000,
-        observaciones: "Incluye aguinaldo en diciembre"
-      },
-      {
-        id: "3",
-        presupuestoId: presupuestoSeleccionado,
-        categoria: "gastos_administrativos",
-        subcategoria: "Servicios Básicos",
-        cuenta: "5131 - Servicios Básicos",
-        enero: 2500,
-        febrero: 2500,
-        marzo: 2500,
-        abril: 2500,
-        mayo: 2500,
-        junio: 2500,
-        julio: 2500,
-        agosto: 2500,
-        septiembre: 2500,
-        octubre: 2500,
-        noviembre: 2500,
-        diciembre: 2500,
-        total: 30000,
-        ejecutado: 15000,
-        observaciones: "Gastos fijos mensuales"
-      }
-    ];
-    setDetalles(detallesDemo);
-  };
-
-  const calcularVariaciones = () => {
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
-    const variacionesData: VariacionPresupuestaria[] = meses.map((mes, index) => {
-      const presupuestadoMes = detalles.reduce((sum, detalle) => {
-        const monthKey = mes.toLowerCase() as keyof PresupuestoDetalle;
-        const monthValue = detalle[monthKey];
-        // Ensure we only add numbers to the sum
-        return sum + (typeof monthValue === 'number' ? monthValue : 0);
-      }, 0);
-      
-      const ejecutadoMes = presupuestadoMes * (0.8 + Math.random() * 0.4); // Simulación
-      const variacion = ejecutadoMes - presupuestadoMes;
-      const variacionPorcentual = presupuestadoMes > 0 ? (variacion / presupuestadoMes) * 100 : 0;
-
-      return {
-        mes,
-        presupuestado: presupuestadoMes,
-        ejecutado: ejecutadoMes,
-        variacion,
-        variacionPorcentual
-      };
-    });
-    
-    setVariaciones(variacionesData);
+  const getVariacionIcon = (variacion: number) => {
+    if (variacion > 0) return <TrendingUp className="w-4 h-4 text-red-500" />;
+    if (variacion < 0) return <TrendingDown className="w-4 h-4 text-green-500" />;
+    return <Target className="w-4 h-4 text-blue-500" />;
   };
 
   const crearPresupuesto = () => {
-    if (!nuevoPresupuesto.nombre) return;
-
-    const presupuesto: PresupuestoMaestro = {
-      id: Date.now().toString(),
-      ...nuevoPresupuesto,
-      estado: "borrador",
-      fechaCreacion: new Date().toISOString().slice(0, 10),
-      totalPresupuestado: 0,
-      totalEjecutado: 0
-    };
-
-    setPresupuestos(prev => [presupuesto, ...prev]);
-    setDialogAbierto(false);
-    setNuevoPresupuesto({ nombre: "", año: new Date().getFullYear(), descripcion: "" });
-  };
-
-  const agregarDetalle = () => {
-    if (!presupuestoSeleccionado || !nuevoDetalle.subcategoria) return;
-
-    const total = nuevoDetalle.enero + nuevoDetalle.febrero + nuevoDetalle.marzo + 
-                 nuevoDetalle.abril + nuevoDetalle.mayo + nuevoDetalle.junio +
-                 nuevoDetalle.julio + nuevoDetalle.agosto + nuevoDetalle.septiembre +
-                 nuevoDetalle.octubre + nuevoDetalle.noviembre + nuevoDetalle.diciembre;
-
-    const detalle: PresupuestoDetalle = {
-      id: Date.now().toString(),
-      presupuestoId: presupuestoSeleccionado,
-      ...nuevoDetalle,
-      total,
-      ejecutado: 0
-    };
-
-    setDetalles(prev => [...prev, detalle]);
-    setNuevoDetalle({
-      categoria: "ingresos",
-      subcategoria: "",
-      cuenta: "",
-      enero: 0, febrero: 0, marzo: 0, abril: 0, mayo: 0, junio: 0,
-      julio: 0, agosto: 0, septiembre: 0, octubre: 0, noviembre: 0, diciembre: 0,
-      observaciones: ""
+    toast({
+      title: "Presupuesto creado",
+      description: "El nuevo presupuesto ha sido creado exitosamente",
     });
+    setShowDialog(false);
   };
-
-  const calcularTotalCategoria = (categoria: string) => {
-    return detalles
-      .filter(d => d.categoria === categoria)
-      .reduce((sum, d) => sum + d.total, 0);
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    const badges = {
-      'borrador': { color: 'bg-gray-100 text-gray-800', text: 'Borrador' },
-      'aprobado': { color: 'bg-blue-100 text-blue-800', text: 'Aprobado' },
-      'ejecutandose': { color: 'bg-green-100 text-green-800', text: 'En Ejecución' },
-      'cerrado': { color: 'bg-red-100 text-red-800', text: 'Cerrado' }
-    };
-    return badges[estado as keyof typeof badges] || badges.borrador;
-  };
-
-  const presupuestoActual = presupuestos.find(p => p.id === presupuestoSeleccionado);
-  const porcentajeEjecucion = presupuestoActual && presupuestoActual.totalPresupuestado > 0 
-    ? (presupuestoActual.totalEjecutado / presupuestoActual.totalPresupuestado) * 100 
-    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Resumen del Presupuesto Seleccionado */}
-      {presupuestoActual && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Presupuestado</p>
-                  <p className="text-2xl font-bold">Bs. {presupuestoActual.totalPresupuestado.toLocaleString()}</p>
-                </div>
-                <Target className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Ejecutado</p>
-                  <p className="text-2xl font-bold">Bs. {presupuestoActual.totalEjecutado.toLocaleString()}</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">% Ejecución</p>
-                  <p className="text-2xl font-bold">{porcentajeEjecucion.toFixed(1)}%</p>
-                </div>
-                <Calendar className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Estado</p>
-                  <Badge className={getEstadoBadge(presupuestoActual.estado).color}>
-                    {getEstadoBadge(presupuestoActual.estado).text}
-                  </Badge>
-                </div>
-                <CheckCircle className="w-8 h-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Presupuestos Empresariales</h2>
+          <p className="text-muted-foreground">
+            Gestión y control de presupuestos por departamentos y proyectos
+          </p>
         </div>
-      )}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Nuevo Presupuesto
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
+              <DialogDescription>
+                Configure los parámetros para el nuevo presupuesto empresarial
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nombre">Nombre del Presupuesto</Label>
+                <Input id="nombre" placeholder="Ej. Presupuesto Anual 2024" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="periodo">Período</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="anual">Anual</SelectItem>
+                    <SelectItem value="semestral">Semestral</SelectItem>
+                    <SelectItem value="trimestral">Trimestral</SelectItem>
+                    <SelectItem value="mensual">Mensual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fecha-inicio">Fecha de Inicio</Label>
+                <Input id="fecha-inicio" type="date" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fecha-fin">Fecha de Fin</Label>
+                <Input id="fecha-fin" type="date" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="responsable">Responsable</Label>
+                <Input id="responsable" placeholder="Nombre del responsable" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="monto-total">Monto Total Presupuestado</Label>
+                <Input id="monto-total" type="number" placeholder="0.00" />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="descripcion">Descripción</Label>
+                <Textarea id="descripcion" placeholder="Descripción del presupuesto" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={crearPresupuesto}>
+                Crear Presupuesto
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-      <Tabs defaultValue="presupuestos" className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Presupuestado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">Bs. 500,000</div>
+            <p className="text-xs text-muted-foreground">Presupuesto actual</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Ejecutado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">Bs. 325,000</div>
+            <p className="text-xs text-muted-foreground">65% ejecutado</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Variación Total</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">Bs. 175,000</div>
+            <p className="text-xs text-muted-foreground">Pendiente de ejecutar</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Presupuestos Activos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">3</div>
+            <p className="text-xs text-muted-foreground">En ejecución</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="lista-presupuestos" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="presupuestos">Presupuestos</TabsTrigger>
-          <TabsTrigger value="detalles">Detalles y Seguimiento</TabsTrigger>
+          <TabsTrigger value="lista-presupuestos">Lista de Presupuestos</TabsTrigger>
+          <TabsTrigger value="ejecucion-presupuestal">Ejecución Presupuestal</TabsTrigger>
           <TabsTrigger value="variaciones">Análisis de Variaciones</TabsTrigger>
+          <TabsTrigger value="reportes">Reportes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="presupuestos">
+        <TabsContent value="lista-presupuestos">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Gestión de Presupuestos</CardTitle>
-                <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Presupuesto
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Nombre del Presupuesto</Label>
-                        <Input
-                          value={nuevoPresupuesto.nombre}
-                          onChange={(e) => setNuevoPresupuesto(prev => ({ ...prev, nombre: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Año</Label>
-                        <Input
-                          type="number"
-                          value={nuevoPresupuesto.año}
-                          onChange={(e) => setNuevoPresupuesto(prev => ({ ...prev, año: Number(e.target.value) }))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Descripción</Label>
-                        <Textarea
-                          value={nuevoPresupuesto.descripcion}
-                          onChange={(e) => setNuevoPresupuesto(prev => ({ ...prev, descripcion: e.target.value }))}
-                        />
-                      </div>
-                      <Button onClick={crearPresupuesto} className="w-full">
-                        Crear Presupuesto
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <CardTitle>Presupuestos Registrados</CardTitle>
+              <CardDescription>
+                Lista de todos los presupuestos empresariales
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label>Seleccionar Presupuesto</Label>
-                  <Select value={presupuestoSeleccionado} onValueChange={setPresupuestoSeleccionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar presupuesto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {presupuestos.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nombre} - {p.año}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Año</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Presupuestado</TableHead>
-                      <TableHead>Ejecutado</TableHead>
-                      <TableHead>% Ejecución</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Período</TableHead>
+                    <TableHead>Responsable</TableHead>
+                    <TableHead className="text-right">Presupuestado</TableHead>
+                    <TableHead className="text-right">Ejecutado</TableHead>
+                    <TableHead>% Ejecución</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {presupuestos.map((presupuesto) => (
+                    <TableRow key={presupuesto.id}>
+                      <TableCell className="font-medium">
+                        {presupuesto.nombre}
+                      </TableCell>
+                      <TableCell>{presupuesto.periodo}</TableCell>
+                      <TableCell>{presupuesto.responsable}</TableCell>
+                      <TableCell className="text-right">
+                        Bs. {presupuesto.totalPresupuestado.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        Bs. {presupuesto.totalEjecutado.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="text-sm">
+                            {((presupuesto.totalEjecutado / presupuesto.totalPresupuestado) * 100).toFixed(1)}%
+                          </div>
+                          <Progress 
+                            value={(presupuesto.totalEjecutado / presupuesto.totalPresupuestado) * 100} 
+                            className="h-2"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getEstadoColor(presupuesto.estado)}>
+                          {presupuesto.estado.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {presupuestos.map(presupuesto => {
-                      const porcentaje = presupuesto.totalPresupuestado > 0 
-                        ? (presupuesto.totalEjecutado / presupuesto.totalPresupuestado) * 100 
-                        : 0;
-                      return (
-                        <TableRow key={presupuesto.id}>
-                          <TableCell className="font-medium">{presupuesto.nombre}</TableCell>
-                          <TableCell>{presupuesto.año}</TableCell>
-                          <TableCell>
-                            <Badge className={getEstadoBadge(presupuesto.estado).color}>
-                              {getEstadoBadge(presupuesto.estado).text}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>Bs. {presupuesto.totalPresupuestado.toLocaleString()}</TableCell>
-                          <TableCell>Bs. {presupuesto.totalEjecutado.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Progress value={porcentaje} className="flex-1 h-2" />
-                              <span className="text-sm">{porcentaje.toFixed(1)}%</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="detalles">
-          {presupuestoSeleccionado && (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Agregar Línea Presupuestaria</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label>Categoría</Label>
-                      <Select 
-                        value={nuevoDetalle.categoria} 
-                        onValueChange={(value: any) => setNuevoDetalle(prev => ({ ...prev, categoria: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ingresos">Ingresos</SelectItem>
-                          <SelectItem value="gastos_operativos">Gastos Operativos</SelectItem>
-                          <SelectItem value="gastos_administrativos">Gastos Administrativos</SelectItem>
-                          <SelectItem value="inversiones">Inversiones</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Subcategoría</Label>
-                      <Input
-                        value={nuevoDetalle.subcategoria}
-                        onChange={(e) => setNuevoDetalle(prev => ({ ...prev, subcategoria: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label>Cuenta Contable</Label>
-                      <Input
-                        value={nuevoDetalle.cuenta}
-                        onChange={(e) => setNuevoDetalle(prev => ({ ...prev, cuenta: e.target.value }))}
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={agregarDetalle}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Agregar
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
-                    {['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'].map(mes => (
-                      <div key={mes}>
-                        <Label className="capitalize text-xs">{mes}</Label>
-                        <Input
-                          type="number"
-                          value={nuevoDetalle[mes as keyof typeof nuevoDetalle] as number}
-                          onChange={(e) => setNuevoDetalle(prev => ({ 
-                            ...prev, 
-                            [mes]: Number(e.target.value) 
-                          }))}
-                          className="text-sm"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detalle Presupuestario</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead>Subcategoría</TableHead>
-                        <TableHead>Cuenta</TableHead>
-                        <TableHead>Presupuestado</TableHead>
-                        <TableHead>Ejecutado</TableHead>
-                        <TableHead>% Ejecución</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {detalles.map(detalle => {
-                        const porcentaje = detalle.total > 0 ? (detalle.ejecutado / detalle.total) * 100 : 0;
-                        return (
-                          <TableRow key={detalle.id}>
-                            <TableCell className="capitalize">{detalle.categoria.replace('_', ' ')}</TableCell>
-                            <TableCell>{detalle.subcategoria}</TableCell>
-                            <TableCell>{detalle.cuenta}</TableCell>
-                            <TableCell>Bs. {detalle.total.toLocaleString()}</TableCell>
-                            <TableCell>Bs. {detalle.ejecutado.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={porcentaje} className="flex-1 h-2" />
-                                <span className="text-sm">{porcentaje.toFixed(1)}%</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+        <TabsContent value="ejecucion-presupuestal">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ejecución Presupuestal por Conceptos</CardTitle>
+              <CardDescription>
+                Seguimiento detallado de la ejecución presupuestal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Concepto</TableHead>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead className="text-right">Presupuestado</TableHead>
+                    <TableHead className="text-right">Ejecutado</TableHead>
+                    <TableHead className="text-right">Variación</TableHead>
+                    <TableHead>% Ejecución</TableHead>
+                    <TableHead>Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {itemsPresupuesto.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.concepto}</TableCell>
+                      <TableCell>{item.categoria}</TableCell>
+                      <TableCell className="text-right">
+                        Bs. {item.presupuestado.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        Bs. {item.ejecutado.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center gap-1">
+                          {getVariacionIcon(item.variacion)}
+                          <span className={item.variacion > 0 ? 'text-red-600' : 'text-green-600'}>
+                            Bs. {Math.abs(item.variacion).toLocaleString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="text-sm">{item.porcentajeEjecucion.toFixed(1)}%</div>
+                          <Progress 
+                            value={Math.min(item.porcentajeEjecucion, 100)} 
+                            className="h-2"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.porcentajeEjecucion > 100 ? (
+                          <Badge variant="destructive" className="flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Sobrepasado
+                          </Badge>
+                        ) : item.porcentajeEjecucion > 90 ? (
+                          <Badge variant="secondary">
+                            Próximo al límite
+                          </Badge>
+                        ) : (
+                          <Badge variant="default">
+                            En rango
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="variaciones">
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Análisis de Variaciones Presupuestarias</CardTitle>
+                <CardTitle>Variaciones Favorables</CardTitle>
+                <CardDescription>
+                  Conceptos con menor gasto al presupuestado
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={variaciones}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" />
-                    <YAxis />
-                    <Tooltip formatter={(value: number) => [`Bs. ${value.toLocaleString()}`, ""]} />
-                    <Bar dataKey="presupuestado" fill="#8884d8" name="Presupuestado" />
-                    <Bar dataKey="ejecutado" fill="#82ca9d" name="Ejecutado" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">Gastos de Personal</div>
+                    <div className="text-sm text-muted-foreground">Recursos Humanos</div>
+                  </div>
+                  <div className="text-green-600 font-bold">-Bs. 50,000</div>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">Gastos Operativos</div>
+                    <div className="text-sm text-muted-foreground">Operaciones</div>
+                  </div>
+                  <div className="text-green-600 font-bold">-Bs. 40,000</div>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Resumen por Categorías</CardTitle>
+                <CardTitle>Variaciones Desfavorables</CardTitle>
+                <CardDescription>
+                  Conceptos que exceden el presupuesto
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {['ingresos', 'gastos_operativos', 'gastos_administrativos', 'inversiones'].map(categoria => (
-                    <Card key={categoria}>
-                      <CardContent className="p-4">
-                        <div className="text-center">
-                          <h3 className="font-medium capitalize mb-2">
-                            {categoria.replace('_', ' ')}
-                          </h3>
-                          <p className="text-2xl font-bold">
-                            Bs. {calcularTotalCategoria(categoria).toLocaleString()}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Presupuestado</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">Gastos de Marketing</div>
+                    <div className="text-sm text-muted-foreground">Ventas y Marketing</div>
+                  </div>
+                  <div className="text-red-600 font-bold">+Bs. 15,000</div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reportes">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reportes Disponibles</CardTitle>
+                <CardDescription>
+                  Genere reportes detallados de ejecución presupuestal
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start">
+                  Reporte de Ejecución Presupuestal
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Análisis de Variaciones
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Proyección de Gastos
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Comparativo Presupuestal
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración de Alertas</CardTitle>
+                <CardDescription>
+                  Configure alertas automáticas para el control presupuestal
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Alerta por sobrepaso de presupuesto (%)</Label>
+                  <Input type="number" placeholder="90" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Frecuencia de reportes</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar frecuencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="semanal">Semanal</SelectItem>
+                      <SelectItem value="quincenal">Quincenal</SelectItem>
+                      <SelectItem value="mensual">Mensual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full">Guardar Configuración</Button>
               </CardContent>
             </Card>
           </div>
