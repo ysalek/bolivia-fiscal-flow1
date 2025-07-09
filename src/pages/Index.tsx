@@ -30,11 +30,15 @@ import {
   HardDrive,
   Zap,
   FileCheck,
-  Bookmark
+  Bookmark,
+  Bell,
+  Search,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import GlobalSearch from '@/components/contable/search/GlobalSearch';
 
 // Lazy load components
 const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
@@ -58,6 +62,8 @@ const ActivosFijosModule = lazy(() => import('@/components/contable/ActivosFijos
 const KardexModule = lazy(() => import('@/components/contable/KardexModule'));
 const PlanCuentasModule = lazy(() => import('@/components/contable/PlanCuentasModule'));
 const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesModule'));
+const NotificationCenter = lazy(() => import('@/components/contable/notifications/NotificationCenter'));
+const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
 
 interface Module {
   id: string;
@@ -95,7 +101,9 @@ const modules: Module[] = [
   
   { id: 'configuracion', label: 'Configuración', icon: Settings, component: ConfiguracionModule, category: 'configuracion', description: 'Configuración del sistema' },
   { id: 'backup', label: 'Respaldos', icon: HardDrive, component: BackupModule, category: 'configuracion', description: 'Copias de seguridad y restauración' },
-  { id: 'punto-venta', label: 'Punto de Venta', icon: ShoppingCart, component: PuntoVentaModule, category: 'facturacion', description: 'Sistema POS integrado para ventas directas' }
+  { id: 'punto-venta', label: 'Punto de Venta', icon: ShoppingCart, component: PuntoVentaModule, category: 'facturacion', description: 'Sistema POS integrado para ventas directas' },
+  { id: 'notificaciones', label: 'Notificaciones', icon: Bell, component: NotificationCenter, category: 'herramientas', description: 'Centro de alertas y notificaciones del sistema' },
+  { id: 'flujo-caja-avanzado', label: 'Flujo de Caja Avanzado', icon: DollarSign, component: AdvancedCashFlowModule, category: 'herramientas', description: 'Gestión avanzada de flujo de efectivo con proyecciones' }
 ];
 
 const categories = {
@@ -111,6 +119,16 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Función para manejar navegación desde búsqueda global
+  const handleGlobalNavigation = (moduleId: string, itemId?: string) => {
+    setActiveModule(moduleId);
+    // Aquí podrías agregar lógica adicional para navegar a un item específico
+    if (itemId) {
+      // Por ejemplo, establecer filtros o seleccionar un item específico
+      console.log(`Navegando a ${moduleId} con item ${itemId}`);
+    }
+  };
 
   // Inicializar datos de ejemplo al cargar
   useEffect(() => {
@@ -132,7 +150,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
-        {/* Sidebar */}
+        {/* Sidebar mejorado */}
         <div className="w-80 border-r bg-card shadow-lg">
           <div className="p-4 border-b bg-gradient-to-r from-primary to-primary/90">
             <h1 className="text-xl font-bold text-primary-foreground">Sistema Contable</h1>
@@ -140,12 +158,8 @@ const Index = () => {
           </div>
           
           <div className="p-4 space-y-4">
-            <Input
-              placeholder="Buscar módulos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
+            {/* Búsqueda global */}
+            <GlobalSearch onNavigate={handleGlobalNavigation} />
             
             <div className="flex flex-wrap gap-2">
               <Button
