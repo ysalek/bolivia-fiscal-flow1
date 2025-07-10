@@ -22,46 +22,110 @@ const EstadoResultadosModule = () => {
   // Obtener datos del balance de comprobación para el IT
   const { details } = getTrialBalanceData();
   
-  // Estructura de datos completa para el Estado de Resultados
+  // Estructura de datos completa para el Estado de Resultados con subcategorías
   const estadoResultados = {
     ingresos: {
-      total: datosReales.ingresos.total,
-      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('41'))
+      ventasProductos: {
+        total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('411')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('411'))
+      },
+      ventasServicios: {
+        total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('412')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('412'))
+      },
+      otrosIngresos: {
+        total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('413') || c.codigo.startsWith('414')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('413') || c.codigo.startsWith('414'))
+      },
+      totalIngresos: datosReales.ingresos.total,
+      todasLasCuentas: datosReales.ingresos.cuentas
     },
     costosVentas: {
-      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51')).reduce((sum, c) => sum + c.saldo, 0),
-      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51'))
+      costosDirectos: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('511')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('511'))
+      },
+      manoObraDirecta: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('512')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('512'))
+      },
+      gastosIndirectos: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('513')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('513'))
+      },
+      totalCostos: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51')).reduce((sum, c) => sum + c.saldo, 0),
+      todasLasCuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('51'))
     },
     gastosOperativos: {
-      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') || c.codigo.startsWith('53')).reduce((sum, c) => sum + c.saldo, 0),
-      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') || c.codigo.startsWith('53'))
-    },
-    otrosIngresos: {
-      total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42')).reduce((sum, c) => sum + c.saldo, 0),
-      cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42'))
-    },
-    otrosGastos: {
-      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62')).reduce((sum, c) => sum + c.saldo, 0),
-      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62'))
+      gastosAdministrativos: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('521') && c.codigo !== '5211').reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('521') && c.codigo !== '5211')
+      },
+      gastosVentas: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('522')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('522'))
+      },
+      gastosGenerales: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('523')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('523'))
+      },
+      depreciacion: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('524')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('524'))
+      },
+      totalGastosOperativos: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') && c.codigo !== '5211').reduce((sum, c) => sum + c.saldo, 0),
+      todasLasCuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('52') && c.codigo !== '5211')
     },
     impuestoTransacciones: {
       total: datosReales.gastos.cuentas.filter(c => c.codigo === '5211').reduce((sum, c) => sum + c.saldo, 0),
       cuentas: datosReales.gastos.cuentas.filter(c => c.codigo === '5211')
     },
+    otrosIngresos: {
+      ingresosFinancieros: {
+        total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('421')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('421'))
+      },
+      ingresosExtraordinarios: {
+        total: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('422')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('422'))
+      },
+      totalOtrosIngresos: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42')).reduce((sum, c) => sum + c.saldo, 0),
+      todasLasCuentas: datosReales.ingresos.cuentas.filter(c => c.codigo.startsWith('42'))
+    },
+    otrosGastos: {
+      gastosFinancieros: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('621')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('621'))
+      },
+      gastosExtraordinarios: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('622')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('622'))
+      },
+      totalOtrosGastos: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62')).reduce((sum, c) => sum + c.saldo, 0),
+      todasLasCuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('62'))
+    },
     impuestos: {
-      total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63')).reduce((sum, c) => sum + c.saldo, 0),
-      cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63'))
+      impuestoUtilidades: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('631')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('631'))
+      },
+      otrosImpuestos: {
+        total: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('632')).reduce((sum, c) => sum + c.saldo, 0),
+        cuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('632'))
+      },
+      totalImpuestos: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63')).reduce((sum, c) => sum + c.saldo, 0),
+      todasLasCuentas: datosReales.gastos.cuentas.filter(c => c.codigo.startsWith('63'))
     }
   };
 
-  const utilidadBruta = estadoResultados.ingresos.total - estadoResultados.costosVentas.total;
-  const utilidadOperativa = utilidadBruta - estadoResultados.gastosOperativos.total - estadoResultados.impuestoTransacciones.total;
-  const utilidadAntesImpuestos = utilidadOperativa + estadoResultados.otrosIngresos.total - estadoResultados.otrosGastos.total;
-  const utilidadNeta = utilidadAntesImpuestos - estadoResultados.impuestos.total;
+  const utilidadBruta = estadoResultados.ingresos.totalIngresos - estadoResultados.costosVentas.totalCostos;
+  const utilidadOperativa = utilidadBruta - estadoResultados.gastosOperativos.totalGastosOperativos - estadoResultados.impuestoTransacciones.total;
+  const utilidadAntesImpuestos = utilidadOperativa + estadoResultados.otrosIngresos.totalOtrosIngresos - estadoResultados.otrosGastos.totalOtrosGastos;
+  const utilidadNeta = utilidadAntesImpuestos - estadoResultados.impuestos.totalImpuestos;
 
-  const margenBruto = estadoResultados.ingresos.total > 0 ? (utilidadBruta / estadoResultados.ingresos.total) * 100 : 0;
-  const margenOperativo = estadoResultados.ingresos.total > 0 ? (utilidadOperativa / estadoResultados.ingresos.total) * 100 : 0;
-  const margenNeto = estadoResultados.ingresos.total > 0 ? (utilidadNeta / estadoResultados.ingresos.total) * 100 : 0;
+  const margenBruto = estadoResultados.ingresos.totalIngresos > 0 ? (utilidadBruta / estadoResultados.ingresos.totalIngresos) * 100 : 0;
+  const margenOperativo = estadoResultados.ingresos.totalIngresos > 0 ? (utilidadOperativa / estadoResultados.ingresos.totalIngresos) * 100 : 0;
+  const margenNeto = estadoResultados.ingresos.totalIngresos > 0 ? (utilidadNeta / estadoResultados.ingresos.totalIngresos) * 100 : 0;
 
   const toggleSection = (sectionKey: string) => {
     setExpandedSections(prev => ({
@@ -70,25 +134,29 @@ const EstadoResultadosModule = () => {
     }));
   };
 
-  const renderExpandableSection = (
-    sectionKey: string, 
-    title: string, 
-    total: number, 
-    cuentas: { codigo: string; nombre: string; saldo: number }[],
+  const renderMainSection = (
+    sectionKey: string,
+    title: string,
+    total: number,
+    subcategorias: any,
+    todasLasCuentas: { codigo: string; nombre: string; saldo: number }[],
     percentage: string,
-    isNegative: boolean = false
+    isNegative: boolean = false,
+    className: string = ""
   ) => {
     const isExpanded = expandedSections[sectionKey];
-    const hasDetails = cuentas && cuentas.length > 0;
+    const hasSubcategorias = Object.keys(subcategorias).some(key => 
+      key !== 'total' && key !== 'todasLasCuentas' && Array.isArray(subcategorias[key]?.cuentas) && subcategorias[key]?.cuentas.length > 0
+    );
 
     return (
       <>
         <Collapsible open={isExpanded} onOpenChange={() => toggleSection(sectionKey)}>
-          <TableRow className="font-medium bg-muted/50">
+          <TableRow className={`font-bold text-lg border-t-2 ${className}`}>
             <TableCell className="flex items-center gap-2">
-              {hasDetails && (
+              {(hasSubcategorias || todasLasCuentas.length > 0) && (
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-0 h-auto">
+                  <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
                     {isExpanded ? (
                       <ChevronDown className="w-4 h-4" />
                     ) : (
@@ -97,30 +165,45 @@ const EstadoResultadosModule = () => {
                   </Button>
                 </CollapsibleTrigger>
               )}
-              {!hasDetails && <div className="w-4" />}
-              {title}
+              {!hasSubcategorias && todasLasCuentas.length === 0 && <div className="w-6" />}
+              <span className="font-bold">{title}</span>
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right font-bold">
               {isNegative ? `(${total.toFixed(2)})` : total.toFixed(2)}
             </TableCell>
-            <TableCell className="text-right">{percentage}</TableCell>
+            <TableCell className="text-right font-bold">{percentage}</TableCell>
           </TableRow>
           
-          {hasDetails && (
+          {(hasSubcategorias || todasLasCuentas.length > 0) && (
             <CollapsibleContent asChild>
               <>
-                {cuentas.map((cuenta, index) => (
-                  <TableRow key={cuenta.codigo} className="bg-muted/20">
-                    <TableCell className="pl-8 text-sm text-muted-foreground">
-                      {cuenta.codigo} - {cuenta.nombre}
+                {/* Mostrar subcategorías si existen y tienen cuentas */}
+                {Object.entries(subcategorias).map(([key, subcategoria]: [string, any]) => {
+                  if (key === 'total' || key === 'todasLasCuentas' || !subcategoria?.cuentas || subcategoria.cuentas.length === 0) return null;
+                  
+                  return renderSubcategoria(
+                    `${sectionKey}_${key}`,
+                    getSubcategoriaTitle(key),
+                    subcategoria.total,
+                    subcategoria.cuentas,
+                    isNegative
+                  );
+                })}
+
+                {/* Si no hay subcategorías con cuentas, mostrar todas las cuentas directamente */}
+                {!hasSubcategorias && todasLasCuentas.map((cuenta) => (
+                  <TableRow key={cuenta.codigo} className="bg-muted/30">
+                    <TableCell className="pl-8 text-sm">
+                      <span className="font-mono text-xs text-muted-foreground mr-2">{cuenta.codigo}</span>
+                      {cuenta.nombre}
                     </TableCell>
                     <TableCell className="text-right text-sm">
                       {isNegative ? `(${cuenta.saldo.toFixed(2)})` : cuenta.saldo.toFixed(2)}
                     </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {estadoResultados.ingresos.total > 0 ? 
-                        `${((cuenta.saldo / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : 
-                        '0.0%'
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      {estadoResultados.ingresos.totalIngresos > 0 ? 
+                        `${((cuenta.saldo / estadoResultados.ingresos.totalIngresos) * 100).toFixed(2)}%` : 
+                        '0.00%'
                       }
                     </TableCell>
                   </TableRow>
@@ -133,29 +216,122 @@ const EstadoResultadosModule = () => {
     );
   };
 
+  const renderSubcategoria = (
+    sectionKey: string,
+    title: string,
+    total: number,
+    cuentas: { codigo: string; nombre: string; saldo: number }[],
+    isNegative: boolean = false
+  ) => {
+    const isExpanded = expandedSections[sectionKey];
+
+    return (
+      <>
+        <Collapsible open={isExpanded} onOpenChange={() => toggleSection(sectionKey)}>
+          <TableRow className="bg-muted/20 font-medium">
+            <TableCell className="flex items-center gap-2 pl-4">
+              {cuentas.length > 0 && (
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="p-1 h-5 w-5">
+                    {isExpanded ? (
+                      <ChevronDown className="w-3 h-3" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              )}
+              {cuentas.length === 0 && <div className="w-5" />}
+              <span className="text-sm font-medium">{title}</span>
+            </TableCell>
+            <TableCell className="text-right text-sm font-medium">
+              {isNegative ? `(${total.toFixed(2)})` : total.toFixed(2)}
+            </TableCell>
+            <TableCell className="text-right text-sm text-muted-foreground">
+              {estadoResultados.ingresos.totalIngresos > 0 ? 
+                `${((total / estadoResultados.ingresos.totalIngresos) * 100).toFixed(2)}%` : 
+                '0.00%'
+              }
+            </TableCell>
+          </TableRow>
+          
+          {cuentas.length > 0 && (
+            <CollapsibleContent asChild>
+              <>
+                {cuentas.map((cuenta) => (
+                  <TableRow key={cuenta.codigo} className="bg-muted/30">
+                    <TableCell className="pl-12 text-sm">
+                      <span className="font-mono text-xs text-muted-foreground mr-2">{cuenta.codigo}</span>
+                      {cuenta.nombre}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">
+                      {isNegative ? `(${cuenta.saldo.toFixed(2)})` : cuenta.saldo.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      {estadoResultados.ingresos.totalIngresos > 0 ? 
+                        `${((cuenta.saldo / estadoResultados.ingresos.totalIngresos) * 100).toFixed(2)}%` : 
+                        '0.00%'
+                      }
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
+            </CollapsibleContent>
+          )}
+        </Collapsible>
+      </>
+    );
+  };
+
+  const getSubcategoriaTitle = (key: string): string => {
+    const titles: { [key: string]: string } = {
+      // Ingresos
+      ventasProductos: 'Ventas de Productos',
+      ventasServicios: 'Ventas de Servicios',
+      otrosIngresos: 'Otros Ingresos Operacionales',
+      // Costos
+      costosDirectos: 'Costos Directos',
+      manoObraDirecta: 'Mano de Obra Directa',
+      gastosIndirectos: 'Gastos Indirectos de Fabricación',
+      // Gastos Operativos
+      gastosAdministrativos: 'Gastos Administrativos',
+      gastosVentas: 'Gastos de Ventas',
+      gastosGenerales: 'Gastos Generales',
+      depreciacion: 'Depreciación y Amortización',
+      // Otros
+      ingresosFinancieros: 'Ingresos Financieros',
+      ingresosExtraordinarios: 'Ingresos Extraordinarios',
+      gastosFinancieros: 'Gastos Financieros',
+      gastosExtraordinarios: 'Gastos Extraordinarios',
+      impuestoUtilidades: 'Impuesto sobre Utilidades',
+      otrosImpuestos: 'Otros Impuestos'
+    };
+    return titles[key] || key;
+  };
+
   const exportarExcel = () => {
     const datos = [
       ['ESTADO DE RESULTADOS'],
       [`Período: ${fechaInicio} al ${fechaFin}`],
       [''],
       ['Concepto', 'Importe (Bs.)', '% de Ventas'],
-      ['INGRESOS', estadoResultados.ingresos.total.toFixed(2), '100.0%'],
-      ['(-) COSTO DE VENTAS', `(${estadoResultados.costosVentas.total.toFixed(2)})`, 
-       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.costosVentas.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['INGRESOS', estadoResultados.ingresos.totalIngresos.toFixed(2), '100.0%'],
+      ['(-) COSTO DE VENTAS', `(${estadoResultados.costosVentas.totalCostos.toFixed(2)})`, 
+       estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.costosVentas.totalCostos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
       ['UTILIDAD BRUTA', utilidadBruta.toFixed(2), `${margenBruto.toFixed(1)}%`],
-       ['(-) GASTOS OPERATIVOS', `(${estadoResultados.gastosOperativos.total.toFixed(2)})`,
-        estadoResultados.ingresos.total > 0 ? `${((estadoResultados.gastosOperativos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+       ['(-) GASTOS OPERATIVOS', `(${estadoResultados.gastosOperativos.totalGastosOperativos.toFixed(2)})`,
+        estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.gastosOperativos.totalGastosOperativos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
        ['(-) IMPUESTO A LAS TRANSACCIONES', `(${estadoResultados.impuestoTransacciones.total.toFixed(2)})`,
-        estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+        estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
        ['UTILIDAD OPERATIVA', utilidadOperativa.toFixed(2), `${margenOperativo.toFixed(1)}%`],
-      ['(+) OTROS INGRESOS', estadoResultados.otrosIngresos.total.toFixed(2),
-       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosIngresos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
-      ['(-) OTROS GASTOS', `(${estadoResultados.otrosGastos.total.toFixed(2)})`,
-       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosGastos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+      ['(+) OTROS INGRESOS', estadoResultados.otrosIngresos.totalOtrosIngresos.toFixed(2),
+       estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.otrosIngresos.totalOtrosIngresos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
+      ['(-) OTROS GASTOS', `(${estadoResultados.otrosGastos.totalOtrosGastos.toFixed(2)})`,
+       estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.otrosGastos.totalOtrosGastos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
       ['UTILIDAD ANTES DE IMPUESTOS', utilidadAntesImpuestos.toFixed(2),
-       estadoResultados.ingresos.total > 0 ? `${((utilidadAntesImpuestos / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
-      ['(-) IMPUESTOS', `(${estadoResultados.impuestos.total.toFixed(2)})`,
-       estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'],
+       estadoResultados.ingresos.totalIngresos > 0 ? `${((utilidadAntesImpuestos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
+      ['(-) IMPUESTOS', `(${estadoResultados.impuestos.totalImpuestos.toFixed(2)})`,
+       estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.impuestos.totalImpuestos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%'],
       ['UTILIDAD NETA', utilidadNeta.toFixed(2), `${margenNeto.toFixed(1)}%`]
     ];
 
@@ -174,7 +350,7 @@ const EstadoResultadosModule = () => {
             Estado de Resultados
           </CardTitle>
           <CardDescription>
-            Estado de ganancias y pérdidas del período seleccionado
+            Estado de ganancias y pérdidas del período seleccionado con detalle completo de cuentas contables
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -236,104 +412,130 @@ const EstadoResultadosModule = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Concepto</TableHead>
+                <TableHead className="w-[300px]">Concepto</TableHead>
                 <TableHead className="text-right">Importe (Bs.)</TableHead>
                 <TableHead className="text-right">% de Ventas</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {renderExpandableSection(
+              {/* INGRESOS */}
+              {renderMainSection(
                 'ingresos',
-                'INGRESOS',
-                estadoResultados.ingresos.total,
-                estadoResultados.ingresos.cuentas,
-                '100.0%'
+                'INGRESOS OPERACIONALES',
+                estadoResultados.ingresos.totalIngresos,
+                estadoResultados.ingresos,
+                estadoResultados.ingresos.todasLasCuentas,
+                '100.0%',
+                false,
+                'text-green-700 bg-green-50'
               )}
 
-              {renderExpandableSection(
+              {/* COSTO DE VENTAS */}
+              {renderMainSection(
                 'costosVentas',
                 '(-) COSTO DE VENTAS',
-                estadoResultados.costosVentas.total,
-                estadoResultados.costosVentas.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.costosVentas.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%',
-                true
+                estadoResultados.costosVentas.totalCostos,
+                estadoResultados.costosVentas,
+                estadoResultados.costosVentas.todasLasCuentas,
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.costosVentas.totalCostos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                true,
+                'text-red-700 bg-red-50'
               )}
 
-              <TableRow className="font-bold text-green-600 border-t-2">
-                <TableCell>UTILIDAD BRUTA</TableCell>
-                <TableCell className="text-right">{utilidadBruta.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{margenBruto.toFixed(1)}%</TableCell>
+              {/* UTILIDAD BRUTA */}
+              <TableRow className="font-bold text-lg text-green-600 bg-green-100 border-t-2 border-b-2">
+                <TableCell className="font-bold">UTILIDAD BRUTA</TableCell>
+                <TableCell className="text-right font-bold">{utilidadBruta.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold">{margenBruto.toFixed(1)}%</TableCell>
               </TableRow>
 
-              {renderExpandableSection(
+              {/* GASTOS OPERATIVOS */}
+              {renderMainSection(
                 'gastosOperativos',
                 '(-) GASTOS OPERATIVOS',
-                estadoResultados.gastosOperativos.total,
-                estadoResultados.gastosOperativos.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.gastosOperativos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%',
-                true
+                estadoResultados.gastosOperativos.totalGastosOperativos,
+                estadoResultados.gastosOperativos,
+                estadoResultados.gastosOperativos.todasLasCuentas,
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.gastosOperativos.totalGastosOperativos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                true,
+                'text-orange-700 bg-orange-50'
               )}
 
-              {renderExpandableSection(
+              {/* IMPUESTO A LAS TRANSACCIONES */}
+              {renderMainSection(
                 'impuestoTransacciones',
                 '(-) IMPUESTO A LAS TRANSACCIONES',
                 estadoResultados.impuestoTransacciones.total,
+                {},
                 estadoResultados.impuestoTransacciones.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%',
-                true
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.impuestoTransacciones.total / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                true,
+                'text-purple-700 bg-purple-50'
               )}
 
-              <TableRow className="font-bold text-blue-600 border-t-2">
-                <TableCell>UTILIDAD OPERATIVA</TableCell>
-                <TableCell className="text-right">{utilidadOperativa.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{margenOperativo.toFixed(1)}%</TableCell>
+              {/* UTILIDAD OPERATIVA */}
+              <TableRow className="font-bold text-lg text-blue-600 bg-blue-100 border-t-2 border-b-2">
+                <TableCell className="font-bold">UTILIDAD OPERATIVA</TableCell>
+                <TableCell className="text-right font-bold">{utilidadOperativa.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold">{margenOperativo.toFixed(1)}%</TableCell>
               </TableRow>
 
-              {renderExpandableSection(
+              {/* OTROS INGRESOS */}
+              {renderMainSection(
                 'otrosIngresos',
                 '(+) OTROS INGRESOS',
-                estadoResultados.otrosIngresos.total,
-                estadoResultados.otrosIngresos.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosIngresos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%'
+                estadoResultados.otrosIngresos.totalOtrosIngresos,
+                estadoResultados.otrosIngresos,
+                estadoResultados.otrosIngresos.todasLasCuentas,
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.otrosIngresos.totalOtrosIngresos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                false,
+                'text-teal-700 bg-teal-50'
               )}
 
-              {renderExpandableSection(
+              {/* OTROS GASTOS */}
+              {renderMainSection(
                 'otrosGastos',
                 '(-) OTROS GASTOS',
-                estadoResultados.otrosGastos.total,
-                estadoResultados.otrosGastos.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.otrosGastos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%',
-                true
+                estadoResultados.otrosGastos.totalOtrosGastos,
+                estadoResultados.otrosGastos,
+                estadoResultados.otrosGastos.todasLasCuentas,
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.otrosGastos.totalOtrosGastos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                true,
+                'text-pink-700 bg-pink-50'
               )}
 
-              <TableRow className="font-bold text-orange-600 border-t-2">
-                <TableCell>UTILIDAD ANTES DE IMPUESTOS</TableCell>
-                <TableCell className="text-right">{utilidadAntesImpuestos.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  {estadoResultados.ingresos.total > 0 ? ((utilidadAntesImpuestos / estadoResultados.ingresos.total) * 100).toFixed(1) : '0.0'}%
+              {/* UTILIDAD ANTES DE IMPUESTOS */}
+              <TableRow className="font-bold text-lg text-amber-600 bg-amber-100 border-t-2 border-b-2">
+                <TableCell className="font-bold">UTILIDAD ANTES DE IMPUESTOS</TableCell>
+                <TableCell className="text-right font-bold">{utilidadAntesImpuestos.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold">
+                  {estadoResultados.ingresos.totalIngresos > 0 ? ((utilidadAntesImpuestos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1) : '0.0'}%
                 </TableCell>
               </TableRow>
 
-              {renderExpandableSection(
+              {/* IMPUESTOS */}
+              {renderMainSection(
                 'impuestos',
                 '(-) IMPUESTOS',
-                estadoResultados.impuestos.total,
-                estadoResultados.impuestos.cuentas,
-                estadoResultados.ingresos.total > 0 ? `${((estadoResultados.impuestos.total / estadoResultados.ingresos.total) * 100).toFixed(1)}%` : '0.0%',
-                true
+                estadoResultados.impuestos.totalImpuestos,
+                estadoResultados.impuestos,
+                estadoResultados.impuestos.todasLasCuentas,
+                estadoResultados.ingresos.totalIngresos > 0 ? `${((estadoResultados.impuestos.totalImpuestos / estadoResultados.ingresos.totalIngresos) * 100).toFixed(1)}%` : '0.0%',
+                true,
+                'text-red-700 bg-red-50'
               )}
             </TableBody>
             <TableFooter>
-              <TableRow className={`font-bold text-lg border-t-4 ${utilidadNeta >= 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-                <TableCell>UTILIDAD NETA</TableCell>
-                <TableCell className="text-right">{utilidadNeta.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{margenNeto.toFixed(1)}%</TableCell>
+              <TableRow className={`font-bold text-xl border-t-4 ${utilidadNeta >= 0 ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'}`}>
+                <TableCell className="font-bold">UTILIDAD NETA</TableCell>
+                <TableCell className="text-right font-bold">{utilidadNeta.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold">{margenNeto.toFixed(1)}%</TableCell>
               </TableRow>
             </TableFooter>
           </Table>
 
           <div className="mt-6 flex justify-between items-center">
-            <Badge variant={utilidadNeta >= 0 ? "default" : "destructive"}>
+            <Badge variant={utilidadNeta >= 0 ? "default" : "destructive"} className="text-base px-4 py-2">
               {utilidadNeta >= 0 ? 'Utilidad' : 'Pérdida'}: Bs. {Math.abs(utilidadNeta).toFixed(2)}
             </Badge>
             <div className="text-sm text-muted-foreground">
