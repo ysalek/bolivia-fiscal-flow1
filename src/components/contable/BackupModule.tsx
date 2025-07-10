@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Upload, Database, Shield, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useBackup } from "@/hooks/useBackup";
 
 const BackupModule = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -16,6 +17,7 @@ const BackupModule = () => {
   const [exportProgress, setExportProgress] = useState(0);
   const [importProgress, setImportProgress] = useState(0);
   const { toast } = useToast();
+  const { crearBackup, restaurarBackup } = useBackup();
 
   const getAllLocalStorageData = () => {
     const data: { [key: string]: any } = {};
@@ -26,7 +28,8 @@ const BackupModule = () => {
       'asientosContables',
       'movimientosInventario',
       'proveedores',
-      'compras'
+      'compras',
+      'comprobantes_integrados'
     ];
 
     keys.forEach(key => {
@@ -52,129 +55,103 @@ const BackupModule = () => {
       asientos: data.asientosContables?.length || 0,
       movimientos: data.movimientosInventario?.length || 0,
       proveedores: data.proveedores?.length || 0,
-      compras: data.compras?.length || 0
+      compras: data.compras?.length || 0,
+      comprobantes: data.comprobantes_integrados?.length || 0
     };
   };
 
   const exportBackup = async () => {
-    setIsExporting(true);
-    setExportProgress(0);
-
-    try {
-      // Simular progreso
-      for (let i = 0; i <= 100; i += 10) {
-        setExportProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      const data = getAllLocalStorageData();
-      const backup = {
-        version: "1.0",
-        timestamp: new Date().toISOString(),
-        sistema: "Sistema Contable Boliviano",
-        data: data
-      };
-
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {
-        type: 'application/json'
-      });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup-contable-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Backup exportado",
-        description: "El respaldo se ha descargado exitosamente.",
-      });
-
-    } catch (error) {
-      toast({
-        title: "Error en exportación",
-        description: "No se pudo crear el backup. Intente nuevamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsExporting(false);
-      setExportProgress(0);
-    }
+    crearBackup();
   };
 
   const importBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsImporting(true);
-    setImportProgress(0);
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const content = e.target?.result as string;
-        const backup = JSON.parse(content);
-
-        if (!backup.data || !backup.version) {
-          throw new Error("Formato de backup inválido");
-        }
-
-        // Simular progreso
-        for (let i = 0; i <= 100; i += 20) {
-          setImportProgress(i);
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        // Restaurar datos
-        Object.keys(backup.data).forEach(key => {
-          localStorage.setItem(key, JSON.stringify(backup.data[key]));
-        });
-
-        toast({
-          title: "Backup restaurado",
-          description: "Los datos se han restaurado exitosamente. Recargue la página.",
-        });
-
-      } catch (error) {
-        toast({
-          title: "Error en importación",
-          description: "El archivo de backup es inválido o está corrupto.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsImporting(false);
-        setImportProgress(0);
-        if (event.target) {
-          event.target.value = '';
-        }
-      }
-    };
-
-    reader.readAsText(file);
+    restaurarBackup(event);
   };
 
-  const clearAllData = () => {
-    if (confirm("¿Está seguro de eliminar TODOS los datos? Esta acción no se puede deshacer.")) {
-      const keys = [
-        'facturas',
-        'clientes', 
-        'productos',
-        'asientosContables',
-        'movimientosInventario',
-        'proveedores',
-        'compras'
-      ];
+  const resetSystemToVirginState = () => {
+    if (confirm("¿Está COMPLETAMENTE SEGURO de reiniciar el sistema? Esta acción eliminará TODOS los datos operativos (facturas, clientes, productos, asientos, etc.) pero mantendrá el Plan de Cuentas. Esta acción NO se puede deshacer.")) {
+      if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos. ¿Continuar?")) {
+        // Lista completa de datos operativos a eliminar
+        const keysToDelete = [
+          'facturas',
+          'clientes', 
+          'productos',
+          'asientosContables',
+          'movimientosInventario',
+          'proveedores',
+          'compras',
+          'comprobantes_integrados',
+          'cuentasPorCobrar',
+          'cuentasPorPagar',
+          'movimientosBanco',
+          'activosFijos',
+          'depreciaciones',
+          'nomina',
+          'empleados',
+          'centrosCosto',
+          'presupuestos',
+          'kardex',
+          'ventasDelDia',
+          'comprasDelDia',
+          'ultimaFactura',
+          'ultimaCompra',
+          'ultimoAsiento',
+          'saldosCuentas',
+          'movimientosCuentas',
+          'balanceComprobacion',
+          'estadoResultados',
+          'flujoEfectivo',
+          'conciliacionBancaria',
+          'auditoria',
+          'notificaciones',
+          'alertas',
+          'configuracionVentas',
+          'configuracionCompras',
+          'configuracionInventario',
+          'configuracionContable'
+        ];
 
-      keys.forEach(key => localStorage.removeItem(key));
+        // Eliminar todos los datos operativos
+        keysToDelete.forEach(key => {
+          localStorage.removeItem(key);
+        });
 
-      toast({
-        title: "Datos eliminados",
-        description: "Todos los datos han sido eliminados. Recargue la página.",
-        variant: "destructive"
-      });
+        // Reinicializar con arrays vacíos los datos básicos
+        localStorage.setItem('facturas', JSON.stringify([]));
+        localStorage.setItem('clientes', JSON.stringify([]));
+        localStorage.setItem('productos', JSON.stringify([]));
+        localStorage.setItem('asientosContables', JSON.stringify([]));
+        localStorage.setItem('movimientosInventario', JSON.stringify([]));
+        localStorage.setItem('proveedores', JSON.stringify([]));
+        localStorage.setItem('compras', JSON.stringify([]));
+        localStorage.setItem('comprobantes_integrados', JSON.stringify([]));
+
+        // Reinicializar contadores
+        localStorage.setItem('ultimaFactura', '0');
+        localStorage.setItem('ultimaCompra', '0');
+        localStorage.setItem('ultimoAsiento', '0');
+
+        // Resetear saldos de cuentas en el Plan de Cuentas (mantener estructura pero limpiar saldos)
+        const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
+        const planCuentasReset = planCuentas.map((cuenta: any) => ({
+          ...cuenta,
+          saldo: cuenta.codigo === "3111" ? 100000 : 0, // Mantener solo el capital inicial
+          movimientos: []
+        }));
+        localStorage.setItem('planCuentas', JSON.stringify(planCuentasReset));
+
+        // Actualizar fecha de último backup
+        localStorage.setItem('ultimo-backup', new Date().toISOString());
+
+        toast({
+          title: "Sistema reiniciado exitosamente",
+          description: "Todos los datos operativos han sido eliminados. El sistema está listo para empezar desde cero. La página se recargará en 3 segundos.",
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
     }
   };
 
@@ -236,6 +213,10 @@ const BackupModule = () => {
                   <span>Compras:</span>
                   <Badge variant="outline">{backupInfo.compras}</Badge>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span>Comprobantes:</span>
+                  <Badge variant="outline">{backupInfo.comprobantes}</Badge>
+                </div>
               </CardContent>
             </Card>
 
@@ -254,11 +235,8 @@ const BackupModule = () => {
                     className="w-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    {isExporting ? 'Exportando...' : 'Descargar Backup'}
+                    Descargar Backup
                   </Button>
-                  {isExporting && (
-                    <Progress value={exportProgress} className="w-full" />
-                  )}
                 </div>
 
                 {/* Importar Backup */}
@@ -271,21 +249,21 @@ const BackupModule = () => {
                     onChange={importBackup}
                     disabled={isImporting}
                   />
-                  {isImporting && (
-                    <Progress value={importProgress} className="w-full" />
-                  )}
                 </div>
 
-                {/* Limpiar Datos */}
+                {/* Reiniciar Sistema */}
                 <div className="pt-4 border-t">
                   <Button 
-                    onClick={clearAllData}
+                    onClick={resetSystemToVirginState}
                     variant="destructive"
                     className="w-full"
                   >
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Eliminar Todos los Datos
+                    Reiniciar Sistema (Borrar Datos Operativos)
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Elimina todos los datos operativos pero mantiene el Plan de Cuentas
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -300,7 +278,7 @@ const BackupModule = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <h4 className="font-semibold mb-2">Crear Backup:</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
@@ -317,6 +295,15 @@ const BackupModule = () => {
                     <li>• Los datos se restaurarán automáticamente</li>
                     <li>• Recargue la página después de restaurar</li>
                     <li>• Los datos actuales serán reemplazados</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Reiniciar Sistema:</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Elimina TODOS los datos operativos</li>
+                    <li>• Mantiene el Plan de Cuentas intacto</li>
+                    <li>• El sistema queda como recién instalado</li>
+                    <li>• PRECAUCIÓN: No se puede deshacer</li>
                   </ul>
                 </div>
               </div>
