@@ -69,83 +69,213 @@ const BackupModule = () => {
   };
 
   const resetSystemToVirginState = () => {
-    if (confirm("¿Está COMPLETAMENTE SEGURO de reiniciar el sistema? Esta acción eliminará TODOS los datos operativos (facturas, clientes, productos, asientos, etc.) pero mantendrá el Plan de Cuentas. Esta acción NO se puede deshacer.")) {
-      if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos. ¿Continuar?")) {
-        // Lista completa de datos operativos a eliminar
+    if (confirm("¿Está COMPLETAMENTE SEGURO de reiniciar el sistema? Esta acción eliminará TODOS los datos operativos (facturas, clientes, productos, asientos, inventario, etc.) pero mantendrá el Plan de Cuentas. Esta acción NO se puede deshacer.")) {
+      if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos incluyendo TODO EL INVENTARIO. ¿Continuar?")) {
+        console.log("🧹 Iniciando limpieza completa del sistema...");
+        
+        // Lista COMPLETA de datos operativos a eliminar
         const keysToDelete = [
+          // Datos principales
           'facturas',
           'clientes', 
           'productos',
           'asientosContables',
-          'movimientosInventario',
           'proveedores',
           'compras',
           'comprobantes_integrados',
+          
+          // INVENTARIO - datos que faltaban
+          'movimientosInventario',
+          'inventarioProductos',
+          'productosInventario',
+          'stockActual',
+          'costoPromedioPonderado',
+          'valorInventario',
+          'alertasInventario',
+          'ubicacionesProductos',
+          'categoriasProductos',
+          'unidadesMedida',
+          
+          // Cuentas por cobrar/pagar
           'cuentasPorCobrar',
           'cuentasPorPagar',
+          'pagosFacturas',
+          'pagosCompras',
+          'anticiposClientes',
+          'anticiposProveedores',
+          
+          // Movimientos bancarios
           'movimientosBanco',
+          'conciliacionBancaria',
+          'cuentasBancarias',
+          'cheques',
+          'transferencias',
+          
+          // Activos fijos
           'activosFijos',
           'depreciaciones',
+          'mantenimientosActivos',
+          
+          // Nómina
           'nomina',
           'empleados',
+          'planillas',
+          'descuentos',
+          'bonificaciones',
+          'aguinaldos',
+          'liquidaciones',
+          
+          // Centros de costo
           'centrosCosto',
+          'asignacionesCosto',
+          
+          // Presupuestos
           'presupuestos',
+          'ejecucionPresupuestal',
+          
+          // Kardex y movimientos
           'kardex',
+          'movimientosKardex',
           'ventasDelDia',
           'comprasDelDia',
+          
+          // Contadores
           'ultimaFactura',
           'ultimaCompra',
           'ultimoAsiento',
+          'ultimoComprobante',
+          'ultimoMovimiento',
+          
+          // Saldos y movimientos contables
           'saldosCuentas',
           'movimientosCuentas',
           'balanceComprobacion',
           'estadoResultados',
+          'balanceGeneral',
           'flujoEfectivo',
-          'conciliacionBancaria',
+          
+          // Auditoría y logs
           'auditoria',
+          'logsTransacciones',
+          'historialCambios',
+          
+          // Notificaciones y alertas
           'notificaciones',
           'alertas',
+          'alertasStock',
+          'alertasVencimientos',
+          
+          // Configuraciones operativas
           'configuracionVentas',
           'configuracionCompras',
           'configuracionInventario',
-          'configuracionContable'
+          'configuracionContable',
+          'configuracionReportes',
+          'configuracionFacturacion',
+          
+          // Reportes generados
+          'reportesGenerados',
+          'exportacionesDatos',
+          
+          // Datos temporales
+          'sesionActual',
+          'carritoVentas',
+          'facturaEnProceso',
+          'compraEnProceso',
+          
+          // POS y punto de venta
+          'ventasPOS',
+          'cajaDiaria',
+          'arqueosCaja',
+          
+          // Impuestos y declaraciones
+          'declaracionesIVA',
+          'librosIVA',
+          'impuestosPagados',
+          
+          // Backups anteriores
+          'ultimo-backup',
+          'fechaUltimoBackup',
+          'versionSistema'
         ];
 
-        // Eliminar todos los datos operativos
+        console.log(`🗑️ Eliminando ${keysToDelete.length} tipos de datos...`);
+
+        // Eliminar TODOS los datos operativos
         keysToDelete.forEach(key => {
-          localStorage.removeItem(key);
+          const existe = localStorage.getItem(key);
+          if (existe) {
+            console.log(`🗑️ Eliminando: ${key}`);
+            localStorage.removeItem(key);
+          }
         });
 
-        // Reinicializar con arrays vacíos los datos básicos
-        localStorage.setItem('facturas', JSON.stringify([]));
-        localStorage.setItem('clientes', JSON.stringify([]));
-        localStorage.setItem('productos', JSON.stringify([]));
-        localStorage.setItem('asientosContables', JSON.stringify([]));
-        localStorage.setItem('movimientosInventario', JSON.stringify([]));
-        localStorage.setItem('proveedores', JSON.stringify([]));
-        localStorage.setItem('compras', JSON.stringify([]));
-        localStorage.setItem('comprobantes_integrados', JSON.stringify([]));
+        // Verificar que NO queden datos residuales
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && !key.includes('planCuentas') && !key.includes('configSin') && !key.includes('configuracionEmpresa') && !key.includes('configuracionFiscal') && !key.includes('configuracionSistema')) {
+            console.warn(`⚠️ Dato residual encontrado: ${key}`);
+            localStorage.removeItem(key);
+            i--; // Ajustar índice porque se removió un elemento
+          }
+        }
 
-        // Reinicializar contadores
-        localStorage.setItem('ultimaFactura', '0');
-        localStorage.setItem('ultimaCompra', '0');
-        localStorage.setItem('ultimoAsiento', '0');
+        console.log("🏭 Reinicializando datos básicos...");
 
-        // Resetear saldos de cuentas en el Plan de Cuentas (mantener estructura pero limpiar saldos)
+        // Reinicializar con arrays VACÍOS los datos básicos
+        const datosBasicos = {
+          'facturas': [],
+          'clientes': [],
+          'productos': [],
+          'asientosContables': [],
+          'movimientosInventario': [],
+          'proveedores': [],
+          'compras': [],
+          'comprobantes_integrados': [],
+          'notificaciones': [],
+          'alertas': []
+        };
+
+        Object.entries(datosBasicos).forEach(([key, value]) => {
+          localStorage.setItem(key, JSON.stringify(value));
+          console.log(`✅ Inicializado: ${key} con ${Array.isArray(value) ? value.length : 0} elementos`);
+        });
+
+        // Reinicializar contadores a CERO
+        const contadores = {
+          'ultimaFactura': '0',
+          'ultimaCompra': '0',
+          'ultimoAsiento': '0',
+          'ultimoComprobante': '0'
+        };
+
+        Object.entries(contadores).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+          console.log(`🔢 Contador reiniciado: ${key} = ${value}`);
+        });
+
+        // Resetear Plan de Cuentas (mantener estructura pero limpiar saldos)
         const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
         const planCuentasReset = planCuentas.map((cuenta: any) => ({
           ...cuenta,
           saldo: cuenta.codigo === "3111" ? 100000 : 0, // Mantener solo el capital inicial
-          movimientos: []
+          movimientos: [],
+          totalDebe: 0,
+          totalHaber: 0,
+          fechaUltimoMovimiento: null
         }));
         localStorage.setItem('planCuentas', JSON.stringify(planCuentasReset));
+        console.log("📊 Plan de Cuentas reseteado con saldos en cero");
 
-        // Actualizar fecha de último backup
-        localStorage.setItem('ultimo-backup', new Date().toISOString());
+        // Marcar fecha de reinicio
+        localStorage.setItem('fechaUltimaLimpieza', new Date().toISOString());
+        localStorage.setItem('sistemaReinicializado', 'true');
+
+        console.log("✅ Limpieza completa finalizada");
 
         toast({
-          title: "Sistema reiniciado exitosamente",
-          description: "Todos los datos operativos han sido eliminados. El sistema está listo para empezar desde cero. La página se recargará en 3 segundos.",
+          title: "Sistema Completamente Reiniciado",
+          description: "TODOS los datos operativos han sido eliminados incluyendo inventario. El sistema está completamente virgen. La página se recargará en 3 segundos.",
         });
 
         setTimeout(() => {
@@ -259,10 +389,10 @@ const BackupModule = () => {
                     className="w-full"
                   >
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Reiniciar Sistema (Borrar Datos Operativos)
+                    Reiniciar Sistema Completamente (ELIMINAR TODO)
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Elimina todos los datos operativos pero mantiene el Plan de Cuentas
+                    Elimina TODOS los datos operativos incluido el inventario completo. Solo mantiene el Plan de Cuentas.
                   </p>
                 </div>
               </CardContent>
@@ -301,8 +431,8 @@ const BackupModule = () => {
                   <h4 className="font-semibold mb-2">Reiniciar Sistema:</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Elimina TODOS los datos operativos</li>
-                    <li>• Mantiene el Plan de Cuentas intacto</li>
-                    <li>• El sistema queda como recién instalado</li>
+                    <li>• Incluye inventario y movimientos</li>
+                    <li>• Mantiene solo el Plan de Cuentas</li>
                     <li>• PRECAUCIÓN: No se puede deshacer</li>
                   </ul>
                 </div>

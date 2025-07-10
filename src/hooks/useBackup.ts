@@ -5,16 +5,47 @@ export const useBackup = () => {
   const { toast } = useToast();
 
   const LOCAL_STORAGE_KEYS = [
+    // Datos principales
     'asientosContables',
     'productos',
     'facturas',
     'clientes',
     'compras',
     'proveedores',
+    'comprobantes_integrados',
+    
+    // Inventario completo
+    'movimientosInventario',
+    'inventarioProductos',
+    'productosInventario',
+    'categoriasProductos',
+    'unidadesMedida',
+    'ubicacionesProductos',
+    
+    // Configuraciones
     'configSin',
     'configuracionEmpresa',
     'configuracionFiscal',
-    'configuracionSistema'
+    'configuracionSistema',
+    'configuracionInventario',
+    'configuracionVentas',
+    'configuracionCompras',
+    
+    // Plan de cuentas
+    'planCuentas',
+    
+    // Otros datos operativos
+    'cuentasPorCobrar',
+    'cuentasPorPagar',
+    'movimientosBanco',
+    'activosFijos',
+    'nomina',
+    'empleados',
+    'centrosCosto',
+    'presupuestos',
+    'kardex',
+    'notificaciones',
+    'alertas'
   ];
 
   const crearBackup = () => {
@@ -58,7 +89,7 @@ export const useBackup = () => {
 
       toast({
         title: "Backup creado exitosamente",
-        description: "El archivo de respaldo ha sido descargado.",
+        description: "El archivo de respaldo ha sido descargado con todos los datos incluido inventario.",
       });
 
     } catch (error) {
@@ -85,15 +116,23 @@ export const useBackup = () => {
         
         const backupData = JSON.parse(content);
         
+        // Limpiar localStorage antes de restaurar
+        console.log("🧹 Limpiando sistema antes de restaurar...");
+        LOCAL_STORAGE_KEYS.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
+        // Restaurar todos los datos del backup
         Object.keys(backupData).forEach(key => {
           if (LOCAL_STORAGE_KEYS.includes(key)) {
             localStorage.setItem(key, JSON.stringify(backupData[key]));
+            console.log(`✅ Restaurado: ${key}`);
           }
         });
 
         toast({
           title: "Restauración completada",
-          description: "Los datos han sido restaurados. La página se recargará.",
+          description: "Todos los datos han sido restaurados incluyendo inventario. La página se recargará.",
         });
 
         setTimeout(() => {
