@@ -156,6 +156,17 @@ const Index = () => {
   // Inicializar sistema de producción al cargar
   useEffect(() => {
     inicializarSistemaCompleto();
+    
+    // Listener para navegación desde notificaciones
+    const handleNavigation = (event: CustomEvent) => {
+      setActiveModule(event.detail);
+    };
+    
+    window.addEventListener('navigate-to-module', handleNavigation as EventListener);
+    
+    return () => {
+      window.removeEventListener('navigate-to-module', handleNavigation as EventListener);
+    };
   }, []);
 
   const filteredModules = modules.filter(module => {

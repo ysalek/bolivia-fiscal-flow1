@@ -32,7 +32,7 @@ interface Empleado {
   bonosAdicionales: number;
   descuentos: number;
   fechaIngreso: string;
-  gestoraPensiones: 'SENASIR' | 'BBVA_PREVISION' | 'PREVISOL';
+  gestoraPensiones: 'GESTORA_PUBLICA';
   porcentajeComisionGestora: number;
   cuentaBanco: string;
   estado: 'activo' | 'inactivo';
@@ -78,11 +78,14 @@ const NominaBoliviana = () => {
     minimoNoImponible: 2500 // Mínimo no imponible para RC-IVA
   };
 
-  // Gestoras de pensiones en Bolivia
+  // Gestora de pensiones vigente en Bolivia (2024)
   const GESTORAS_PENSIONES = [
-    { id: 'SENASIR', nombre: 'SENASIR', comision: 0.5 },
-    { id: 'BBVA_PREVISION', nombre: 'BBVA Previsión', comision: 0.5 },
-    { id: 'PREVISOL', nombre: 'Previsol', comision: 0.5 }
+    { 
+      id: 'GESTORA_PUBLICA', 
+      nombre: 'Gestora Pública de la Seguridad Social de Largo Plazo', 
+      comision: 0.5,
+      descripcion: 'Única gestora oficial vigente en Bolivia'
+    }
   ];
 
   useEffect(() => {
@@ -191,7 +194,7 @@ const NominaBoliviana = () => {
       bonosAdicionales: 0,
       descuentos: 0,
       fechaIngreso: new Date().toISOString().split('T')[0],
-      gestoraPensiones: 'SENASIR',
+      gestoraPensiones: 'GESTORA_PUBLICA',
       porcentajeComisionGestora: 0.5,
       cuentaBanco: '',
       estado: 'activo'
@@ -274,7 +277,10 @@ const NominaBoliviana = () => {
               <SelectContent>
                 {GESTORAS_PENSIONES.map(gestora => (
                   <SelectItem key={gestora.id} value={gestora.id}>
-                    {gestora.nombre}
+                    <div>
+                      <div className="font-medium">{gestora.nombre}</div>
+                      <div className="text-xs text-muted-foreground">{gestora.descripcion}</div>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -309,7 +315,7 @@ const NominaBoliviana = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Nómina - Normativa Boliviana</h2>
-          <p className="text-muted-foreground">Gestión de sueldos y salarios según normativa boliviana 2024</p>
+          <p className="text-muted-foreground">Gestión de sueldos según normativa boliviana 2024 - Gestora Pública de Seguridad Social</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={modalEmpleado} onOpenChange={setModalEmpleado}>
@@ -376,7 +382,9 @@ const NominaBoliviana = () => {
                       <TableCell>{empleado.cargo}</TableCell>
                       <TableCell>Bs. {empleado.salarioBasico.toLocaleString()}</TableCell>
                       <TableCell>
-                        {GESTORAS_PENSIONES.find(g => g.id === empleado.gestoraPensiones)?.nombre}
+                        <Badge variant="outline" className="text-xs">
+                          {GESTORAS_PENSIONES.find(g => g.id === empleado.gestoraPensiones)?.nombre || 'Gestora Pública'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={empleado.estado === 'activo' ? 'default' : 'secondary'}>

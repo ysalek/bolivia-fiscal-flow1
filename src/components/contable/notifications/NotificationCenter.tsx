@@ -53,8 +53,9 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Productos',
             onClick: () => {
-              // Navegar a productos
-              window.location.hash = '#productos';
+              // Navegar a inventario donde están los productos
+              const event = new CustomEvent('navigate-to-module', { detail: 'inventario' });
+              window.dispatchEvent(event);
             }
           },
           module: 'inventario'
@@ -76,7 +77,8 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Facturas',
             onClick: () => {
-              window.location.hash = '#facturacion';
+              const event = new CustomEvent('navigate-to-module', { detail: 'facturacion' });
+              window.dispatchEvent(event);
             }
           },
           module: 'facturacion'
@@ -101,7 +103,8 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Cuentas',
             onClick: () => {
-              window.location.hash = '#cuentas-cobrar-pagar';
+              const event = new CustomEvent('navigate-to-module', { detail: 'cuentas-cobrar-pagar' });
+              window.dispatchEvent(event);
             }
           },
           module: 'cobranzas'
@@ -133,12 +136,13 @@ const NotificationCenter = () => {
             message: `Diferencia de Bs. ${diferencia.toFixed(2)} en el balance contable`,
             timestamp: new Date(),
             read: false,
-            action: {
-              label: 'Ver Balance',
-              onClick: () => {
-                window.location.hash = '#balance-comprobacion';
-              }
-            },
+          action: {
+            label: 'Ver Balance',
+            onClick: () => {
+              const event = new CustomEvent('navigate-to-module', { detail: 'balance-comprobacion' });
+              window.dispatchEvent(event);
+            }
+          },
             module: 'contabilidad'
           });
         } else {
@@ -167,7 +171,8 @@ const NotificationCenter = () => {
           action: {
             label: 'Crear Backup',
             onClick: () => {
-              window.location.hash = '#backup';
+              const event = new CustomEvent('navigate-to-module', { detail: 'backup' });
+              window.dispatchEvent(event);
             }
           },
           module: 'backup'
@@ -187,7 +192,8 @@ const NotificationCenter = () => {
             action: {
               label: 'Crear Backup',
               onClick: () => {
-                window.location.hash = '#backup';
+                const event = new CustomEvent('navigate-to-module', { detail: 'backup' });
+                window.dispatchEvent(event);
               }
             },
             module: 'backup'
