@@ -12,17 +12,17 @@ const TutorialModule = () => {
       {
         id: "general",
         title: "Bienvenida, Administrador",
-        content: "Como administrador, tienes acceso total a todas las funcionalidades del sistema. Puedes gestionar usuarios, configurar el sistema, y supervisar todas las operaciones contables, de ventas y de compras. Este manual te guiará a través de cada módulo."
+        content: "Como administrador, tienes acceso total a todas las funcionalidades del sistema contable boliviano. Puedes gestionar usuarios, configurar el sistema, supervisar operaciones contables, y asegurar el cumplimiento de las normativas del SIN.\n\nTU RESPONSABILIDAD:\n• Configurar correctamente la empresa y datos fiscales\n• Gestionar usuarios y sus permisos de acceso\n• Supervisar la integridad de la información contable\n• Generar reportes para cumplimiento tributario\n• Mantener respaldos regulares del sistema"
       },
       {
         id: "dashboard",
         title: "Dashboard",
-        content: "El Dashboard te ofrece una vista general del estado de la empresa. Aquí puedes ver métricas clave como ventas, compras, y el estado de las facturas. Es tu centro de comando para la toma de decisiones."
+        content: "El Dashboard es tu centro de control principal. Desde aquí puedes:\n\n• MONITOREAR métricas en tiempo real (ventas, compras, inventario)\n• RECIBIR notificaciones importantes (stock bajo, vencimientos fiscales)\n• ACCEDER rápidamente a funciones críticas\n• VISUALIZAR el estado financiero general\n\nCLIC en el ícono de campana (🔔) para ver notificaciones importantes del sistema."
       },
       {
         id: "facturacion",
         title: "Facturación",
-        content: "Crea, gestiona y anula facturas de venta. El sistema genera automáticamente los asientos contables correspondientes, actualiza las cuentas por cobrar y disminuye el stock del inventario. Puedes ver el historial de cada factura y procesar sus pagos."
+        content: "PROCESO COMPLETO DE FACTURACIÓN:\n\n1. CREAR FACTURA: Selecciona cliente y productos\n2. CÁLCULO AUTOMÁTICO: IVA, IT, RC-IVA según normativa SIN\n3. INTEGRACIÓN CONTABLE: Genera asientos automáticamente\n4. ACTUALIZACIÓN STOCK: Reduce inventario en tiempo real\n5. CUENTAS POR COBRAR: Registra pendientes de cobro\n\nIMPORTANTE: Las facturas deben cumplir formato SIN y tener numeración autorizada."
       },
       {
         id: "compras",
@@ -32,17 +32,17 @@ const TutorialModule = () => {
       {
         id: "contabilidad",
         title: "Módulos Contables (Plan de Cuentas, Libro Diario, Mayor, Balances)",
-        content: "Esta es el área central de la contabilidad. Puedes definir tu plan de cuentas, consultar el libro diario con todos los asientos generados, revisar el libro mayor por cuenta, y generar los balances de comprobación y general. Todos los reportes se actualizan en tiempo real."
+        content: "NÚCLEO DEL SISTEMA CONTABLE:\n\n• PLAN DE CUENTAS: Estructura según normativa boliviana (activos, pasivos, patrimonio, ingresos, gastos)\n• LIBRO DIARIO: Registro cronológico de todas las transacciones con partida doble\n• LIBRO MAYOR: Movimientos detallados por cada cuenta contable\n• BALANCE DE COMPROBACIÓN: Verificación de saldos deudores y acreedores\n• BALANCE GENERAL: Estado de situación patrimonial\n\nTODO SE ACTUALIZA AUTOMÁTICAMENTE con cada transacción registrada."
       },
       {
         id: "reportes",
         title: "Reportes",
-        content: "Genera reportes financieros clave como el Estado de Resultados y la Declaración de IVA. Estos reportes se basan en la información contable registrada y te ayudan a cumplir con las obligaciones fiscales y a analizar la rentabilidad."
+        content: "REPORTES PARA CUMPLIMIENTO Y ANÁLISIS:\n\n• ESTADO DE RESULTADOS: Ingresos, costos y gastos del período\n• DECLARACIÓN IVA: Formularios 200 y 603 para el SIN\n• BALANCE GENERAL: Situación patrimonial de la empresa\n• FLUJO DE CAJA: Entradas y salidas de efectivo\n• ANÁLISIS FINANCIERO: Ratios e indicadores de gestión\n\nTODOS los reportes se generan en tiempo real y pueden exportarse en PDF/Excel."
       },
       {
         id: "configuracion",
         title: "Configuración",
-        content: "Desde aquí puedes gestionar los datos de tu empresa, los perfiles de usuario y otras configuraciones generales del sistema."
+        content: "CONFIGURACIÓN CRÍTICA DEL SISTEMA:\n\n• DATOS EMPRESA: NIT, razón social, dirección, actividad económica\n• USUARIOS: Crear cuentas (admin, contador, ventas) con permisos específicos\n• NUMERACIÓN: Configurar secuencias de facturas autorizadas por SIN\n• IMPUESTOS: Configurar tasas de IVA, IT, RC-IVA vigentes\n• RESPALDOS: Programar copias de seguridad automáticas\n\nESTOS DATOS SON FUNDAMENTALES para el correcto funcionamiento del sistema."
       }
     ],
     contador: [

@@ -32,27 +32,9 @@ const Dashboard = () => {
   const comprobantes = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
 
   useEffect(() => {
-    // Inicializar sistema al cargar el dashboard
-    if (!sistemaInicializado) {
-      try {
-        const inicializado = inicializarSistemaCompleto();
-        if (inicializado) {
-          setSistemaInicializado(true);
-          toast({
-            title: "Sistema inicializado",
-            description: "Datos de ejemplo y asientos contables generados correctamente",
-          });
-        }
-      } catch (error) {
-        console.error("Error al inicializar sistema:", error);
-        toast({
-          title: "Error de inicialización",
-          description: "Hubo un problema al inicializar el sistema",
-          variant: "destructive"
-        });
-      }
-    }
-  }, [sistemaInicializado, toast]);
+    // Sistema ya inicializado en producción - no agregar datos de ejemplo
+    setSistemaInicializado(true);
+  }, []);
 
   // Estadísticas de integración
   const comprobantesAutorizados = comprobantes.filter((c: any) => c.estado === 'autorizado');
@@ -62,27 +44,24 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header con notificaciones */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Bienvenido al sistema contable - {fechaActual}</p>
+        </div>
+        <NotificationsIcon />
+      </div>
+
       {/* Status de inicialización */}
       <Card className="border-l-4 border-l-blue-500">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
-            {sistemaInicializado ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                Sistema Integrado Activo
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                Inicializando Sistema...
-              </>
-            )}
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            Sistema Contable en Producción
           </CardTitle>
           <CardDescription>
-            {sistemaInicializado ? 
-              `Comprobantes integrados: ${comprobantesAutorizados.length} | Asientos generados: ${asientos.length} | Balance equilibrado` :
-              "Cargando datos de ejemplo y generando asientos contables..."
-            }
+            Sistema listo para usar - Comprobantes: {comprobantesAutorizados.length} | Asientos: {asientos.length} | Estado: Activo
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,41 +92,6 @@ const Dashboard = () => {
         asientos={asientos}
         productos={productos}
       />
-
-      {/* Información de pruebas */}
-      <Card className="bg-slate-50">
-        <CardHeader>
-          <CardTitle className="text-lg">Datos de Prueba Incluidos</CardTitle>
-          <CardDescription>
-            El sistema incluye datos de ejemplo completos para probar todas las funcionalidades
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">Comprobantes de Ingreso:</h4>
-              <ul className="space-y-1 text-slate-600">
-                <li>• Venta de servicios con factura (IT calculado)</li>
-                <li>• Venta adicional con separación de IVA e IT</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Comprobantes de Egreso:</h4>
-              <ul className="space-y-1 text-slate-600">
-                <li>• Alquiler con factura (87% como gasto)</li>
-                <li>• Suministros sin factura (100% como gasto)</li>
-                <li>• Servicios profesionales con factura</li>
-                <li>• Planilla de sueldos sin factura</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Estado de Resultados:</strong> Los gastos administrativos de los comprobantes ya están integrados y deberían aparecer correctamente clasificados por cuenta contable.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
