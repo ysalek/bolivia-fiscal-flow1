@@ -32,55 +32,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const usuarios = [
-    {
-      id: 1,
-      usuario: "admin",
-      email: "admin@empresa.com",
-      password: "admin123",
-      nombre: "Juan Pérez",
-      rol: "admin",
-      empresa: "Empresa Demo SRL",
-      permisos: ["*"] // Admin tiene todos los permisos
-    },
-    {
-      id: 2,
-      usuario: "contador",
-      email: "contador@empresa.com",
-      password: "contador123", 
-      nombre: "María González",
-      rol: "contador",
-      empresa: "Empresa Demo SRL",
-      permisos: [
-        "dashboard", 
-        "facturacion", 
-        "clientes", 
-        "productos", 
-        "inventario", 
-        "plan_cuentas",
-        "libro_diario", 
-        "balance", 
-        "reportes",
-        "configuracion"
-      ]
-    },
-    {
-      id: 3,
-      usuario: "ventas",
-      email: "ventas@empresa.com",
-      password: "ventas123",
-      nombre: "Carlos Mendoza", 
-      rol: "ventas",
-      empresa: "Empresa Demo SRL",
-      permisos: [
-        "dashboard", 
-        "facturacion", 
-        "clientes", 
-        "productos", 
-        "inventario"
-      ]
+  // Cargar usuarios desde localStorage o usar administrador por defecto
+  const getUsuarios = () => {
+    const usuariosGuardados = localStorage.getItem('usuarios_sistema');
+    if (usuariosGuardados) {
+      return JSON.parse(usuariosGuardados);
     }
-  ];
+    
+    // Usuario administrador por defecto para sistema de producción
+    const usuariosPorDefecto = [
+      {
+        id: 1,
+        usuario: "admin",
+        email: "admin@sistema.com",
+        password: "C123081a!",
+        nombre: "Administrador del Sistema",
+        rol: "admin",
+        empresa: "Sistema Contable",
+        permisos: ["*"], // Admin tiene todos los permisos
+        activo: true,
+        fechaCreacion: new Date().toISOString()
+      }
+    ];
+    
+    // Guardar usuarios por defecto
+    localStorage.setItem('usuarios_sistema', JSON.stringify(usuariosPorDefecto));
+    return usuariosPorDefecto;
+  };
+  
+  const [usuarios] = useState(getUsuarios());
 
   const login = (emailOrUsuario: string, password: string) => {
     console.log('Intentando login con:', emailOrUsuario, password);

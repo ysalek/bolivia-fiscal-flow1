@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useBackup } from "@/hooks/useBackup";
-import UserManagement from "./users/UserManagement";
+import UserProductionManager from "./users/UserProductionManager";
 
 const ConfiguracionModule = () => {
   const { toast } = useToast();
@@ -772,7 +772,7 @@ const ConfiguracionModule = () => {
 
         {/* Gestión de Usuarios */}
         <TabsContent value="usuarios" className="space-y-4">
-          <UserManagement />
+          <UserProductionManager />
         </TabsContent>
 
         {/* Backup y Restauración */}

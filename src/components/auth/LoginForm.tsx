@@ -32,24 +32,12 @@ const LoginForm = () => {
     }
   };
 
-  const demoCredentials = [
+  const credencialesProduccion = [
     { 
       role: 'Administrador', 
-      email: 'admin@empresa.com', 
+      email: 'admin@sistema.com', 
       usuario: 'admin',
-      password: 'admin123' 
-    },
-    { 
-      role: 'Contador', 
-      email: 'contador@empresa.com', 
-      usuario: 'contador',
-      password: 'contador123' 
-    },
-    { 
-      role: 'Ventas', 
-      email: 'ventas@empresa.com', 
-      usuario: 'ventas',
-      password: 'ventas123' 
+      password: 'C123081a!' 
     }
   ];
 
@@ -134,13 +122,13 @@ const LoginForm = () => {
           </CardContent>
         </Card>
 
-        {/* Demo Credentials */}
+        {/* Production Credentials */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Credenciales de Demostración</CardTitle>
+            <CardTitle className="text-sm">Credenciales del Sistema</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {demoCredentials.map((cred, index) => (
+            {credencialesProduccion.map((cred, index) => (
               <div key={index} className="p-3 bg-gray-50 rounded-lg">
                 <div className="font-medium text-sm">{cred.role}</div>
                 <div className="text-xs text-gray-600 space-y-1">

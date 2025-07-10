@@ -1,12 +1,12 @@
 
-import { initializarDatosEjemplo } from './datosEjemplo';
+import { initializarSistemaProduccion } from './datosEjemplo';
 import { generarAsientosParaComprobantes } from './generarAsientosComprobantes';
 
 export const inicializarSistemaCompleto = () => {
-  console.log("🚀 Inicializando sistema contable completo...");
+  console.log("🚀 Inicializando sistema contable para producción...");
   
-  // 1. Inicializar datos base
-  initializarDatosEjemplo();
+  // 1. Inicializar sistema limpio para producción
+  initializarSistemaProduccion();
   
   // 2. Generar asientos contables para comprobantes
   const asientosGenerados = generarAsientosParaComprobantes();
@@ -14,8 +14,8 @@ export const inicializarSistemaCompleto = () => {
   // 3. Verificar integridad
   verificarIntegridadDatos();
   
-  console.log("✅ Sistema inicializado correctamente");
-  console.log(`📝 ${asientosGenerados} asientos contables generados`);
+  console.log("✅ Sistema de producción inicializado correctamente");
+  console.log("🏭 Listo para ambiente productivo");
   
   return true;
 };

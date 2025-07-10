@@ -1,6 +1,6 @@
 
 import React, { Suspense, useState, useEffect, lazy } from 'react';
-import { initializarDatosEjemplo } from '@/utils/datosEjemplo';
+import { inicializarSistemaCompleto } from '@/utils/inicializarSistema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -153,9 +153,9 @@ const Index = () => {
     }
   };
 
-  // Inicializar datos de ejemplo al cargar
+  // Inicializar sistema de producción al cargar
   useEffect(() => {
-    initializarDatosEjemplo();
+    inicializarSistemaCompleto();
   }, []);
 
   const filteredModules = modules.filter(module => {
