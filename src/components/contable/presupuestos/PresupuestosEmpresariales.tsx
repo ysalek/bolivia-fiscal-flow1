@@ -41,62 +41,15 @@ const PresupuestosEmpresariales = () => {
   const [selectedPresupuesto, setSelectedPresupuesto] = useState<string>('');
   const [showDialog, setShowDialog] = useState(false);
 
-  const [presupuestos] = useState<Presupuesto[]>([
-    {
-      id: '1',
-      nombre: 'Presupuesto Anual 2024',
-      descripcion: 'Presupuesto general para el ejercicio fiscal 2024',
-      periodo: '2024',
-      estado: 'en_ejecucion',
-      totalPresupuestado: 500000,
-      totalEjecutado: 325000,
-      fechaInicio: '2024-01-01',
-      fechaFin: '2024-12-31',
-      responsable: 'María González'
-    },
-    {
-      id: '2',
-      nombre: 'Presupuesto Marketing Q1',
-      descripcion: 'Presupuesto del área de marketing para el primer trimestre',
-      periodo: 'Q1 2024',
-      estado: 'aprobado',
-      totalPresupuestado: 75000,
-      totalEjecutado: 45000,
-      fechaInicio: '2024-01-01',
-      fechaFin: '2024-03-31',
-      responsable: 'Carlos Mendoza'
-    }
-  ]);
+  const [presupuestos] = useState<Presupuesto[]>(() => {
+    const saved = localStorage.getItem('presupuestos');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [itemsPresupuesto] = useState<PresupuestoItem[]>([
-    {
-      id: '1',
-      concepto: 'Gastos de Personal',
-      categoria: 'Recursos Humanos',
-      presupuestado: 200000,
-      ejecutado: 150000,
-      variacion: -50000,
-      porcentajeEjecucion: 75
-    },
-    {
-      id: '2',
-      concepto: 'Gastos de Marketing',
-      categoria: 'Ventas y Marketing',
-      presupuestado: 80000,
-      ejecutado: 95000,
-      variacion: 15000,
-      porcentajeEjecucion: 118.75
-    },
-    {
-      id: '3',
-      concepto: 'Gastos Operativos',
-      categoria: 'Operaciones',
-      presupuestado: 120000,
-      ejecutado: 80000,
-      variacion: -40000,
-      porcentajeEjecucion: 66.67
-    }
-  ]);
+  const [itemsPresupuesto] = useState<PresupuestoItem[]>(() => {
+    const saved = localStorage.getItem('itemsPresupuesto');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {

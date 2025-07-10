@@ -168,6 +168,7 @@ const BackupModule = () => {
           'empleados': [],
           'centrosCosto': [],
           'presupuestos': [],
+          'itemsPresupuesto': [],
           'notificaciones': [],
           'alertas': []
         };
