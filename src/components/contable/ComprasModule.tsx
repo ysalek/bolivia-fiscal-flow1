@@ -14,7 +14,7 @@ import ProveedoresList from "./purchases/ProveedoresList";
 const ComprasModule = () => {
   const [compras, setCompras] = useState<Compra[]>(comprasIniciales);
   const [proveedores, setProveedores] = useState<Proveedor[]>(proveedoresIniciales);
-  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [showNewCompraForm, setShowNewCompraForm] = useState(false);
   const { toast } = useToast();
   const { generarAsientoCompra, actualizarStockProducto, generarAsientoPagoCompra } = useContabilidadIntegration();

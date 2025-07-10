@@ -73,133 +73,131 @@ const BackupModule = () => {
       if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos incluyendo TODO EL INVENTARIO y se resetearán los saldos a CERO. ¿Continuar?")) {
         console.log("🧹 Iniciando limpieza EXHAUSTIVA del sistema...");
         
-        // PASO 1: Preservar SOLO las configuraciones esenciales
-        const configsEsenciales = ['planCuentas', 'configSin', 'configuracionEmpresa', 'configuracionFiscal', 'configuracionSistema'];
-        const backupConfigs: { [key: string]: string } = {};
-        
-        configsEsenciales.forEach(key => {
-          const value = localStorage.getItem(key);
-          if (value) {
-            backupConfigs[key] = value;
-            console.log(`💾 Preservando config: ${key}`);
-          }
-        });
-
-        // PASO 2: ELIMINAR TODO EL localStorage
+        // PASO 1: ELIMINAR TODO EL localStorage COMPLETAMENTE
         console.log("🗑️ ELIMINANDO TODO EL localStorage...");
-        const todasLasClaves: string[] = [];
+        const allKeys: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key) todasLasClaves.push(key);
+          if (key) allKeys.push(key);
         }
         
-        console.log(`🗑️ Se encontraron ${todasLasClaves.length} claves para eliminar:`, todasLasClaves);
+        console.log(`🗑️ Se encontraron ${allKeys.length} claves para eliminar:`, allKeys);
+        localStorage.clear(); // LIMPIAR TODO
         
-        // Eliminar TODAS las claves
-        todasLasClaves.forEach(key => {
-          console.log(`🗑️ Eliminando: ${key}`);
-          localStorage.removeItem(key);
-        });
+        console.log(`🔍 Verificación: localStorage tiene ${localStorage.length} elementos después de clear()`);
 
-        // VERIFICAR que esté completamente limpio
-        console.log(`🔍 Verificación: localStorage tiene ${localStorage.length} elementos`);
-        if (localStorage.length > 0) {
-          console.warn("⚠️ Aún quedan elementos, eliminando residuos...");
-          localStorage.clear(); // Forzar limpieza completa
-        }
+        // PASO 2: REINSTALAR SOLO el Plan de Cuentas reseteado
+        console.log("📊 Instalando Plan de Cuentas LIMPIO con saldos en CERO...");
+        const planCuentasLimpio = [
+          // ACTIVOS
+          { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1131", nombre: "Inventarios - Mercaderías", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1141", nombre: "Gastos Pagados por Anticipado", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          
+          // PASIVOS  
+          { codigo: "2111", nombre: "Cuentas por Pagar Comerciales", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "2121", nombre: "Sueldos y Salarios por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          
+          // PATRIMONIO (solo Capital Social con saldo inicial)
+          { codigo: "3111", nombre: "Capital Social", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "3211", nombre: "Utilidades Acumuladas", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          
+          // INGRESOS
+          { codigo: "4111", nombre: "Ventas", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          
+          // GASTOS
+          { codigo: "5111", nombre: "Costo de Ventas", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5191", nombre: "Gastos Varios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5221", nombre: "Cargas Sociales", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5241", nombre: "Alquileres", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5251", nombre: "Materiales y Suministros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+          { codigo: "5261", nombre: "Impuesto a las Transacciones", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] }
+        ];
+        localStorage.setItem('planCuentas', JSON.stringify(planCuentasLimpio));
+        console.log("📊 Plan de Cuentas instalado con TODOS los saldos en CERO");
 
-        console.log("🏭 Reinicializando datos básicos VACÍOS...");
+        // PASO 3: Instalar configuraciones básicas del sistema
+        console.log("🔧 Instalando configuraciones básicas...");
+        localStorage.setItem('configSin', JSON.stringify({}));
+        localStorage.setItem('configuracionEmpresa', JSON.stringify({}));
+        localStorage.setItem('configuracionFiscal', JSON.stringify({}));
+        localStorage.setItem('configuracionSistema', JSON.stringify({}));
 
-        // PASO 3: RESTAURAR solo las configuraciones esenciales
-        console.log("🔧 Restaurando configuraciones esenciales...");
-        Object.entries(backupConfigs).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-          console.log(`✅ Restaurado config: ${key}`);
-        });
-
-        // PASO 4: RESETEAR Plan de Cuentas - MANTENER estructura pero SALDOS EN CERO
-        console.log("📊 Reseteando saldos del Plan de Cuentas a CERO...");
-        const planCuentasOriginal = backupConfigs['planCuentas'];
-        if (planCuentasOriginal) {
-          const planCuentas = JSON.parse(planCuentasOriginal);
-          const planCuentasReset = planCuentas.map((cuenta: any) => ({
-            ...cuenta,
-            saldo: 0,
-            saldoActual: 0,
-            saldoAnterior: 0,
-            totalDebe: 0,
-            totalHaber: 0,
-            movimientos: [],
-            fechaUltimoMovimiento: null,
-            balance: 0,
-            valor: 0,
-            importe: 0
-          }));
-          localStorage.setItem('planCuentas', JSON.stringify(planCuentasReset));
-          console.log("📊 Plan de Cuentas reseteado - TODOS los saldos en CERO");
-        }
-
-        // PASO 5: Reinicializar con arrays COMPLETAMENTE VACÍOS
-        const datosBasicosVacios = {
-          'facturas': [],
-          'clientes': [],
+        // PASO 4: Instalar arrays COMPLETAMENTE VACÍOS para TODOS los datos operativos
+        console.log("🏭 Instalando arrays VACÍOS para datos operativos...");
+        const datosVaciosCompletos = {
+          // Datos principales VACÍOS
           'productos': [],
+          'clientes': [],
+          'facturas': [],
+          'proveedores': [],  
+          'compras': [],
           'asientosContables': [],
+          'comprobantes_integrados': [],
+          
+          // INVENTARIO - TODO VACÍO
           'movimientosInventario': [],
           'inventarioProductos': [],
           'productosInventario': [],
-          'proveedores': [],
-          'compras': [],
-          'comprobantes_integrados': [],
-          'notificaciones': [],
-          'alertas': [],
-          'kardex': [],
+          'stockActual': [],
+          'costoPromedioPonderado': [],
+          'valorInventario': [],
+          'alertasInventario': [],
+          'categoriasProductos': [],
+          'unidadesMedida': [],
           'registrosInventario': [],
-          'historialInventario': []
+          'historialInventario': [],
+          'kardex': [],
+          
+          // Otros datos operativos VACÍOS
+          'cuentasPorCobrar': [],
+          'cuentasPorPagar': [],
+          'movimientosBanco': [],
+          'activosFijos': [],
+          'nomina': [],
+          'empleados': [],
+          'centrosCosto': [],
+          'presupuestos': [],
+          'notificaciones': [],
+          'alertas': []
         };
 
-        Object.entries(datosBasicosVacios).forEach(([key, value]) => {
+        Object.entries(datosVaciosCompletos).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
-          console.log(`✅ Inicializado VACÍO: ${key} = []`);
+          console.log(`✅ Instalado VACÍO: ${key} = []`);
         });
 
-        // Reinicializar contadores a CERO
-        const contadoresEnCero = {
-          'ultimaFactura': '0',
-          'ultimaCompra': '0',
-          'ultimoAsiento': '0',
-          'ultimoComprobante': '0',
-          'ultimoMovimiento': '0',
-          'numeroFactura': '0',
-          'numeroCompra': '0',
-          'numeroAsiento': '0'
-        };
-
-        Object.entries(contadoresEnCero).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-          console.log(`🔢 Contador en CERO: ${key} = ${value}`);
-        });
-
-        // Marcar fecha de reinicio y estado del sistema
+        // PASO 5: Marcar el sistema como completamente reiniciado
         const fechaReinicio = new Date().toISOString();
         localStorage.setItem('fechaUltimaLimpieza', fechaReinicio);
         localStorage.setItem('sistemaReinicializado', 'true');
         localStorage.setItem('estadoSistema', 'virgen');
         localStorage.setItem('datosEliminados', 'completo');
+        localStorage.setItem('ultimo-backup', fechaReinicio);
 
-        console.log("✅ LIMPIEZA COMPLETA FINALIZADA - Sistema completamente virgen");
-        console.log("📊 Plan de Cuentas mantenido con saldos en CERO");
-        console.log("🗂️ Todos los datos operativos eliminados");
-        console.log("📦 Todo el inventario eliminado");
+        console.log("✅ LIMPIEZA COMPLETA FINALIZADA - Sistema 100% VIRGEN");
+        console.log("📊 Plan de Cuentas: TODOS los saldos en CERO");
+        console.log("📦 Inventario: COMPLETAMENTE VACÍO");
+        console.log("🗂️ Datos operativos: COMPLETAMENTE VACÍOS");
 
         toast({
-          title: "Sistema Completamente Reiniciado",
-          description: "TODOS los datos operativos han sido eliminados incluyendo inventario completo. Plan de Cuentas mantenido con saldos en CERO. El sistema está completamente virgen.",
+          title: "Sistema 100% Reiniciado",
+          description: "TODOS los datos eliminados. Plan de Cuentas con saldos en CERO. Inventario completamente vacío. Sistema 100% virgen.",
         });
 
         setTimeout(() => {
           window.location.reload();
-        }, 3000);
+        }, 2000);
       }
     }
   };

@@ -10,7 +10,7 @@ import { Producto, productosIniciales } from "./products/ProductsData";
 import ProductoForm from "./products/ProductoForm";
 
 const ProductosModule = () => {
-  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
   const [searchTerm, setSearchTerm] = useState("");

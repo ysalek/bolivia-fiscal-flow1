@@ -17,7 +17,7 @@ import DeclaracionIVA from "./DeclaracionIVA";
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
-  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showAccountingHistory, setShowAccountingHistory] = useState(false);
   const [showDeclaracionIVA, setShowDeclaracionIVA] = useState(false);

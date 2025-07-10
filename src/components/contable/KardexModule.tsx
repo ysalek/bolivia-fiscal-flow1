@@ -13,7 +13,7 @@ import { Producto, productosIniciales } from "./products/ProductsData";
 import { MovimientoInventario, movimientosIniciales } from "./inventory/InventoryData";
 
 const KardexModule = () => {
-  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
   const [productoSeleccionado, setProductoSeleccionado] = useState<string>("");
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));

@@ -19,7 +19,7 @@ import MethodologyTab from "./inventory/MethodologyTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
 
 const InventarioModule = () => {
-  const [productos, setProductos] = useState<ProductoInventario[]>(productosIniciales);
+  const [productos, setProductos] = useState<ProductoInventario[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
   const [filtroCategoria, setFiltroCategoria] = useState("all");
   const [busqueda, setBusqueda] = useState("");
