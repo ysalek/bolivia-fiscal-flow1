@@ -14,13 +14,36 @@ export const useBackup = () => {
     'proveedores',
     'comprobantes_integrados',
     
-    // Inventario completo
+    // Inventario completo - TODAS las claves posibles
     'movimientosInventario',
     'inventarioProductos',
     'productosInventario',
     'categoriasProductos',
     'unidadesMedida',
     'ubicacionesProductos',
+    'registrosInventario',
+    'historialInventario',
+    'ajustesInventario',
+    'entradaInventario',
+    'salidaInventario',
+    'inventarioFisico',
+    'conteoInventario',
+    'diferenciasInventario',
+    'valoracionInventario',
+    'inventarioMinimo',
+    'inventarioMaximo',
+    'puntosReorden',
+    'proveedoresProductos',
+    'costosProductos',
+    'preciosProductos',
+    'inventarioValuado',
+    'resumenInventario',
+    'totalInventario',
+    'inventarioActual',
+    'existenciasProductos',
+    'movimientosProductos',
+    'transaccionesInventario',
+    'operacionesInventario',
     
     // Configuraciones
     'configSin',
@@ -89,7 +112,7 @@ export const useBackup = () => {
 
       toast({
         title: "Backup creado exitosamente",
-        description: "El archivo de respaldo ha sido descargado con todos los datos incluido inventario.",
+        description: "El archivo de respaldo ha sido descargado con todos los datos incluido inventario completo.",
       });
 
     } catch (error) {
@@ -132,7 +155,7 @@ export const useBackup = () => {
 
         toast({
           title: "Restauración completada",
-          description: "Todos los datos han sido restaurados incluyendo inventario. La página se recargará.",
+          description: "Todos los datos han sido restaurados incluyendo inventario completo. La página se recargará.",
         });
 
         setTimeout(() => {

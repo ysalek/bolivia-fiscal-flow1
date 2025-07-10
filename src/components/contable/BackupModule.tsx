@@ -69,11 +69,11 @@ const BackupModule = () => {
   };
 
   const resetSystemToVirginState = () => {
-    if (confirm("¿Está COMPLETAMENTE SEGURO de reiniciar el sistema? Esta acción eliminará TODOS los datos operativos (facturas, clientes, productos, asientos, inventario, etc.) pero mantendrá el Plan de Cuentas. Esta acción NO se puede deshacer.")) {
-      if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos incluyendo TODO EL INVENTARIO. ¿Continuar?")) {
+    if (confirm("¿Está COMPLETAMENTE SEGURO de reiniciar el sistema? Esta acción eliminará TODOS los datos operativos (facturas, clientes, productos, asientos, inventario, etc.) pero mantendrá el Plan de Cuentas con saldos en CERO. Esta acción NO se puede deshacer.")) {
+      if (confirm("CONFIRMACIÓN FINAL: Se eliminarán todos los datos operativos incluyendo TODO EL INVENTARIO y se resetearán los saldos a CERO. ¿Continuar?")) {
         console.log("🧹 Iniciando limpieza completa del sistema...");
         
-        // Lista COMPLETA de datos operativos a eliminar
+        // Lista COMPLETA de datos operativos a eliminar (incluyendo TODOS los datos de inventario)
         const keysToDelete = [
           // Datos principales
           'facturas',
@@ -84,7 +84,7 @@ const BackupModule = () => {
           'compras',
           'comprobantes_integrados',
           
-          // INVENTARIO - datos que faltaban
+          // INVENTARIO - TODOS los datos relacionados
           'movimientosInventario',
           'inventarioProductos',
           'productosInventario',
@@ -95,6 +95,29 @@ const BackupModule = () => {
           'ubicacionesProductos',
           'categoriasProductos',
           'unidadesMedida',
+          'registrosInventario',
+          'historialInventario',
+          'ajustesInventario',
+          'entradaInventario',
+          'salidaInventario',
+          'inventarioFisico',
+          'conteoInventario',
+          'diferenciasInventario',
+          'valoracionInventario',
+          'inventarioMinimo',
+          'inventarioMaximo',
+          'puntosReorden',
+          'proveedoresProductos',
+          'costosProductos',
+          'preciosProductos',
+          'inventarioValuado',
+          'resumenInventario',
+          'totalInventario',
+          'inventarioActual',
+          'existenciasProductos',
+          'movimientosProductos',
+          'transaccionesInventario',
+          'operacionesInventario',
           
           // Cuentas por cobrar/pagar
           'cuentasPorCobrar',
@@ -103,6 +126,10 @@ const BackupModule = () => {
           'pagosCompras',
           'anticiposClientes',
           'anticiposProveedores',
+          'cobranzas',
+          'pagosRealizados',
+          'documentosPorCobrar',
+          'documentosPorPagar',
           
           // Movimientos bancarios
           'movimientosBanco',
@@ -110,11 +137,16 @@ const BackupModule = () => {
           'cuentasBancarias',
           'cheques',
           'transferencias',
+          'depositosBancarios',
+          'retirosBancarios',
+          'estadosCuenta',
           
           // Activos fijos
           'activosFijos',
           'depreciaciones',
           'mantenimientosActivos',
+          'bajaActivos',
+          'revaluacionActivos',
           
           // Nómina
           'nomina',
@@ -124,27 +156,34 @@ const BackupModule = () => {
           'bonificaciones',
           'aguinaldos',
           'liquidaciones',
+          'sueldos',
+          'salarios',
           
           // Centros de costo
           'centrosCosto',
           'asignacionesCosto',
+          'distribucionCostos',
           
           // Presupuestos
           'presupuestos',
           'ejecucionPresupuestal',
+          'variacionesPresupuestales',
           
           // Kardex y movimientos
           'kardex',
           'movimientosKardex',
           'ventasDelDia',
           'comprasDelDia',
+          'movimientosDiarios',
           
-          // Contadores
+          // Contadores y numeración
           'ultimaFactura',
           'ultimaCompra',
           'ultimoAsiento',
           'ultimoComprobante',
           'ultimoMovimiento',
+          'numeracionDocumentos',
+          'correlativos',
           
           // Saldos y movimientos contables
           'saldosCuentas',
@@ -153,55 +192,82 @@ const BackupModule = () => {
           'estadoResultados',
           'balanceGeneral',
           'flujoEfectivo',
+          'libroMayor',
+          'libroDiario',
           
           // Auditoría y logs
           'auditoria',
           'logsTransacciones',
           'historialCambios',
+          'registrosAuditoria',
+          'logsSistema',
           
           // Notificaciones y alertas
           'notificaciones',
           'alertas',
           'alertasStock',
           'alertasVencimientos',
+          'alertasSistema',
+          'avisos',
+          'recordatorios',
           
-          // Configuraciones operativas
+          // Configuraciones operativas (mantener solo las básicas del sistema)
           'configuracionVentas',
           'configuracionCompras',
           'configuracionInventario',
           'configuracionContable',
           'configuracionReportes',
           'configuracionFacturacion',
+          'configuracionPOS',
           
           // Reportes generados
           'reportesGenerados',
           'exportacionesDatos',
+          'informesContables',
+          'estadisticas',
           
-          // Datos temporales
+          // Datos temporales y de sesión
           'sesionActual',
           'carritoVentas',
           'facturaEnProceso',
           'compraEnProceso',
+          'asientoEnProceso',
+          'datosTemporales',
+          'cache',
           
           // POS y punto de venta
           'ventasPOS',
           'cajaDiaria',
           'arqueosCaja',
+          'ventasContado',
+          'ventasCredito',
           
           // Impuestos y declaraciones
           'declaracionesIVA',
           'librosIVA',
           'impuestosPagados',
+          'retencionesIVA',
+          'retencionesIT',
           
-          // Backups anteriores
+          // Backups y versiones
           'ultimo-backup',
           'fechaUltimoBackup',
-          'versionSistema'
+          'versionSistema',
+          'versionDatos',
+          
+          // Datos adicionales que puedan existir
+          'transacciones',
+          'operaciones',
+          'registros',
+          'historiales',
+          'logs',
+          'eventos',
+          'procesos'
         ];
 
         console.log(`🗑️ Eliminando ${keysToDelete.length} tipos de datos...`);
 
-        // Eliminar TODOS los datos operativos
+        // ELIMINAR TODOS los datos operativos
         keysToDelete.forEach(key => {
           const existe = localStorage.getItem(key);
           if (existe) {
@@ -210,72 +276,96 @@ const BackupModule = () => {
           }
         });
 
-        // Verificar que NO queden datos residuales
+        // VERIFICAR que NO queden datos residuales - Limpieza exhaustiva
+        console.log("🔍 Verificando datos residuales...");
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key && !key.includes('planCuentas') && !key.includes('configSin') && !key.includes('configuracionEmpresa') && !key.includes('configuracionFiscal') && !key.includes('configuracionSistema')) {
-            console.warn(`⚠️ Dato residual encontrado: ${key}`);
+          if (key && 
+              !key.includes('planCuentas') && 
+              !key.includes('configSin') && 
+              !key.includes('configuracionEmpresa') && 
+              !key.includes('configuracionFiscal') && 
+              !key.includes('configuracionSistema')) {
+            console.warn(`⚠️ Eliminando dato residual: ${key}`);
             localStorage.removeItem(key);
             i--; // Ajustar índice porque se removió un elemento
           }
         }
 
-        console.log("🏭 Reinicializando datos básicos...");
+        console.log("🏭 Reinicializando datos básicos VACÍOS...");
 
-        // Reinicializar con arrays VACÍOS los datos básicos
-        const datosBasicos = {
+        // Reinicializar con arrays COMPLETAMENTE VACÍOS
+        const datosBasicosVacios = {
           'facturas': [],
           'clientes': [],
           'productos': [],
           'asientosContables': [],
           'movimientosInventario': [],
+          'inventarioProductos': [],
+          'productosInventario': [],
           'proveedores': [],
           'compras': [],
           'comprobantes_integrados': [],
           'notificaciones': [],
-          'alertas': []
+          'alertas': [],
+          'kardex': [],
+          'registrosInventario': [],
+          'historialInventario': []
         };
 
-        Object.entries(datosBasicos).forEach(([key, value]) => {
+        Object.entries(datosBasicosVacios).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
-          console.log(`✅ Inicializado: ${key} con ${Array.isArray(value) ? value.length : 0} elementos`);
+          console.log(`✅ Inicializado VACÍO: ${key} = []`);
         });
 
         // Reinicializar contadores a CERO
-        const contadores = {
+        const contadoresEnCero = {
           'ultimaFactura': '0',
           'ultimaCompra': '0',
           'ultimoAsiento': '0',
-          'ultimoComprobante': '0'
+          'ultimoComprobante': '0',
+          'ultimoMovimiento': '0',
+          'numeroFactura': '0',
+          'numeroCompra': '0',
+          'numeroAsiento': '0'
         };
 
-        Object.entries(contadores).forEach(([key, value]) => {
+        Object.entries(contadoresEnCero).forEach(([key, value]) => {
           localStorage.setItem(key, value);
-          console.log(`🔢 Contador reiniciado: ${key} = ${value}`);
+          console.log(`🔢 Contador en CERO: ${key} = ${value}`);
         });
 
-        // Resetear Plan de Cuentas (mantener estructura pero limpiar saldos)
+        // RESETEAR Plan de Cuentas - MANTENER estructura pero SALDOS EN CERO
+        console.log("📊 Reseteando saldos del Plan de Cuentas a CERO...");
         const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
         const planCuentasReset = planCuentas.map((cuenta: any) => ({
           ...cuenta,
-          saldo: cuenta.codigo === "3111" ? 100000 : 0, // Mantener solo el capital inicial
+          saldo: 0, // TODOS los saldos en CERO
           movimientos: [],
           totalDebe: 0,
           totalHaber: 0,
-          fechaUltimoMovimiento: null
+          fechaUltimoMovimiento: null,
+          saldoAnterior: 0,
+          saldoActual: 0
         }));
         localStorage.setItem('planCuentas', JSON.stringify(planCuentasReset));
-        console.log("📊 Plan de Cuentas reseteado con saldos en cero");
+        console.log("📊 Plan de Cuentas reseteado - TODOS los saldos en CERO");
 
-        // Marcar fecha de reinicio
-        localStorage.setItem('fechaUltimaLimpieza', new Date().toISOString());
+        // Marcar fecha de reinicio y estado del sistema
+        const fechaReinicio = new Date().toISOString();
+        localStorage.setItem('fechaUltimaLimpieza', fechaReinicio);
         localStorage.setItem('sistemaReinicializado', 'true');
+        localStorage.setItem('estadoSistema', 'virgen');
+        localStorage.setItem('datosEliminados', 'completo');
 
-        console.log("✅ Limpieza completa finalizada");
+        console.log("✅ LIMPIEZA COMPLETA FINALIZADA - Sistema completamente virgen");
+        console.log("📊 Plan de Cuentas mantenido con saldos en CERO");
+        console.log("🗂️ Todos los datos operativos eliminados");
+        console.log("📦 Todo el inventario eliminado");
 
         toast({
           title: "Sistema Completamente Reiniciado",
-          description: "TODOS los datos operativos han sido eliminados incluyendo inventario. El sistema está completamente virgen. La página se recargará en 3 segundos.",
+          description: "TODOS los datos operativos han sido eliminados incluyendo inventario completo. Plan de Cuentas mantenido con saldos en CERO. El sistema está completamente virgen.",
         });
 
         setTimeout(() => {
@@ -392,7 +482,7 @@ const BackupModule = () => {
                     Reiniciar Sistema Completamente (ELIMINAR TODO)
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Elimina TODOS los datos operativos incluido el inventario completo. Solo mantiene el Plan de Cuentas.
+                    Elimina TODOS los datos operativos incluido el inventario completo. Plan de Cuentas mantenido con saldos en CERO.
                   </p>
                 </div>
               </CardContent>
@@ -432,7 +522,7 @@ const BackupModule = () => {
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Elimina TODOS los datos operativos</li>
                     <li>• Incluye inventario y movimientos</li>
-                    <li>• Mantiene solo el Plan de Cuentas</li>
+                    <li>• Plan de Cuentas con saldos en CERO</li>
                     <li>• PRECAUCIÓN: No se puede deshacer</li>
                   </ul>
                 </div>
