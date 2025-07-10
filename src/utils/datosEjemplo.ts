@@ -1,3 +1,4 @@
+
 // Datos de ejemplo reales para el sistema contable boliviano
 
 export const productosEjemplo = [
@@ -9,6 +10,7 @@ export const productosEjemplo = [
     categoria: 'Equipos de Computación',
     precio: 5200.00,
     costo: 4100.00,
+    costoUnitario: 4100.00,
     stockActual: 15,
     stockMinimo: 5,
     unidadMedida: 'PZA',
@@ -24,6 +26,7 @@ export const productosEjemplo = [
     categoria: 'Accesorios de Computación',
     precio: 250.00,
     costo: 180.00,
+    costoUnitario: 180.00,
     stockActual: 45,
     stockMinimo: 10,
     unidadMedida: 'PZA',
@@ -39,6 +42,7 @@ export const productosEjemplo = [
     categoria: 'Muebles de Oficina',
     precio: 1800.00,
     costo: 1200.00,
+    costoUnitario: 1200.00,
     stockActual: 8,
     stockMinimo: 3,
     unidadMedida: 'PZA',
@@ -140,6 +144,7 @@ export const facturasEjemplo = [
         cantidad: 2,
         precio: 250.00,
         descuento: 0,
+        subtotal: 500.00,
         total: 500.00
       }
     ],
@@ -172,6 +177,7 @@ export const facturasEjemplo = [
         cantidad: 3,
         precio: 5200.00,
         descuento: 260.00,
+        subtotal: 15340.00,
         total: 15340.00
       },
       {
@@ -181,6 +187,7 @@ export const facturasEjemplo = [
         cantidad: 2,
         precio: 1800.00,
         descuento: 0,
+        subtotal: 3600.00,
         total: 3600.00
       }
     ],
@@ -264,7 +271,7 @@ export const asientosEjemplo = [
     cuentas: [
       { codigo: '1111', nombre: 'Caja General', debe: 565.00, haber: 0 },
       { codigo: '4111', nombre: 'Ventas', debe: 0, haber: 500.00 },
-      { codigo: '2131', nombre: 'IVA Débito Fiscal', debe: 0, haber: 65.00 }
+      { codigo: '2113', nombre: 'IVA Débito Fiscal', debe: 0, haber: 65.00 }
     ]
   },
   {
@@ -298,6 +305,156 @@ export const asientosEjemplo = [
   }
 ];
 
+// Datos de ejemplo completos para comprobantes integrados
+export const comprobantesIntegradosEjemplo = [
+  {
+    id: "1",
+    tipo: "ingreso",
+    numero: "ING-0001",
+    fecha: "2024-01-20",
+    concepto: "Venta de servicios de consultoría",
+    beneficiario: "Empresa ABC S.R.L.",
+    monto: 8700.00,
+    metodoPago: "1112",
+    referencia: "SERV-001",
+    observaciones: "Servicio de consultoría con factura",
+    estado: "autorizado",
+    creadoPor: "Ana García - Contadora",
+    fechaCreacion: "2024-01-20T10:30:00Z",
+    conFactura: true,
+    cuentaIngreso: "4191",
+    cuentas: [
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 8700.00, haber: 0 },
+      { codigo: "4191", nombre: "Otros Ingresos", debe: 0, haber: 7522.17 }, // Base sin IT
+      { codigo: "2113", nombre: "IVA por Pagar", debe: 0, haber: 977.83 }, // IVA 13%
+      { codigo: "5211", nombre: "Impuesto a las Transacciones", debe: 225.66, haber: 0 }, // IT 3%
+      { codigo: "1111", nombre: "Caja General", debe: 0, haber: 225.66 } // IT pagado
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-001"
+  },
+  {
+    id: "2",
+    tipo: "egreso",
+    numero: "EGR-0001",
+    fecha: "2024-01-21",
+    concepto: "Pago de alquiler de oficina",
+    beneficiario: "Inmobiliaria La Paz Ltda.",
+    monto: 4500.00,
+    metodoPago: "1112",
+    referencia: "ALQ-ENE-2024",
+    observaciones: "Alquiler enero 2024 con factura",
+    estado: "autorizado",
+    creadoPor: "Carlos López - Gerente",
+    fechaCreacion: "2024-01-21T14:15:00Z",
+    conFactura: true,
+    cuentaGasto: "5241",
+    cuentas: [
+      { codigo: "5241", nombre: "Alquileres", debe: 3982.30, haber: 0 }, // 87% del total (base sin IVA)
+      { codigo: "1142", nombre: "IVA Crédito Fiscal", debe: 517.70, haber: 0 }, // IVA 13%
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 0, haber: 4500.00 }
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-002"
+  },
+  {
+    id: "3",
+    tipo: "egreso",
+    numero: "EGR-0002",
+    fecha: "2024-01-22",
+    concepto: "Compra de suministros de oficina",
+    beneficiario: "Papelería Central",
+    monto: 850.00,
+    metodoPago: "1111",
+    referencia: "COMP-SUM-001",
+    observaciones: "Suministros varios sin factura",
+    estado: "autorizado",
+    creadoPor: "Ana García - Contadora",
+    fechaCreacion: "2024-01-22T09:45:00Z",
+    conFactura: false,
+    cuentaGasto: "5251",
+    cuentas: [
+      { codigo: "5251", nombre: "Materiales y Suministros", debe: 850.00, haber: 0 }, // Monto completo sin factura
+      { codigo: "1111", nombre: "Caja General", debe: 0, haber: 850.00 }
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-003"
+  },
+  {
+    id: "4",
+    tipo: "egreso",
+    numero: "EGR-0003",
+    fecha: "2024-01-23",
+    concepto: "Pago de servicios profesionales",
+    beneficiario: "Estudio Jurídico Morales & Asociados",
+    monto: 2300.00,
+    metodoPago: "1112",
+    referencia: "HON-ENE-001",
+    observaciones: "Honorarios profesionales con factura",
+    estado: "autorizado",
+    creadoPor: "Carlos López - Gerente",
+    fechaCreacion: "2024-01-23T16:20:00Z",
+    conFactura: true,
+    cuentaGasto: "5191",
+    cuentas: [
+      { codigo: "5191", nombre: "Gastos Varios", debe: 2035.40, haber: 0 }, // 87% del total
+      { codigo: "1142", nombre: "IVA Crédito Fiscal", debe: 264.60, haber: 0 }, // IVA 13%
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 0, haber: 2300.00 }
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-004"
+  },
+  {
+    id: "5",
+    tipo: "ingreso",
+    numero: "ING-0002",
+    fecha: "2024-01-24",
+    concepto: "Venta adicional de productos",
+    beneficiario: "Cliente Corporativo XYZ",
+    monto: 12000.00,
+    metodoPago: "1112",
+    referencia: "VENTA-002",
+    observaciones: "Venta con factura emitida",
+    estado: "autorizado",
+    creadoPor: "Ana García - Contadora",
+    fechaCreacion: "2024-01-24T11:00:00Z",
+    conFactura: true,
+    cuentaIngreso: "4111",
+    cuentas: [
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 12000.00, haber: 0 },
+      { codigo: "4111", nombre: "Ventas", debe: 0, haber: 10379.31 }, // Base sin IT
+      { codigo: "2113", nombre: "IVA por Pagar", debe: 0, haber: 1349.31 }, // IVA 13%
+      { codigo: "5211", nombre: "Impuesto a las Transacciones", debe: 311.38, haber: 0 }, // IT 3%
+      { codigo: "1111", nombre: "Caja General", debe: 0, haber: 311.38 } // IT pagado
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-005"
+  },
+  {
+    id: "6",
+    tipo: "egreso",
+    numero: "EGR-0004",
+    fecha: "2024-01-25",
+    concepto: "Pago de sueldos y salarios",
+    beneficiario: "Planilla de empleados",
+    monto: 15000.00,
+    metodoPago: "1112",
+    referencia: "PLAN-ENE-2024",
+    observaciones: "Planilla enero 2024 sin factura",
+    estado: "autorizado",
+    creadoPor: "Ana García - Contadora",
+    fechaCreacion: "2024-01-25T17:30:00Z",
+    conFactura: false,
+    cuentaGasto: "5211",
+    cuentas: [
+      { codigo: "5211", nombre: "Sueldos y Salarios", debe: 15000.00, haber: 0 }, // Monto completo
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", debe: 0, haber: 15000.00 }
+    ],
+    asientoGenerado: true,
+    asientoId: "ASI-006"
+  }
+];
+
 export const initializarDatosEjemplo = () => {
   // Solo inicializar si no existen datos
   if (!localStorage.getItem('productos')) {
@@ -323,9 +480,60 @@ export const initializarDatosEjemplo = () => {
   if (!localStorage.getItem('asientosContables')) {
     localStorage.setItem('asientosContables', JSON.stringify(asientosEjemplo));
   }
+
+  // Inicializar comprobantes integrados con datos completos de prueba
+  if (!localStorage.getItem('comprobantes_integrados')) {
+    localStorage.setItem('comprobantes_integrados', JSON.stringify(comprobantesIntegradosEjemplo));
+  }
+
+  // Inicializar plan de cuentas completo
+  if (!localStorage.getItem('planCuentas')) {
+    const planCuentasCompleto = [
+      // ACTIVOS
+      { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1131", nombre: "Inventarios - Mercaderías", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1141", nombre: "Gastos Pagados por Anticipado", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      
+      // PASIVOS
+      { codigo: "2111", nombre: "Cuentas por Pagar Comerciales", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2121", nombre: "Sueldos y Salarios por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      
+      // PATRIMONIO
+      { codigo: "3111", nombre: "Capital Social", tipo: "patrimonio", naturaleza: "acreedora", saldo: 100000, activa: true },
+      { codigo: "3211", nombre: "Utilidades Acumuladas", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true },
+      
+      // INGRESOS
+      { codigo: "4111", nombre: "Ventas", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+      
+      // GASTOS
+      { codigo: "5111", nombre: "Costo de Ventas", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5191", nombre: "Gastos Varios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5221", nombre: "Cargas Sociales", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5241", nombre: "Alquileres", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5251", nombre: "Materiales y Suministros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5211", nombre: "Impuesto a las Transacciones", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true }
+    ];
+    localStorage.setItem('planCuentas', JSON.stringify(planCuentasCompleto));
+  }
   
   // Inicializar último backup
   if (!localStorage.getItem('ultimo-backup')) {
     localStorage.setItem('ultimo-backup', new Date().toISOString());
   }
+
+  console.log("✅ Datos de ejemplo completos inicializados correctamente");
+  console.log("📊 Comprobantes integrados:", comprobantesIntegradosEjemplo.length);
+  console.log("💰 Total ingresos con factura:", comprobantesIntegradosEjemplo.filter(c => c.tipo === 'ingreso' && c.conFactura).reduce((sum, c) => sum + c.monto, 0));
+  console.log("💸 Total gastos con factura:", comprobantesIntegradosEjemplo.filter(c => c.tipo === 'egreso' && c.conFactura).reduce((sum, c) => sum + c.monto, 0));
+  console.log("📋 Estado de resultados debería mostrar todos los gastos administrativos");
 };
