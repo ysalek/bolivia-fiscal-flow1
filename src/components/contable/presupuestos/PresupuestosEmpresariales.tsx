@@ -10,7 +10,20 @@ import { usePresupuestos } from './hooks/usePresupuestos';
 
 const PresupuestosEmpresariales = () => {
   const [showDialog, setShowDialog] = useState(false);
-  const { presupuestos, itemsPresupuesto } = usePresupuestos();
+  const { 
+    presupuestos, 
+    itemsPresupuesto, 
+    crearPresupuesto,
+    actualizarPresupuesto,
+    eliminarPresupuesto,
+    obtenerMetricas 
+  } = usePresupuestos();
+
+  const metricas = obtenerMetricas();
+
+  const handleCrearPresupuesto = (data: any) => {
+    crearPresupuesto(data);
+  };
 
   return (
     <div className="space-y-6">
@@ -21,10 +34,14 @@ const PresupuestosEmpresariales = () => {
             Gestión y control de presupuestos por departamentos y proyectos
           </p>
         </div>
-        <PresupuestoDialog open={showDialog} onOpenChange={setShowDialog} />
+        <PresupuestoDialog 
+          open={showDialog} 
+          onOpenChange={setShowDialog}
+          onCrearPresupuesto={handleCrearPresupuesto}
+        />
       </div>
 
-      <PresupuestoMetrics />
+      <PresupuestoMetrics metricas={metricas} />
 
       <Tabs defaultValue="lista-presupuestos" className="space-y-4">
         <TabsList>
@@ -35,7 +52,11 @@ const PresupuestosEmpresariales = () => {
         </TabsList>
 
         <TabsContent value="lista-presupuestos">
-          <PresupuestosList presupuestos={presupuestos} />
+          <PresupuestosList 
+            presupuestos={presupuestos}
+            onActualizarPresupuesto={actualizarPresupuesto}
+            onEliminarPresupuesto={eliminarPresupuesto}
+          />
         </TabsContent>
 
         <TabsContent value="ejecucion-presupuestal">

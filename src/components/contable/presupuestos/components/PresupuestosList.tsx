@@ -4,15 +4,51 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Edit, Eye } from 'lucide-react';
+import { Edit, Eye, Trash2 } from 'lucide-react';
 import { Presupuesto } from '../types';
 import { getEstadoColor } from '../utils/presupuestoUtils';
+import { useToast } from '@/hooks/use-toast';
 
 interface PresupuestosListProps {
   presupuestos: Presupuesto[];
+  onActualizarPresupuesto: (id: string, data: Partial<Presupuesto>) => void;
+  onEliminarPresupuesto: (id: string) => void;
 }
 
-export const PresupuestosList: React.FC<PresupuestosListProps> = ({ presupuestos }) => {
+export const PresupuestosList: React.FC<PresupuestosListProps> = ({ 
+  presupuestos, 
+  onActualizarPresupuesto,
+  onEliminarPresupuesto 
+}) => {
+  const { toast } = useToast();
+
+  const handleEliminar = (presupuesto: Presupuesto) => {
+    if (confirm(`¿Está seguro de eliminar el presupuesto "${presupuesto.nombre}"?`)) {
+      onEliminarPresupuesto(presupuesto.id);
+      toast({
+        title: "Presupuesto eliminado",
+        description: `El presupuesto "${presupuesto.nombre}" ha sido eliminado`,
+      });
+    }
+  };
+
+  const handleCambiarEstado = (presupuesto: Presupuesto) => {
+    const nuevosEstados = {
+      'borrador': 'aprobado',
+      'aprobado': 'en_ejecucion',
+      'en_ejecucion': 'cerrado',
+      'cerrado': 'borrador'
+    } as const;
+
+    const nuevoEstado = nuevosEstados[presupuesto.estado];
+    onActualizarPresupuesto(presupuesto.id, { estado: nuevoEstado });
+    
+    toast({
+      title: "Estado actualizado",
+      description: `El presupuesto cambió a estado: ${nuevoEstado.replace('_', ' ')}`,
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -72,7 +108,11 @@ export const PresupuestosList: React.FC<PresupuestosListProps> = ({ presupuestos
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getEstadoColor(presupuesto.estado)}>
+                    <Badge 
+                      className={getEstadoColor(presupuesto.estado)}
+                      onClick={() => handleCambiarEstado(presupuesto)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       {presupuesto.estado.replace('_', ' ')}
                     </Badge>
                   </TableCell>
@@ -83,6 +123,13 @@ export const PresupuestosList: React.FC<PresupuestosListProps> = ({ presupuestos
                       </Button>
                       <Button variant="ghost" size="sm">
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEliminar(presupuesto)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>

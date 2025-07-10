@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,19 +11,61 @@ import { useToast } from '@/hooks/use-toast';
 interface PresupuestoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCrearPresupuesto: (data: any) => void;
 }
 
 export const PresupuestoDialog: React.FC<PresupuestoDialogProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  onCrearPresupuesto
 }) => {
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    periodo: '',
+    fechaInicio: '',
+    fechaFin: '',
+    responsable: '',
+    totalPresupuestado: 0,
+    estado: 'borrador' as const
+  });
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const crearPresupuesto = () => {
+    if (!formData.nombre || !formData.periodo || !formData.fechaInicio || !formData.fechaFin) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    onCrearPresupuesto(formData);
+    
     toast({
       title: "Presupuesto creado",
       description: "El nuevo presupuesto ha sido creado exitosamente",
     });
+    
+    setFormData({
+      nombre: '',
+      descripcion: '',
+      periodo: '',
+      fechaInicio: '',
+      fechaFin: '',
+      responsable: '',
+      totalPresupuestado: 0,
+      estado: 'borrador'
+    });
+    
     onOpenChange(false);
   };
 
@@ -45,12 +87,17 @@ export const PresupuestoDialog: React.FC<PresupuestoDialogProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre del Presupuesto</Label>
-            <Input id="nombre" placeholder="Ej. Presupuesto Anual 2024" />
+            <Input 
+              id="nombre" 
+              placeholder="Ej. Presupuesto Anual 2024" 
+              value={formData.nombre}
+              onChange={(e) => handleInputChange('nombre', e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="periodo">Período</Label>
-            <Select>
+            <Select value={formData.periodo} onValueChange={(value) => handleInputChange('periodo', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar período" />
               </SelectTrigger>
@@ -65,27 +112,53 @@ export const PresupuestoDialog: React.FC<PresupuestoDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="fecha-inicio">Fecha de Inicio</Label>
-            <Input id="fecha-inicio" type="date" />
+            <Input 
+              id="fecha-inicio" 
+              type="date" 
+              value={formData.fechaInicio}
+              onChange={(e) => handleInputChange('fechaInicio', e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="fecha-fin">Fecha de Fin</Label>
-            <Input id="fecha-fin" type="date" />
+            <Input 
+              id="fecha-fin" 
+              type="date" 
+              value={formData.fechaFin}
+              onChange={(e) => handleInputChange('fechaFin', e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="responsable">Responsable</Label>
-            <Input id="responsable" placeholder="Nombre del responsable" />
+            <Input 
+              id="responsable" 
+              placeholder="Nombre del responsable" 
+              value={formData.responsable}
+              onChange={(e) => handleInputChange('responsable', e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="monto-total">Monto Total Presupuestado</Label>
-            <Input id="monto-total" type="number" placeholder="0.00" />
+            <Input 
+              id="monto-total" 
+              type="number" 
+              placeholder="0.00" 
+              value={formData.totalPresupuestado}
+              onChange={(e) => handleInputChange('totalPresupuestado', parseFloat(e.target.value) || 0)}
+            />
           </div>
           
           <div className="col-span-2 space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>
-            <Textarea id="descripcion" placeholder="Descripción del presupuesto" />
+            <Textarea 
+              id="descripcion" 
+              placeholder="Descripción del presupuesto" 
+              value={formData.descripcion}
+              onChange={(e) => handleInputChange('descripcion', e.target.value)}
+            />
           </div>
         </div>
         <div className="flex justify-end gap-2">
