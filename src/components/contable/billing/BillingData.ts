@@ -178,11 +178,19 @@ export const simularValidacionSIN = (factura: Factura): Promise<Factura> => {
   });
 };
 
-export const calcularIVA = (subtotal: number): number => {
-  return subtotal * 0.13;
+// El IVA está incluido en el precio, por lo tanto:
+// Precio sin IVA = Precio Total / 1.13
+// IVA = Precio Total - Precio sin IVA
+export const calcularIVA = (precioConIVA: number): number => {
+  const precioSinIVA = precioConIVA / 1.13;
+  return precioConIVA - precioSinIVA;
+};
+
+export const calcularSubtotalSinIVA = (precioConIVA: number): number => {
+  return precioConIVA / 1.13;
 };
 
 export const calcularTotal = (subtotalConDescuento: number): number => {
-  const iva = calcularIVA(subtotalConDescuento);
-  return subtotalConDescuento + iva;
+  // El subtotal ya incluye el IVA, por lo tanto el total es el mismo
+  return subtotalConDescuento;
 };

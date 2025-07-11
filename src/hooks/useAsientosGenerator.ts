@@ -88,9 +88,15 @@ export const useAsientosGenerator = () => {
   const generarAsientoVenta = (factura: any): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
+    
+    // El total de la factura ya incluye IVA
     const totalConIVA = factura.total;
-    const subtotal = factura.subtotal;
-    const ivaVenta = factura.iva;
+    
+    // Calcular venta sin IVA (dividiendo entre 1.13)
+    const ventaSinIVA = totalConIVA / 1.13;
+    
+    // El IVA es la diferencia
+    const ivaVenta = totalConIVA - ventaSinIVA;
 
     cuentas.push({
       codigo: "1131",
@@ -103,7 +109,7 @@ export const useAsientosGenerator = () => {
       codigo: "4111",
       nombre: "Ventas de Productos",
       debe: 0,
-      haber: subtotal
+      haber: ventaSinIVA
     });
 
     cuentas.push({
@@ -242,13 +248,13 @@ export const useAsientosGenerator = () => {
         {
           codigo: "4111",
           nombre: "Ventas de Productos",
-          debe: factura.subtotal,
+          debe: factura.total / 1.13, // Venta sin IVA
           haber: 0
         },
         {
           codigo: "2131",
           nombre: "IVA Débito Fiscal",
-          debe: factura.iva,
+          debe: factura.total - (factura.total / 1.13), // IVA incluido
           haber: 0
         },
         {
