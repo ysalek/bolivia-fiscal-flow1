@@ -353,7 +353,10 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                   <SelectValue placeholder="Seleccionar cuenta" />
                 </SelectTrigger>
                 <SelectContent>
-                  {planCuentas.map(cuenta => (
+                  {planCuentas
+                    .filter(cuenta => cuenta.activa)
+                    .filter((cuenta, index, arr) => arr.findIndex(c => c.codigo === cuenta.codigo) === index)
+                    .map(cuenta => (
                     <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
                       {cuenta.codigo} - {cuenta.nombre}
                     </SelectItem>
@@ -456,7 +459,10 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        {planCuentas.map(c => (
+                        {planCuentas
+                          .filter(cuenta => cuenta.activa)
+                          .filter((cuenta, index, arr) => arr.findIndex(c => c.codigo === cuenta.codigo) === index)
+                          .map(c => (
                           <SelectItem key={c.codigo} value={c.codigo}>
                             {c.codigo} - {c.nombre}
                           </SelectItem>
