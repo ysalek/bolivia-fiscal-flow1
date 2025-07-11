@@ -128,8 +128,11 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
   const createInvoiceObject = (): Factura => {
     const subtotal = calculateSubtotal();
     const descuentoTotal = calculateDiscountTotal();
-    const iva = calcularIVA(subtotal - descuentoTotal);
-    const total = subtotal - descuentoTotal + iva;
+    const totalConDescuento = subtotal - descuentoTotal;
+    // El total mostrado al cliente es exactamente lo que paga (ya incluye IVA)
+    const total = totalConDescuento;
+    // Para efectos contables internos, calculamos cuánto IVA está incluido
+    const iva = calcularIVA(totalConDescuento);
 
     const numeros = facturas.map(f => parseInt(f.numero)).filter(n => !isNaN(n));
     const ultimoNumero = numeros.length > 0 ? Math.max(...numeros) : 0;
