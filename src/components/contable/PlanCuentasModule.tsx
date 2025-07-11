@@ -22,7 +22,10 @@ interface Cuenta {
 }
 
 const PlanCuentasModule = () => {
+  const [cuentas, setCuentas] = useState<Cuenta[]>([]);
   const [showNewCuenta, setShowNewCuenta] = useState(false);
+  const [showEditCuenta, setShowEditCuenta] = useState(false);
+  const [editingCuenta, setEditingCuenta] = useState<Cuenta | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTipo, setFilterTipo] = useState("todos");
   const [newCuenta, setNewCuenta] = useState({
@@ -35,12 +38,14 @@ const PlanCuentasModule = () => {
   });
   const { toast } = useToast();
 
-  // Guardar el plan de cuentas en localStorage al cargar
+  // Cargar el plan de cuentas desde localStorage al inicializar
   useEffect(() => {
-    localStorage.setItem('planCuentas', JSON.stringify(cuentas));
-  }, []);
-
-  const cuentas: Cuenta[] = [
+    const savedCuentas = localStorage.getItem('planCuentas');
+    if (savedCuentas) {
+      setCuentas(JSON.parse(savedCuentas));
+    } else {
+      // Plan de cuentas inicial
+      const initialCuentas: Cuenta[] = [
     // ACTIVOS (1000-1999)
     { codigo: "1", nombre: "ACTIVOS", tipo: "activo", nivel: 1, naturaleza: "deudora", saldo: 150000, activa: true },
     { codigo: "11", nombre: "ACTIVO CORRIENTE", tipo: "activo", nivel: 2, padre: "1", naturaleza: "deudora", saldo: 75000, activa: true },
@@ -99,7 +104,18 @@ const PlanCuentasModule = () => {
     { codigo: "5212", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
     { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
     { codigo: "522", nombre: "Gastos de Ventas", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true },
-  ];
+      ];
+      setCuentas(initialCuentas);
+      localStorage.setItem('planCuentas', JSON.stringify(initialCuentas));
+    }
+  }, []);
+
+  // Guardar cambios en localStorage cada vez que se actualicen las cuentas
+  useEffect(() => {
+    if (cuentas.length > 0) {
+      localStorage.setItem('planCuentas', JSON.stringify(cuentas));
+    }
+  }, [cuentas]);
 
   const getTipoColor = (tipo: string) => {
     const colors = {
@@ -122,6 +138,24 @@ const PlanCuentasModule = () => {
       return;
     }
 
+    // Verificar que el código no exista
+    if (cuentas.find(c => c.codigo === newCuenta.codigo)) {
+      toast({
+        title: "Error",
+        description: "Ya existe una cuenta con ese código.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const nuevaCuenta: Cuenta = {
+      ...newCuenta,
+      saldo: 0,
+      activa: true
+    };
+
+    setCuentas(prev => [...prev, nuevaCuenta]);
+
     toast({
       title: "Cuenta creada",
       description: `Cuenta ${newCuenta.codigo} - ${newCuenta.nombre} ha sido creada.`,
@@ -136,6 +170,69 @@ const PlanCuentasModule = () => {
       padre: "",
       naturaleza: "deudora"
     });
+  };
+
+  const handleEditCuenta = (cuenta: Cuenta) => {
+    setEditingCuenta(cuenta);
+    setShowEditCuenta(true);
+  };
+
+  const handleUpdateCuenta = () => {
+    if (!editingCuenta) return;
+
+    setCuentas(prev => 
+      prev.map(c => 
+        c.codigo === editingCuenta.codigo ? editingCuenta : c
+      )
+    );
+
+    toast({
+      title: "Cuenta actualizada",
+      description: `Cuenta ${editingCuenta.codigo} ha sido actualizada.`,
+    });
+
+    setShowEditCuenta(false);
+    setEditingCuenta(null);
+  };
+
+  const handleDeleteCuenta = (codigo: string) => {
+    // Verificar si hay cuentas hijas
+    const cuentasHijas = cuentas.filter(c => c.padre === codigo);
+    if (cuentasHijas.length > 0) {
+      toast({
+        title: "No se puede eliminar",
+        description: "Esta cuenta tiene subcuentas asociadas.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confirm("¿Está seguro de eliminar esta cuenta?")) {
+      setCuentas(prev => prev.filter(c => c.codigo !== codigo));
+      toast({
+        title: "Cuenta eliminada",
+        description: "La cuenta ha sido eliminada correctamente.",
+      });
+    }
+  };
+
+  const resetearSaldos = () => {
+    if (confirm("¿Está seguro de resetear todos los saldos a cero? Esta acción no se puede deshacer.")) {
+      setCuentas(prev => 
+        prev.map(cuenta => ({
+          ...cuenta,
+          saldo: 0,
+          totalDebe: 0,
+          totalHaber: 0,
+          movimientos: []
+        }))
+      );
+      
+      toast({
+        title: "Saldos reseteados",
+        description: "Todos los saldos han sido puestos en cero.",
+      });
+    }
   };
 
   const filteredCuentas = cuentas.filter(cuenta => {
@@ -154,7 +251,12 @@ const PlanCuentasModule = () => {
           <p className="text-slate-600">Gestión del catálogo de cuentas contables</p>
         </div>
         
-        <Dialog open={showNewCuenta} onOpenChange={setShowNewCuenta}>
+        <div className="flex gap-2">
+          <Button onClick={resetearSaldos} variant="outline">
+            <Calculator className="w-4 h-4 mr-2" />
+            Resetear Saldos
+          </Button>
+          <Dialog open={showNewCuenta} onOpenChange={setShowNewCuenta}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -254,7 +356,100 @@ const PlanCuentasModule = () => {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+
+          {/* Dialog para editar cuenta */}
+          <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Cuenta Contable</DialogTitle>
+                <DialogDescription>
+                  Modificar la información de la cuenta
+                </DialogDescription>
+              </DialogHeader>
+              
+              {editingCuenta && (
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-codigo">Código</Label>
+                      <Input
+                        id="edit-codigo"
+                        value={editingCuenta.codigo}
+                        disabled
+                        className="bg-gray-100"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-nivel">Nivel</Label>
+                      <Input
+                        id="edit-nivel"
+                        value={editingCuenta.nivel}
+                        disabled
+                        className="bg-gray-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nombre">Nombre de la Cuenta</Label>
+                    <Input
+                      id="edit-nombre"
+                      value={editingCuenta.nombre}
+                      onChange={(e) => setEditingCuenta(prev => prev ? {...prev, nombre: e.target.value} : null)}
+                      placeholder="Nombre descriptivo de la cuenta"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tipo de Cuenta</Label>
+                      <Select 
+                        value={editingCuenta.tipo} 
+                        onValueChange={(value: any) => setEditingCuenta(prev => prev ? {...prev, tipo: value} : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="activo">Activo</SelectItem>
+                          <SelectItem value="pasivo">Pasivo</SelectItem>
+                          <SelectItem value="patrimonio">Patrimonio</SelectItem>
+                          <SelectItem value="ingresos">Ingresos</SelectItem>
+                          <SelectItem value="gastos">Gastos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Naturaleza</Label>
+                      <Select 
+                        value={editingCuenta.naturaleza} 
+                        onValueChange={(value: any) => setEditingCuenta(prev => prev ? {...prev, naturaleza: value} : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="deudora">Deudora</SelectItem>
+                          <SelectItem value="acreedora">Acreedora</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setShowEditCuenta(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleUpdateCuenta}>
+                      Actualizar Cuenta
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -335,10 +530,18 @@ const PlanCuentasModule = () => {
                   Bs. {cuenta.saldo.toLocaleString()}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEditCuenta(cuenta)}
+                  >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleDeleteCuenta(cuenta.codigo)}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>

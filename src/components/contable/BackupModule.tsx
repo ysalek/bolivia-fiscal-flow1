@@ -86,45 +86,58 @@ const BackupModule = () => {
         
         console.log(`🔍 Verificación: localStorage tiene ${localStorage.length} elementos después de clear()`);
 
-        // PASO 2: REINSTALAR SOLO el Plan de Cuentas reseteado
-        console.log("📊 Instalando Plan de Cuentas LIMPIO con saldos en CERO...");
-        const planCuentasLimpio = [
-          // ACTIVOS
-          { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1131", nombre: "Inventarios - Mercaderías", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1141", nombre: "Gastos Pagados por Anticipado", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          
-          // PASIVOS  
-          { codigo: "2111", nombre: "Cuentas por Pagar Comerciales", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "2121", nombre: "Sueldos y Salarios por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          
-          // PATRIMONIO (solo Capital Social con saldo inicial)
-          { codigo: "3111", nombre: "Capital Social", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "3211", nombre: "Utilidades Acumuladas", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          
-          // INGRESOS
-          { codigo: "4111", nombre: "Ventas", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          
-          // GASTOS
-          { codigo: "5111", nombre: "Costo de Ventas", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5191", nombre: "Gastos Varios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5221", nombre: "Cargas Sociales", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5241", nombre: "Alquileres", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5251", nombre: "Materiales y Suministros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
-          { codigo: "5261", nombre: "Impuesto a las Transacciones", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] }
-        ];
-        localStorage.setItem('planCuentas', JSON.stringify(planCuentasLimpio));
-        console.log("📊 Plan de Cuentas instalado con TODOS los saldos en CERO");
+        // PASO 2: Resetear SOLO los saldos del Plan de Cuentas existente
+        console.log("📊 Reseteando saldos del Plan de Cuentas a CERO...");
+        const planCuentasExistente = JSON.parse(localStorage.getItem('planCuentas') || '[]');
+        
+        if (planCuentasExistente.length > 0) {
+          const planCuentasReseteado = planCuentasExistente.map((cuenta: any) => ({
+            ...cuenta,
+            saldo: 0,
+            totalDebe: 0,
+            totalHaber: 0,
+            movimientos: []
+          }));
+          localStorage.setItem('planCuentas', JSON.stringify(planCuentasReseteado));
+          console.log(`📊 Plan de Cuentas reseteado: ${planCuentasReseteado.length} cuentas con saldos en CERO`);
+        } else {
+          // Si no existe plan de cuentas, crear uno básico
+          const planCuentasBasico = [
+            // ACTIVOS
+            { codigo: "1", nombre: "ACTIVOS", tipo: "activo", nivel: 1, naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "11", nombre: "ACTIVO CORRIENTE", tipo: "activo", nivel: 2, padre: "1", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "111", nombre: "DISPONIBLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "1111", nombre: "Caja General", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "1131", nombre: "Inventarios", tipo: "activo", nivel: 4, padre: "113", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", nivel: 4, padre: "114", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            
+            // PASIVOS  
+            { codigo: "2", nombre: "PASIVOS", tipo: "pasivo", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "21", nombre: "PASIVO CORRIENTE", tipo: "pasivo", nivel: 2, padre: "2", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "2111", nombre: "Cuentas por Pagar", tipo: "pasivo", nivel: 3, padre: "21", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", nivel: 3, padre: "21", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            
+            // PATRIMONIO
+            { codigo: "3", nombre: "PATRIMONIO", tipo: "patrimonio", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "31", nombre: "CAPITAL", tipo: "patrimonio", nivel: 2, padre: "3", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "311", nombre: "Capital Social", tipo: "patrimonio", nivel: 3, padre: "31", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            
+            // INGRESOS
+            { codigo: "4", nombre: "INGRESOS", tipo: "ingresos", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "41", nombre: "INGRESOS OPERACIONALES", tipo: "ingresos", nivel: 2, padre: "4", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "411", nombre: "Ventas", tipo: "ingresos", nivel: 3, padre: "41", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            
+            // GASTOS
+            { codigo: "5", nombre: "GASTOS", tipo: "gastos", nivel: 1, naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "51", nombre: "COSTO DE VENTAS", tipo: "gastos", nivel: 2, padre: "5", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "511", nombre: "Costo de Ventas", tipo: "gastos", nivel: 3, padre: "51", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "52", nombre: "GASTOS OPERACIONALES", tipo: "gastos", nivel: 2, padre: "5", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "521", nombre: "Gastos Administrativos", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] }
+          ];
+          localStorage.setItem('planCuentas', JSON.stringify(planCuentasBasico));
+          console.log("📊 Plan de Cuentas básico instalado con saldos en CERO");
+        }
 
         // PASO 3: Instalar configuraciones básicas del sistema
         console.log("🔧 Instalando configuraciones básicas...");
