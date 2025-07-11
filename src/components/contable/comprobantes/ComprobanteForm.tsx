@@ -37,46 +37,57 @@ interface ComprobanteFormProps {
   onCancel: () => void;
 }
 
-// Plan de cuentas completo para Bolivia
-const PLAN_CUENTAS = [
-  { codigo: "1111", nombre: "Caja General" },
-  { codigo: "1112", nombre: "Banco Nacional de Bolivia" },
-  { codigo: "1113", nombre: "Banco Mercantil Santa Cruz" },
-  { codigo: "1114", nombre: "Banco Sol" },
-  { codigo: "1115", nombre: "Banco Unión" },
-  { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales" },
-  { codigo: "1131", nombre: "Inventarios - Mercaderías" },
-  { codigo: "1141", nombre: "Gastos Pagados por Anticipado" },
-  { codigo: "1142", nombre: "IVA Crédito Fiscal" },
-  { codigo: "1211", nombre: "Muebles y Enseres" },
-  { codigo: "1212", nombre: "Equipos de Computación" },
-  { codigo: "1213", nombre: "Vehículos" },
-  { codigo: "2111", nombre: "Cuentas por Pagar Comerciales" },
-  { codigo: "2121", nombre: "Sueldos y Salarios por Pagar" },
-  { codigo: "2131", nombre: "IVA Débito Fiscal" },
-  { codigo: "2132", nombre: "IVA Crédito Fiscal" },
-  { codigo: "2141", nombre: "IT por Pagar" },
-  { codigo: "2151", nombre: "Previsiones Sociales por Pagar" },
-  { codigo: "3111", nombre: "Capital Social" },
-  { codigo: "3211", nombre: "Utilidades Acumuladas" },
-  { codigo: "4111", nombre: "Ventas" },
-  { codigo: "4121", nombre: "Descuentos Obtenidos" },
-  { codigo: "4191", nombre: "Otros Ingresos" },
-  { codigo: "5111", nombre: "Costo de Ventas" },
-  { codigo: "5211", nombre: "Sueldos y Salarios" },
-  { codigo: "5221", nombre: "Cargas Sociales" },
-  { codigo: "5231", nombre: "Servicios Básicos" },
-  { codigo: "5241", nombre: "Alquileres" },
-  { codigo: "5251", nombre: "Materiales y Suministros" },
-  { codigo: "5261", nombre: "Combustibles y Lubricantes" },
-  { codigo: "5271", nombre: "Mantenimiento y Reparaciones" },
-  { codigo: "5281", nombre: "Gastos de Viaje" },
-  { codigo: "5291", nombre: "Gastos Financieros" },
-  { codigo: "5191", nombre: "Gastos Varios" }
-];
+// Función para obtener el plan de cuentas dinámico
+const obtenerPlanCuentas = () => {
+  const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
+  if (planCuentas.length === 0) {
+    // Si no existe plan de cuentas, inicializar con cuentas básicas
+    const planBasico = [
+      { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1114", nombre: "Banco Sol", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1115", nombre: "Banco Unión", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1131", nombre: "Inventarios - Mercaderías", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1141", nombre: "Gastos Pagados por Anticipado", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "1213", nombre: "Vehículos", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "2111", nombre: "Cuentas por Pagar Comerciales", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2121", nombre: "Sueldos y Salarios por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2131", nombre: "IVA Débito Fiscal", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2132", nombre: "IVA Crédito Fiscal", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2141", nombre: "IT por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "2151", nombre: "Previsiones Sociales por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "3111", nombre: "Capital Social", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "3211", nombre: "Utilidades Acumuladas", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "4111", nombre: "Ventas", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "4121", nombre: "Descuentos Obtenidos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
+      { codigo: "5111", nombre: "Costo de Ventas", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5191", nombre: "Gastos Varios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5221", nombre: "Cargas Sociales", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5241", nombre: "Alquileres", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5251", nombre: "Materiales y Suministros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5261", nombre: "Combustibles y Lubricantes", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5271", nombre: "Mantenimiento y Reparaciones", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5281", nombre: "Gastos de Viaje", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
+      { codigo: "5291", nombre: "Gastos Financieros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true }
+    ];
+    localStorage.setItem('planCuentas', JSON.stringify(planBasico));
+    return planBasico;
+  }
+  return planCuentas;
+};
 
 const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
   const { toast } = useToast();
+  const [planCuentas, setPlanCuentas] = useState(obtenerPlanCuentas());
   const [formData, setFormData] = useState<ComprobanteFormData>({
     tipo,
     numero: '',
@@ -117,7 +128,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
       cuentas: prev.cuentas.map((cuenta, i) => {
         if (i === index) {
           if (campo === 'codigo') {
-            const cuentaSeleccionada = PLAN_CUENTAS.find(c => c.codigo === valor);
+            const cuentaSeleccionada = planCuentas.find(c => c.codigo === valor);
             return {
               ...cuenta,
               codigo: valor as string,
@@ -152,7 +163,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
     // Generar cuentas automáticamente para ingreso y egreso
     if (tipo !== 'traspaso') {
       // Verificar que la cuenta del método de pago existe
-      const metodoPagoSeleccionado = PLAN_CUENTAS.find(m => m.codigo === formData.metodoPago);
+      const metodoPagoSeleccionado = planCuentas.find(m => m.codigo === formData.metodoPago);
       
       if (!metodoPagoSeleccionado) {
         toast({
@@ -342,7 +353,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                   <SelectValue placeholder="Seleccionar cuenta" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PLAN_CUENTAS.map(cuenta => (
+                  {planCuentas.map(cuenta => (
                     <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
                       {cuenta.codigo} - {cuenta.nombre}
                     </SelectItem>
@@ -445,7 +456,7 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        {PLAN_CUENTAS.map(c => (
+                        {planCuentas.map(c => (
                           <SelectItem key={c.codigo} value={c.codigo}>
                             {c.codigo} - {c.nombre}
                           </SelectItem>
