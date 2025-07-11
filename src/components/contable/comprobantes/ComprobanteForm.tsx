@@ -151,7 +151,18 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
 
     // Generar cuentas automáticamente para ingreso y egreso
     if (tipo !== 'traspaso') {
+      // Verificar que la cuenta del método de pago existe
       const metodoPagoSeleccionado = PLAN_CUENTAS.find(m => m.codigo === formData.metodoPago);
+      
+      if (!metodoPagoSeleccionado) {
+        toast({
+          title: "Error en Cuenta",
+          description: `La cuenta ${formData.metodoPago} no existe en el plan de cuentas`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const cuentasGeneradas: CuentaContable[] = [];
 
       if (tipo === 'ingreso') {
