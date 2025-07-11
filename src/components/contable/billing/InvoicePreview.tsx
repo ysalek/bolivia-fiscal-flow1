@@ -63,21 +63,14 @@ const InvoicePreview = ({ invoice }: InvoicePreviewProps) => {
         <Separator className="my-4" />
         <div className="flex justify-end">
           <div className="w-full max-w-xs space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span>Bs. {invoice.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Descuento:</span>
-              <span>- Bs. {invoice.descuentoTotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">IVA (13%):</span>
-              <span>Bs. {invoice.iva.toFixed(2)}</span>
-            </div>
-            <Separator />
+            {invoice.descuentoTotal > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Descuento:</span>
+                <span>- Bs. {invoice.descuentoTotal.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-lg">
-              <span>Total:</span>
+              <span>Total a Pagar:</span>
               <span>Bs. {invoice.total.toFixed(2)}</span>
             </div>
           </div>

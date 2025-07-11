@@ -207,17 +207,15 @@ const EnhancedInvoicePreview = ({ invoice, showActions = true }: EnhancedInvoice
           {/* Totales */}
           <div className="flex justify-end mb-8">
             <div className="w-full max-w-sm space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
-                <span>Bs. {invoice.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>IVA (13%):</span>
-                <span>Bs. {invoice.iva.toFixed(2)}</span>
-              </div>
+              {invoice.descuentoTotal > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Descuento:</span>
+                  <span>- Bs. {invoice.descuentoTotal.toFixed(2)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
-                <span>TOTAL:</span>
+                <span>TOTAL A PAGAR:</span>
                 <span>Bs. {invoice.total.toFixed(2)}</span>
               </div>
             </div>
