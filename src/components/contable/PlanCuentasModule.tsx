@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Edit, Trash2, FolderTree, Calculator } from "lucide-react";
+import { Plus, Search, Edit, Trash2, FolderTree } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Cuenta {
@@ -216,7 +215,6 @@ const PlanCuentasModule = () => {
     }
   };
 
-
   const filteredCuentas = cuentas.filter(cuenta => {
     const matchesSearch = cuenta.codigo.includes(searchTerm) || 
                          cuenta.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -333,100 +331,99 @@ const PlanCuentasModule = () => {
               </div>
             </div>
           </DialogContent>
-          </Dialog>
+        </Dialog>
 
-          {/* Dialog para editar cuenta */}
-          <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Editar Cuenta Contable</DialogTitle>
-                <DialogDescription>
-                  Modificar la información de la cuenta
-                </DialogDescription>
-              </DialogHeader>
-              
-              {editingCuenta && (
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-codigo">Código</Label>
-                      <Input
-                        id="edit-codigo"
-                        value={editingCuenta.codigo}
-                        disabled
-                        className="bg-gray-100"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-nivel">Nivel</Label>
-                      <Input
-                        id="edit-nivel"
-                        value={editingCuenta.nivel}
-                        disabled
-                        className="bg-gray-100"
-                      />
-                    </div>
-                  </div>
-
+        {/* Dialog para editar cuenta */}
+        <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Cuenta Contable</DialogTitle>
+              <DialogDescription>
+                Modificar la información de la cuenta
+              </DialogDescription>
+            </DialogHeader>
+            
+            {editingCuenta && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-nombre">Nombre de la Cuenta</Label>
+                    <Label htmlFor="edit-codigo">Código</Label>
                     <Input
-                      id="edit-nombre"
-                      value={editingCuenta.nombre}
-                      onChange={(e) => setEditingCuenta(prev => prev ? {...prev, nombre: e.target.value} : null)}
-                      placeholder="Nombre descriptivo de la cuenta"
+                      id="edit-codigo"
+                      value={editingCuenta.codigo}
+                      disabled
+                      className="bg-gray-100"
                     />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Tipo de Cuenta</Label>
-                      <Select 
-                        value={editingCuenta.tipo} 
-                        onValueChange={(value: any) => setEditingCuenta(prev => prev ? {...prev, tipo: value} : null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="activo">Activo</SelectItem>
-                          <SelectItem value="pasivo">Pasivo</SelectItem>
-                          <SelectItem value="patrimonio">Patrimonio</SelectItem>
-                          <SelectItem value="ingresos">Ingresos</SelectItem>
-                          <SelectItem value="gastos">Gastos</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Naturaleza</Label>
-                      <Select 
-                        value={editingCuenta.naturaleza} 
-                        onValueChange={(value: any) => setEditingCuenta(prev => prev ? {...prev, naturaleza: value} : null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="deudora">Deudora</SelectItem>
-                          <SelectItem value="acreedora">Acreedora</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowEditCuenta(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleUpdateCuenta}>
-                      Actualizar Cuenta
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nivel">Nivel</Label>
+                    <Input
+                      id="edit-nivel"
+                      value={editingCuenta.nivel}
+                      disabled
+                      className="bg-gray-100"
+                    />
                   </div>
                 </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nombre">Nombre de la Cuenta</Label>
+                  <Input
+                    id="edit-nombre"
+                    value={editingCuenta.nombre}
+                    onChange={(e) => setEditingCuenta(prev => prev ? { ...prev, nombre: e.target.value } : null)}
+                    placeholder="Nombre descriptivo de la cuenta"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Cuenta</Label>
+                    <Select 
+                      value={editingCuenta.tipo} 
+                      onValueChange={(value: any) => setEditingCuenta(prev => prev ? { ...prev, tipo: value } : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activo">Activo</SelectItem>
+                        <SelectItem value="pasivo">Pasivo</SelectItem>
+                        <SelectItem value="patrimonio">Patrimonio</SelectItem>
+                        <SelectItem value="ingresos">Ingresos</SelectItem>
+                        <SelectItem value="gastos">Gastos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Naturaleza</Label>
+                    <Select 
+                      value={editingCuenta.naturaleza} 
+                      onValueChange={(value: any) => setEditingCuenta(prev => prev ? { ...prev, naturaleza: value } : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="deudora">Deudora</SelectItem>
+                        <SelectItem value="acreedora">Acreedora</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowEditCuenta(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleUpdateCuenta}>
+                    Guardar Cambios
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filtros */}
@@ -442,10 +439,9 @@ const PlanCuentasModule = () => {
                 className="pl-10"
               />
             </div>
-            
             <Select value={filterTipo} onValueChange={setFilterTipo}>
               <SelectTrigger className="w-48">
-                <SelectValue />
+                <SelectValue placeholder="Filtrar por tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los tipos</SelectItem>
@@ -456,100 +452,86 @@ const PlanCuentasModule = () => {
                 <SelectItem value="gastos">Gastos</SelectItem>
               </SelectContent>
             </Select>
-
-            <div className="flex items-center gap-2">
-              <FolderTree className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">
-                {filteredCuentas.length} cuenta(s)
-              </span>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Plan de Cuentas */}
+      {/* Lista de Cuentas */}
       <Card>
         <CardHeader>
-          <CardTitle>Catálogo de Cuentas</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FolderTree className="w-6 h-6" />
+            Catálogo de Cuentas
+          </CardTitle>
           <CardDescription>
-            Estructura jerárquica del plan de cuentas
+            Listado completo del plan de cuentas con sus saldos actuales
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="grid grid-cols-6 gap-4 p-3 bg-gray-50 border-b font-medium text-sm">
-              <div>Código</div>
-              <div className="col-span-2">Nombre</div>
-              <div>Tipo</div>
-              <div>Saldo</div>
-              <div>Acciones</div>
-            </div>
-            
-            {filteredCuentas.map((cuenta) => (
-              <div 
-                key={cuenta.codigo} 
-                className={`grid grid-cols-6 gap-4 p-3 border-b hover:bg-gray-50 ${
-                  cuenta.nivel > 1 ? `pl-${cuenta.nivel * 4}` : ''
-                }`}
-              >
-                <div className="font-mono font-medium">{cuenta.codigo}</div>
-                <div className="col-span-2">
-                  <span style={{ marginLeft: `${(cuenta.nivel - 1) * 20}px` }}>
-                    {cuenta.nombre}
-                  </span>
-                </div>
-                <div>
-                  <Badge className={getTipoColor(cuenta.tipo)}>
-                    {cuenta.tipo.toUpperCase()}
-                  </Badge>
-                </div>
-                <div className="font-medium">
-                  Bs. {cuenta.saldo.toLocaleString()}
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEditCuenta(cuenta)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleDeleteCuenta(cuenta.codigo)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Código</th>
+                  <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Tipo</th>
+                  <th className="text-left p-2">Nivel</th>
+                  <th className="text-left p-2">Naturaleza</th>
+                  <th className="text-right p-2">Saldo</th>
+                  <th className="text-center p-2">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCuentas.map((cuenta) => (
+                  <tr key={cuenta.codigo} className="border-b hover:bg-gray-50">
+                    <td className="p-2 font-mono text-sm">{cuenta.codigo}</td>
+                    <td className="p-2">
+                      <span style={{ paddingLeft: `${(cuenta.nivel - 1) * 20}px` }}>
+                        {cuenta.nombre}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <Badge className={getTipoColor(cuenta.tipo)}>
+                        {cuenta.tipo}
+                      </Badge>
+                    </td>
+                    <td className="p-2">{cuenta.nivel}</td>
+                    <td className="p-2">
+                      <Badge variant={cuenta.naturaleza === 'deudora' ? 'secondary' : 'outline'}>
+                        {cuenta.naturaleza}
+                      </Badge>
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {cuenta.saldo.toLocaleString('es-BO', {
+                        style: 'currency',
+                        currency: 'BOB'
+                      })}
+                    </td>
+                    <td className="p-2">
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditCuenta(cuenta)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteCuenta(cuenta.codigo)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
-
-      {/* Resumen por tipo */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {['activo', 'pasivo', 'patrimonio', 'ingresos', 'gastos'].map(tipo => {
-          const cuentasTipo = cuentas.filter(c => c.tipo === tipo);
-          const totalSaldo = cuentasTipo.reduce((sum, c) => sum + c.saldo, 0);
-          
-          return (
-            <Card key={tipo}>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Calculator className="h-6 w-6 text-blue-600" />
-                  <div>
-                    <p className="text-lg font-bold">Bs. {totalSaldo.toLocaleString()}</p>
-                    <p className="text-sm text-gray-600 capitalize">{tipo}s</p>
-                    <p className="text-xs text-gray-500">{cuentasTipo.length} cuentas</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 };
