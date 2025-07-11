@@ -216,24 +216,6 @@ const PlanCuentasModule = () => {
     }
   };
 
-  const resetearSaldos = () => {
-    if (confirm("¿Está seguro de resetear todos los saldos a cero? Esta acción no se puede deshacer.")) {
-      setCuentas(prev => 
-        prev.map(cuenta => ({
-          ...cuenta,
-          saldo: 0,
-          totalDebe: 0,
-          totalHaber: 0,
-          movimientos: []
-        }))
-      );
-      
-      toast({
-        title: "Saldos reseteados",
-        description: "Todos los saldos han sido puestos en cero.",
-      });
-    }
-  };
 
   const filteredCuentas = cuentas.filter(cuenta => {
     const matchesSearch = cuenta.codigo.includes(searchTerm) || 
@@ -251,12 +233,7 @@ const PlanCuentasModule = () => {
           <p className="text-slate-600">Gestión del catálogo de cuentas contables</p>
         </div>
         
-        <div className="flex gap-2">
-          <Button onClick={resetearSaldos} variant="outline">
-            <Calculator className="w-4 h-4 mr-2" />
-            Resetear Saldos
-          </Button>
-          <Dialog open={showNewCuenta} onOpenChange={setShowNewCuenta}>
+        <Dialog open={showNewCuenta} onOpenChange={setShowNewCuenta}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
