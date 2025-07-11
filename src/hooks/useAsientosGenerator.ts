@@ -107,8 +107,8 @@ export const useAsientosGenerator = () => {
     });
 
     cuentas.push({
-      codigo: "2113",
-      nombre: "IVA por Pagar",
+      codigo: "2131",
+      nombre: "IVA Débito Fiscal",
       debe: 0,
       haber: ivaVenta
     });
@@ -246,8 +246,8 @@ export const useAsientosGenerator = () => {
           haber: 0
         },
         {
-          codigo: "2113",
-          nombre: "IVA por Pagar",
+          codigo: "2131",
+          nombre: "IVA Débito Fiscal",
           debe: factura.iva,
           haber: 0
         },
