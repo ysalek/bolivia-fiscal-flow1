@@ -117,6 +117,8 @@ const BackupModule = () => {
             { codigo: "21", nombre: "PASIVO CORRIENTE", tipo: "pasivo", nivel: 2, padre: "2", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             { codigo: "2111", nombre: "Cuentas por Pagar", tipo: "pasivo", nivel: 3, padre: "21", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", nivel: 3, padre: "21", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "2131", nombre: "IVA Débito Fiscal", tipo: "pasivo", nivel: 4, padre: "213", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "2141", nombre: "IT por Pagar", tipo: "pasivo", nivel: 4, padre: "214", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             
             // PATRIMONIO
             { codigo: "3", nombre: "PATRIMONIO", tipo: "patrimonio", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
@@ -127,6 +129,9 @@ const BackupModule = () => {
             { codigo: "4", nombre: "INGRESOS", tipo: "ingresos", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             { codigo: "41", nombre: "INGRESOS OPERACIONALES", tipo: "ingresos", nivel: 2, padre: "4", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             { codigo: "411", nombre: "Ventas", tipo: "ingresos", nivel: 3, padre: "41", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "4111", nombre: "Ventas", tipo: "ingresos", nivel: 4, padre: "411", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", nivel: 4, padre: "419", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
+            { codigo: "419", nombre: "OTROS INGRESOS", tipo: "ingresos", nivel: 3, padre: "41", naturaleza: "acreedora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
             
             // GASTOS
             { codigo: "5", nombre: "GASTOS", tipo: "gastos", nivel: 1, naturaleza: "deudora", saldo: 0, activa: true, totalDebe: 0, totalHaber: 0, movimientos: [] },
@@ -172,10 +177,16 @@ const BackupModule = () => {
           'historialInventario': [],
           'kardex': [],
           
+          // DATOS BANCARIOS Y FINANCIEROS - TODO VACÍO
+          'movimientosBanco': [],
+          'movimientosCaja': [],
+          'conciliacionesBancarias': [],
+          'estadosCuenta': [],
+          'transferenciasInternas': [],
+          
           // Otros datos operativos VACÍOS
           'cuentasPorCobrar': [],
           'cuentasPorPagar': [],
-          'movimientosBanco': [],
           'activosFijos': [],
           'nomina': [],
           'empleados': [],
