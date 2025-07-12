@@ -29,7 +29,8 @@ const FacturacionModule = () => {
     generarAsientoInventario, 
     getAsientos,
     generarAsientoPagoFactura,
-    generarAsientoAnulacionFactura
+    generarAsientoAnulacionFactura,
+    actualizarStockProducto
   } = useContabilidadIntegration();
 
   // Cargar datos desde localStorage
@@ -80,6 +81,27 @@ const FacturacionModule = () => {
         facturaValidada.items.forEach(item => {
           const producto = productos.find(p => p.id === item.productoId);
           if (producto && producto.costoUnitario > 0) {
+            // CRÍTICO: Actualizar stock del producto ANTES de crear el movimiento
+            const stockActualizado = actualizarStockProducto(item.productoId, item.cantidad, 'salida');
+            
+            if (!stockActualizado) {
+              toast({
+                title: "Error de Stock",
+                description: `No se pudo descontar el stock del producto ${item.descripcion}`,
+                variant: "destructive"
+              });
+              return; // Detener el proceso si falla la actualización de stock
+            }
+
+            // Actualizar también el estado local de productos
+            setProductos(prevProductos => 
+              prevProductos.map(p => 
+                p.id === item.productoId 
+                  ? { ...p, stockActual: p.stockActual - item.cantidad }
+                  : p
+              )
+            );
+
             const movimientoInventario: MovimientoInventario = {
               id: `${Date.now().toString()}-${item.productoId}`,
               fecha: facturaValidada.fecha,
@@ -97,11 +119,15 @@ const FacturacionModule = () => {
               valorMovimiento: item.cantidad * producto.costoUnitario,
             };
 
+            // Generar asiento contable del movimiento de inventario
             generarAsientoInventario(movimientoInventario);
 
+            // Guardar el movimiento en el historial
             const movimientosExistentes = JSON.parse(localStorage.getItem('movimientosInventario') || '[]');
             const nuevosMovimientos = [movimientoInventario, ...movimientosExistentes];
             localStorage.setItem('movimientosInventario', JSON.stringify(nuevosMovimientos));
+            
+            console.log(`✅ Stock descontado: ${item.descripcion} - Cantidad: ${item.cantidad}`);
           }
         });
 
