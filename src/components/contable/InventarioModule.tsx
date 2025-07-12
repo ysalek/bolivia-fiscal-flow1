@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ProductoInventario, 
@@ -17,6 +17,7 @@ import MovementListTab from "./inventory/MovementListTab";
 import AlertsTab from "./inventory/AlertsTab";
 import MethodologyTab from "./inventory/MethodologyTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
+import { Producto } from "./products/ProductsData";
 
 const InventarioModule = () => {
   const [productos, setProductos] = useState<ProductoInventario[]>([]);
@@ -31,6 +32,57 @@ const InventarioModule = () => {
 
   const { generarAsientoInventario } = useContabilidadIntegration();
   const { toast } = useToast();
+
+  // Cargar y sincronizar productos del módulo de productos
+  useEffect(() => {
+    const cargarProductos = () => {
+      // Primero cargar productos desde localStorage (del módulo de productos)
+      const productosGuardados = localStorage.getItem('productos');
+      
+      if (productosGuardados) {
+        const productos: Producto[] = JSON.parse(productosGuardados);
+        
+        // Convertir productos del módulo de productos a formato de inventario
+        const productosInventario: ProductoInventario[] = productos
+          .filter(p => p.activo) // Solo productos activos
+          .map(producto => ({
+            id: producto.id,
+            codigo: producto.codigo,
+            nombre: producto.nombre,
+            categoria: producto.categoria,
+            stockActual: producto.stockActual || 0,
+            stockMinimo: producto.stockMinimo || 5,
+            stockMaximo: (producto.stockMinimo || 5) * 10, // Calculamos stockMaximo como 10x el mínimo
+            costoUnitario: producto.costoUnitario || 0,
+            costoPromedioPonderado: producto.costoUnitario || 0,
+            precioVenta: producto.precioVenta || 0,
+            ubicacion: 'Almacén Principal',
+            fechaUltimoMovimiento: producto.fechaActualizacion,
+            valorTotalInventario: (producto.stockActual || 0) * (producto.costoUnitario || 0)
+          }));
+          
+        setProductos(productosInventario);
+      } else {
+        // Si no hay productos guardados, usar los datos iniciales
+        setProductos(productosIniciales);
+      }
+    };
+
+    cargarProductos();
+    
+    // Escuchar cambios en localStorage para sincronizar automáticamente
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'productos') {
+        cargarProductos();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoActualizado: ProductoInventario) => {
     try {
@@ -60,6 +112,19 @@ const InventarioModule = () => {
         const productosActualizados = prev.map(p => 
           p.id === productoActualizado.id ? productoActualizado : p
         );
+        
+        // Sincronizar cambios con el módulo de productos
+        const productosLocalStorage = localStorage.getItem('productos');
+        if (productosLocalStorage) {
+          const productos: Producto[] = JSON.parse(productosLocalStorage);
+          const productosActualizadosLS = productos.map(p => 
+            p.id === productoActualizado.id 
+              ? { ...p, stockActual: productoActualizado.stockActual, fechaActualizacion: new Date().toISOString().slice(0, 10) }
+              : p
+          );
+          localStorage.setItem('productos', JSON.stringify(productosActualizadosLS));
+        }
+        
         console.log("Productos actualizados:", productosActualizados.find(p => p.id === productoActualizado.id));
         return productosActualizados;
       });
