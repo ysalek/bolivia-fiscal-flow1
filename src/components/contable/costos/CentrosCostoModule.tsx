@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { 
   Building2, 
   Plus, 
@@ -17,26 +18,33 @@ import {
   BarChart3, 
   PieChart,
   TrendingUp,
+  TrendingDown,
   Calculator,
   Factory,
   Store,
   Truck,
-  Users
+  Users,
+  DollarSign,
+  AlertTriangle,
+  Target,
+  Activity
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface CentroCosto {
   id: string;
   codigo: string;
   nombre: string;
   descripcion: string;
-  tipo: 'produccion' | 'administracion' | 'ventas' | 'distribucion';
+  tipo: 'administracion' | 'operacional' | 'ventas' | 'financiero' | 'limpieza' | 'mantenimiento';
   responsable: string;
   presupuesto: number;
   presupuestoEjecutado: number;
   estado: 'activo' | 'inactivo';
   fechaCreacion: string;
   departamento: string;
+  cuentasContables: string[]; // Códigos de cuentas del plan de cuentas asociadas
 }
 
 interface AsignacionCosto {
@@ -48,11 +56,36 @@ interface AsignacionCosto {
   fecha: string;
   tipo: 'directo' | 'indirecto';
   comprobante: string;
+  cuentaContable: string;
 }
+
+interface AnalisisRentabilidad {
+  ingresosTotales: number;
+  gastosTotales: number;
+  gastosOperacionales: number;
+  gastosAdministrativos: number;
+  gastosFinancieros: number;
+  gastosLimpieza: number;
+  gastosMantenimiento: number;
+  gastosVentas: number;
+  utilidadBruta: number;
+  utilidadOperacional: number;
+  utilidadNeta: number;
+  margenBruto: number;
+  margenOperacional: number;
+  margenNeto: number;
+  costoOperacion: number;
+  eficienciaOperacional: number;
+}
+
+const COLORES_GRAFICOS = [
+  '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#0088fe', '#ff8c42'
+];
 
 const CentrosCostoModule = () => {
   const [centrosCosto, setCentrosCosto] = useState<CentroCosto[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionCosto[]>([]);
+  const [analisisRentabilidad, setAnalisisRentabilidad] = useState<AnalisisRentabilidad | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingCentro, setEditingCentro] = useState<CentroCosto | null>(null);
@@ -63,18 +96,20 @@ const CentrosCostoModule = () => {
     codigo: string;
     nombre: string;
     descripcion: string;
-    tipo: 'produccion' | 'administracion' | 'ventas' | 'distribucion';
+    tipo: 'administracion' | 'operacional' | 'ventas' | 'financiero' | 'limpieza' | 'mantenimiento';
     responsable: string;
     presupuesto: number;
     departamento: string;
+    cuentasContables: string[];
   }>({
     codigo: '',
     nombre: '',
     descripcion: '',
-    tipo: 'produccion',
+    tipo: 'administracion',
     responsable: '',
     presupuesto: 0,
-    departamento: ''
+    departamento: '',
+    cuentasContables: []
   });
 
   const [assignFormData, setAssignFormData] = useState<{
@@ -83,18 +118,211 @@ const CentrosCostoModule = () => {
     monto: number;
     tipo: 'directo' | 'indirecto';
     comprobante: string;
+    cuentaContable: string;
   }>({
     centroCostoId: '',
     concepto: '',
     monto: 0,
     tipo: 'directo',
-    comprobante: ''
+    comprobante: '',
+    cuentaContable: ''
   });
 
   useEffect(() => {
     loadCentrosCosto();
     loadAsignaciones();
+    inicializarCentrosPorDefecto();
+    calcularAnalisisRentabilidad();
   }, []);
+
+  useEffect(() => {
+    calcularAnalisisRentabilidad();
+  }, [asignaciones]);
+
+  const inicializarCentrosPorDefecto = () => {
+    const stored = localStorage.getItem('centrosCosto');
+    if (!stored || JSON.parse(stored).length === 0) {
+      const centrosPorDefecto: CentroCosto[] = [
+        {
+          id: '1',
+          codigo: 'ADM001',
+          nombre: 'Administración General',
+          descripcion: 'Gastos administrativos generales de la empresa',
+          tipo: 'administracion',
+          responsable: 'Gerente General',
+          presupuesto: 50000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Administración',
+          cuentasContables: ['5211', '5212', '5231', '5191']
+        },
+        {
+          id: '2',
+          codigo: 'FIN001',
+          nombre: 'Gastos Financieros',
+          descripcion: 'Intereses bancarios, comisiones y gastos financieros',
+          tipo: 'financiero',
+          responsable: 'Contador',
+          presupuesto: 15000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Finanzas',
+          cuentasContables: ['5291']
+        },
+        {
+          id: '3',
+          codigo: 'LIM001',
+          nombre: 'Limpieza y Aseo',
+          descripcion: 'Productos de limpieza, servicios de aseo y mantenimiento básico',
+          tipo: 'limpieza',
+          responsable: 'Jefe de Servicios',
+          presupuesto: 8000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Servicios',
+          cuentasContables: ['5251']
+        },
+        {
+          id: '4',
+          codigo: 'MAN001',
+          nombre: 'Mantenimiento y Reparaciones',
+          descripcion: 'Mantenimiento de equipos, reparaciones y servicios técnicos',
+          tipo: 'mantenimiento',
+          responsable: 'Jefe de Mantenimiento',
+          presupuesto: 12000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Mantenimiento',
+          cuentasContables: ['5271']
+        },
+        {
+          id: '5',
+          codigo: 'VEN001',
+          nombre: 'Gastos de Ventas',
+          descripcion: 'Marketing, publicidad y gastos de ventas',
+          tipo: 'ventas',
+          responsable: 'Gerente de Ventas',
+          presupuesto: 20000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Ventas',
+          cuentasContables: ['522']
+        },
+        {
+          id: '6',
+          codigo: 'OPE001',
+          nombre: 'Gastos Operacionales',
+          descripcion: 'Costos operativos directos del negocio',
+          tipo: 'operacional',
+          responsable: 'Gerente de Operaciones',
+          presupuesto: 35000,
+          presupuestoEjecutado: 0,
+          estado: 'activo',
+          fechaCreacion: new Date().toISOString().split('T')[0],
+          departamento: 'Operaciones',
+          cuentasContables: ['5111', '511']
+        }
+      ];
+      
+      localStorage.setItem('centrosCosto', JSON.stringify(centrosPorDefecto));
+      setCentrosCosto(centrosPorDefecto);
+    }
+  };
+
+  const calcularAnalisisRentabilidad = () => {
+    try {
+      // Obtener datos reales del sistema contable
+      const comprobantes = JSON.parse(localStorage.getItem('comprobantes') || '[]');
+      const facturas = JSON.parse(localStorage.getItem('invoices') || '[]');
+      
+      // Calcular ingresos totales de facturas
+      const ingresosTotales = facturas
+        .filter((f: any) => f.status === 'paid')
+        .reduce((total: number, f: any) => total + (f.total || 0), 0);
+
+      // Calcular gastos por tipo de centro de costo
+      const gastosAdministrativos = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'administracion';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosFinancieros = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'financiero';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosLimpieza = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'limpieza';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosMantenimiento = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'mantenimiento';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosVentas = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'ventas';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosOperacionales = asignaciones
+        .filter(a => {
+          const centro = centrosCosto.find(c => c.id === a.centroCostoId);
+          return centro?.tipo === 'operacional';
+        })
+        .reduce((total, a) => total + a.monto, 0);
+
+      const gastosTotales = gastosAdministrativos + gastosFinancieros + gastosLimpieza + 
+                           gastosMantenimiento + gastosVentas + gastosOperacionales;
+
+      const costoOperacion = gastosAdministrativos + gastosFinancieros + gastosLimpieza + gastosMantenimiento;
+      const utilidadBruta = ingresosTotales - gastosOperacionales;
+      const utilidadOperacional = utilidadBruta - costoOperacion - gastosVentas;
+      const utilidadNeta = utilidadOperacional;
+
+      const margenBruto = ingresosTotales > 0 ? (utilidadBruta / ingresosTotales) * 100 : 0;
+      const margenOperacional = ingresosTotales > 0 ? (utilidadOperacional / ingresosTotales) * 100 : 0;
+      const margenNeto = ingresosTotales > 0 ? (utilidadNeta / ingresosTotales) * 100 : 0;
+      const eficienciaOperacional = ingresosTotales > 0 ? (costoOperacion / ingresosTotales) * 100 : 0;
+
+      setAnalisisRentabilidad({
+        ingresosTotales,
+        gastosTotales,
+        gastosOperacionales,
+        gastosAdministrativos,
+        gastosFinancieros,
+        gastosLimpieza,
+        gastosMantenimiento,
+        gastosVentas,
+        utilidadBruta,
+        utilidadOperacional,
+        utilidadNeta,
+        margenBruto,
+        margenOperacional,
+        margenNeto,
+        costoOperacion,
+        eficienciaOperacional
+      });
+    } catch (error) {
+      console.error('Error calculando análisis de rentabilidad:', error);
+    }
+  };
 
   const loadCentrosCosto = () => {
     const stored = localStorage.getItem('centrosCosto');
@@ -134,7 +362,8 @@ const CentrosCostoModule = () => {
       presupuestoEjecutado: editingCentro?.presupuestoEjecutado || 0,
       estado: 'activo',
       fechaCreacion: editingCentro?.fechaCreacion || new Date().toISOString().split('T')[0],
-      departamento: formData.departamento
+      departamento: formData.departamento,
+      cuentasContables: formData.cuentasContables
     };
 
     if (editingCentro) {
@@ -164,7 +393,8 @@ const CentrosCostoModule = () => {
       monto: assignFormData.monto,
       fecha: new Date().toISOString().split('T')[0],
       tipo: assignFormData.tipo,
-      comprobante: assignFormData.comprobante
+      comprobante: assignFormData.comprobante,
+      cuentaContable: assignFormData.cuentaContable
     };
 
     saveAsignaciones([...asignaciones, asignacion]);
@@ -183,7 +413,8 @@ const CentrosCostoModule = () => {
       concepto: '',
       monto: 0,
       tipo: 'directo',
-      comprobante: ''
+      comprobante: '',
+      cuentaContable: ''
     });
     setIsAssignDialogOpen(false);
   };
@@ -193,10 +424,11 @@ const CentrosCostoModule = () => {
       codigo: '',
       nombre: '',
       descripcion: '',
-      tipo: 'produccion',
+      tipo: 'administracion',
       responsable: '',
       presupuesto: 0,
-      departamento: ''
+      departamento: '',
+      cuentasContables: []
     });
     setEditingCentro(null);
   };
@@ -209,7 +441,8 @@ const CentrosCostoModule = () => {
       tipo: centro.tipo,
       responsable: centro.responsable,
       presupuesto: centro.presupuesto,
-      departamento: centro.departamento
+      departamento: centro.departamento,
+      cuentasContables: centro.cuentasContables || []
     });
     setEditingCentro(centro);
     setIsDialogOpen(true);
@@ -223,28 +456,26 @@ const CentrosCostoModule = () => {
 
   const getTipoIcon = (tipo: string) => {
     switch (tipo) {
-      case 'produccion': return <Factory className="w-4 h-4" />;
+      case 'operacional': return <Factory className="w-4 h-4" />;
       case 'administracion': return <Building2 className="w-4 h-4" />;
       case 'ventas': return <Store className="w-4 h-4" />;
-      case 'distribucion': return <Truck className="w-4 h-4" />;
+      case 'financiero': return <DollarSign className="w-4 h-4" />;
+      case 'limpieza': return <Users className="w-4 h-4" />;
+      case 'mantenimiento': return <Activity className="w-4 h-4" />;
       default: return <Building2 className="w-4 h-4" />;
     }
   };
 
   const getTipoBadgeColor = (tipo: string) => {
     switch (tipo) {
-      case 'produccion': return 'bg-blue-100 text-blue-800';
+      case 'operacional': return 'bg-blue-100 text-blue-800';
       case 'administracion': return 'bg-gray-100 text-gray-800';
       case 'ventas': return 'bg-green-100 text-green-800';
-      case 'distribucion': return 'bg-purple-100 text-purple-800';
+      case 'financiero': return 'bg-yellow-100 text-yellow-800';
+      case 'limpieza': return 'bg-purple-100 text-purple-800';
+      case 'mantenimiento': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const calcularTotalAsignado = (centroCostoId: string) => {
-    return asignaciones
-      .filter(a => a.centroCostoId === centroCostoId)
-      .reduce((total, a) => total + a.monto, 0);
   };
 
   const calcularPorcentajeEjecucion = (centro: CentroCosto) => {
@@ -252,17 +483,68 @@ const CentrosCostoModule = () => {
     return (centro.presupuestoEjecutado / centro.presupuesto) * 100;
   };
 
+  const obtenerDatosGraficoPorcentajes = () => {
+    if (!analisisRentabilidad) return [];
+    
+    const total = analisisRentabilidad.ingresosTotales;
+    if (total === 0) return [];
+
+    return [
+      { 
+        name: 'Gastos Administración', 
+        value: (analisisRentabilidad.gastosAdministrativos / total) * 100,
+        monto: analisisRentabilidad.gastosAdministrativos 
+      },
+      { 
+        name: 'Gastos Financieros', 
+        value: (analisisRentabilidad.gastosFinancieros / total) * 100,
+        monto: analisisRentabilidad.gastosFinancieros 
+      },
+      { 
+        name: 'Gastos Limpieza', 
+        value: (analisisRentabilidad.gastosLimpieza / total) * 100,
+        monto: analisisRentabilidad.gastosLimpieza 
+      },
+      { 
+        name: 'Gastos Mantenimiento', 
+        value: (analisisRentabilidad.gastosMantenimiento / total) * 100,
+        monto: analisisRentabilidad.gastosMantenimiento 
+      },
+      { 
+        name: 'Gastos Ventas', 
+        value: (analisisRentabilidad.gastosVentas / total) * 100,
+        monto: analisisRentabilidad.gastosVentas 
+      },
+      { 
+        name: 'Gastos Operacionales', 
+        value: (analisisRentabilidad.gastosOperacionales / total) * 100,
+        monto: analisisRentabilidad.gastosOperacionales 
+      }
+    ].filter(item => item.value > 0);
+  };
+
+  const obtenerDatosCentrosCosto = () => {
+    return centrosCosto.map(centro => ({
+      nombre: centro.nombre,
+      presupuesto: centro.presupuesto,
+      ejecutado: centro.presupuestoEjecutado,
+      porcentaje: calcularPorcentajeEjecucion(centro)
+    }));
+  };
+
+  const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">Centros de Costo</h2>
-          <p className="text-muted-foreground">Gestión y control de centros de costo empresariales</p>
+          <h2 className="text-3xl font-bold tracking-tight">Centros de Costo</h2>
+          <p className="text-muted-foreground">Control y análisis de costos operacionales empresariales</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="hover-scale">
                 <Calculator className="w-4 h-4 mr-2" />
                 Asignar Costo
               </Button>
@@ -279,7 +561,7 @@ const CentrosCostoModule = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                       {centrosCosto.map((centro) => (
                         <SelectItem key={centro.id} value={centro.id}>
                           {centro.codigo} - {centro.nombre}
@@ -312,13 +594,32 @@ const CentrosCostoModule = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="cuentaContable">Cuenta Contable</Label>
+                  <Select value={assignFormData.cuentaContable} onValueChange={(value) => 
+                    setAssignFormData({...assignFormData, cuentaContable: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cuenta" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
+                      {planCuentas
+                        .filter((cuenta: any) => cuenta.tipo === 'gastos')
+                        .map((cuenta: any) => (
+                        <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
+                          {cuenta.codigo} - {cuenta.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="tipo">Tipo de Costo</Label>
                   <Select value={assignFormData.tipo} onValueChange={(value: 'directo' | 'indirecto') => 
                     setAssignFormData({...assignFormData, tipo: value})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                       <SelectItem value="directo">Directo</SelectItem>
                       <SelectItem value="indirecto">Indirecto</SelectItem>
                     </SelectContent>
@@ -346,7 +647,7 @@ const CentrosCostoModule = () => {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm}>
+              <Button onClick={resetForm} className="hover-scale">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Centro
               </Button>
@@ -395,11 +696,13 @@ const CentrosCostoModule = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="produccion">Producción</SelectItem>
+                      <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                         <SelectItem value="administracion">Administración</SelectItem>
+                        <SelectItem value="operacional">Operacional</SelectItem>
                         <SelectItem value="ventas">Ventas</SelectItem>
-                        <SelectItem value="distribucion">Distribución</SelectItem>
+                        <SelectItem value="financiero">Financiero</SelectItem>
+                        <SelectItem value="limpieza">Limpieza</SelectItem>
+                        <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -424,7 +727,7 @@ const CentrosCostoModule = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="presupuesto">Presupuesto (Bs.)</Label>
+                    <Label htmlFor="presupuesto">Presupuesto Anual (Bs.)</Label>
                     <Input
                       id="presupuesto"
                       type="number"
@@ -451,9 +754,10 @@ const CentrosCostoModule = () => {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="centros">Centros de Costo</TabsTrigger>
           <TabsTrigger value="asignaciones">Asignaciones</TabsTrigger>
+          <TabsTrigger value="analisis">Análisis Financiero</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
         </TabsList>
 
@@ -481,7 +785,7 @@ const CentrosCostoModule = () => {
                   {centrosCosto.map((centro) => {
                     const porcentaje = calcularPorcentajeEjecucion(centro);
                     return (
-                      <TableRow key={centro.id}>
+                      <TableRow key={centro.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">{centro.codigo}</TableCell>
                         <TableCell>{centro.nombre}</TableCell>
                         <TableCell>
@@ -497,13 +801,8 @@ const CentrosCostoModule = () => {
                         <TableCell>Bs. {centro.presupuestoEjecutado.toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div className="w-12 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${porcentaje > 100 ? 'bg-red-500' : porcentaje > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                                style={{ width: `${Math.min(porcentaje, 100)}%` }}
-                              />
-                            </div>
-                            <span className={`text-sm ${porcentaje > 100 ? 'text-red-600' : ''}`}>
+                            <Progress value={Math.min(porcentaje, 100)} className="w-16" />
+                            <span className={`text-sm ${porcentaje > 100 ? 'text-red-600' : porcentaje > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
                               {porcentaje.toFixed(1)}%
                             </span>
                           </div>
@@ -514,20 +813,12 @@ const CentrosCostoModule = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(centro)}
-                            >
-                              <Edit className="w-3 h-3" />
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(centro)}>
+                              <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDelete(centro.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(centro.id)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -552,6 +843,7 @@ const CentrosCostoModule = () => {
                     <TableHead>Fecha</TableHead>
                     <TableHead>Centro de Costo</TableHead>
                     <TableHead>Concepto</TableHead>
+                    <TableHead>Cuenta Contable</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Comprobante</TableHead>
@@ -559,10 +851,11 @@ const CentrosCostoModule = () => {
                 </TableHeader>
                 <TableBody>
                   {asignaciones.map((asignacion) => (
-                    <TableRow key={asignacion.id}>
+                    <TableRow key={asignacion.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>{asignacion.fecha}</TableCell>
                       <TableCell>{asignacion.centroCostoNombre}</TableCell>
                       <TableCell>{asignacion.concepto}</TableCell>
+                      <TableCell>{asignacion.cuentaContable}</TableCell>
                       <TableCell>
                         <Badge variant={asignacion.tipo === 'directo' ? 'default' : 'secondary'}>
                           {asignacion.tipo}
@@ -578,9 +871,194 @@ const CentrosCostoModule = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="analisis" className="space-y-4">
+          {analisisRentabilidad && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="hover-scale">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">Bs. {analisisRentabilidad.ingresosTotales.toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="hover-scale">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">Bs. {analisisRentabilidad.gastosTotales.toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="hover-scale">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Utilidad Neta</CardTitle>
+                    <Target className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${analisisRentabilidad.utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      Bs. {analisisRentabilidad.utilidadNeta.toLocaleString()}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="hover-scale">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Margen Neto</CardTitle>
+                    <PieChart className="h-4 w-4 text-purple-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${analisisRentabilidad.margenNeto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {analisisRentabilidad.margenNeto.toFixed(1)}%
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distribución de Gastos por Centro de Costo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {obtenerDatosGraficoPorcentajes().map((item, index) => (
+                      <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-4 h-4 rounded" 
+                            style={{ backgroundColor: COLORES_GRAFICOS[index % COLORES_GRAFICOS.length] }}
+                          />
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold">Bs. {item.monto.toLocaleString()}</div>
+                          <div className="text-sm text-muted-foreground">{item.value.toFixed(1)}%</div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Análisis de Eficiencia Operacional</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span>Costo de Operación:</span>
+                      <span className="font-bold">Bs. {analisisRentabilidad.costoOperacion.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Eficiencia Operacional:</span>
+                      <span className={`font-bold ${analisisRentabilidad.eficienciaOperacional <= 30 ? 'text-green-600' : analisisRentabilidad.eficienciaOperacional <= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {analisisRentabilidad.eficienciaOperacional.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-4">
+                      <Progress 
+                        value={analisisRentabilidad.eficienciaOperacional} 
+                        className="w-full" 
+                      />
+                    </div>
+                    
+                    {analisisRentabilidad.eficienciaOperacional > 50 && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <span className="text-sm text-red-600">
+                          Alto costo operacional. Considere optimizar gastos administrativos.
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Desglose Detallado de Gastos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos Administrativos</span>
+                        <Building2 className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosAdministrativos.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosAdministrativos / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos Financieros</span>
+                        <DollarSign className="w-4 h-4 text-yellow-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosFinancieros.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosFinancieros / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos de Limpieza</span>
+                        <Users className="w-4 h-4 text-purple-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosLimpieza.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosLimpieza / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos de Mantenimiento</span>
+                        <Activity className="w-4 h-4 text-orange-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosMantenimiento.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosMantenimiento / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos de Ventas</span>
+                        <Store className="w-4 h-4 text-green-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosVentas.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosVentas / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Gastos Operacionales</span>
+                        <Factory className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div className="text-xl font-bold">Bs. {analisisRentabilidad.gastosOperacionales.toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {analisisRentabilidad.ingresosTotales > 0 ? ((analisisRentabilidad.gastosOperacionales / analisisRentabilidad.ingresosTotales) * 100).toFixed(1) : 0}% de ingresos
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="reportes" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
+            <Card className="hover-scale">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Centros</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -590,7 +1068,7 @@ const CentrosCostoModule = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="hover-scale">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Presupuesto Total</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -602,7 +1080,7 @@ const CentrosCostoModule = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="hover-scale">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Ejecutado</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -614,7 +1092,7 @@ const CentrosCostoModule = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="hover-scale">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">% Ejecución Global</CardTitle>
                 <PieChart className="h-4 w-4 text-muted-foreground" />
@@ -632,6 +1110,31 @@ const CentrosCostoModule = () => {
 
           <Card>
             <CardHeader>
+              <CardTitle>Presupuesto vs Ejecutado por Centro</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={obtenerDatosCentrosCosto()}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="nombre" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: any, name: any) => [`Bs. ${value.toLocaleString()}`, name]}
+                  />
+                  <Bar dataKey="presupuesto" fill="#8884d8" name="Presupuesto" />
+                  <Bar dataKey="ejecutado" fill="#82ca9d" name="Ejecutado" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Ejecución por Centro de Costo</CardTitle>
             </CardHeader>
             <CardContent>
@@ -646,14 +1149,13 @@ const CentrosCostoModule = () => {
                           Bs. {centro.presupuestoEjecutado.toLocaleString()} / Bs. {centro.presupuesto.toLocaleString()}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className={`h-3 rounded-full ${porcentaje > 100 ? 'bg-red-500' : porcentaje > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                          style={{ width: `${Math.min(porcentaje, 100)}%` }}
-                        />
-                      </div>
+                      <Progress 
+                        value={Math.min(porcentaje, 100)} 
+                        className={`w-full ${porcentaje > 100 ? 'bg-red-200' : porcentaje > 80 ? 'bg-yellow-200' : 'bg-green-200'}`}
+                      />
                       <div className="text-right text-sm text-muted-foreground">
                         {porcentaje.toFixed(1)}%
+                        {porcentaje > 100 && <span className="text-red-600 ml-2">⚠️ Sobre presupuesto</span>}
                       </div>
                     </div>
                   );
