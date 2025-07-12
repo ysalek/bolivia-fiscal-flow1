@@ -37,52 +37,11 @@ interface ComprobanteFormProps {
   onCancel: () => void;
 }
 
+import { inicializarPlanCuentas } from "@/utils/planCuentasInicial";
+
 // Función para obtener el plan de cuentas dinámico
 const obtenerPlanCuentas = () => {
-  const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
-  if (planCuentas.length === 0) {
-    // Si no existe plan de cuentas, inicializar con cuentas básicas
-    const planBasico = [
-      { codigo: "1111", nombre: "Caja General", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1114", nombre: "Banco Sol", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1115", nombre: "Banco Unión", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1121", nombre: "Cuentas por Cobrar Comerciales", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1131", nombre: "Inventarios - Mercaderías", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1141", nombre: "Gastos Pagados por Anticipado", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "1213", nombre: "Vehículos", tipo: "activo", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "2111", nombre: "Cuentas por Pagar Comerciales", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2121", nombre: "Sueldos y Salarios por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2131", nombre: "IVA Débito Fiscal", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2132", nombre: "IVA Crédito Fiscal", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2141", nombre: "IT por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "2151", nombre: "Previsiones Sociales por Pagar", tipo: "pasivo", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "3111", nombre: "Capital Social", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "3211", nombre: "Utilidades Acumuladas", tipo: "patrimonio", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "4111", nombre: "Ventas", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "4121", nombre: "Descuentos Obtenidos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "4191", nombre: "Otros Ingresos", tipo: "ingresos", naturaleza: "acreedora", saldo: 0, activa: true },
-      { codigo: "5111", nombre: "Costo de Ventas", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5191", nombre: "Gastos Varios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5221", nombre: "Cargas Sociales", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5241", nombre: "Alquileres", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5251", nombre: "Materiales y Suministros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5261", nombre: "Combustibles y Lubricantes", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5271", nombre: "Mantenimiento y Reparaciones", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5281", nombre: "Gastos de Viaje", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true },
-      { codigo: "5291", nombre: "Gastos Financieros", tipo: "gastos", naturaleza: "deudora", saldo: 0, activa: true }
-    ];
-    localStorage.setItem('planCuentas', JSON.stringify(planBasico));
-    return planBasico;
-  }
-  return planCuentas;
+  return inicializarPlanCuentas();
 };
 
 const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {

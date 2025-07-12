@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Search, Edit, Trash2, FolderTree } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { inicializarPlanCuentas } from "@/utils/planCuentasInicial";
 
 interface Cuenta {
   codigo: string;
@@ -39,74 +40,8 @@ const PlanCuentasModule = () => {
 
   // Cargar el plan de cuentas desde localStorage al inicializar
   useEffect(() => {
-    const savedCuentas = localStorage.getItem('planCuentas');
-    if (savedCuentas) {
-      setCuentas(JSON.parse(savedCuentas));
-    } else {
-      // Plan de cuentas inicial
-      const initialCuentas: Cuenta[] = [
-    // ACTIVOS (1000-1999)
-    { codigo: "1", nombre: "ACTIVOS", tipo: "activo", nivel: 1, naturaleza: "deudora", saldo: 150000, activa: true },
-    { codigo: "11", nombre: "ACTIVO CORRIENTE", tipo: "activo", nivel: 2, padre: "1", naturaleza: "deudora", saldo: 75000, activa: true },
-    { codigo: "111", nombre: "DISPONIBLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 25000, activa: true },
-    { codigo: "1111", nombre: "Caja General", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 5000, activa: true },
-    { codigo: "1112", nombre: "Banco Nacional de Bolivia", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 15000, activa: true },
-    { codigo: "1113", nombre: "Banco Mercantil Santa Cruz", tipo: "activo", nivel: 4, padre: "111", naturaleza: "deudora", saldo: 5000, activa: true },
-    
-    { codigo: "112", nombre: "EXIGIBLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 30000, activa: true },
-    { codigo: "1121", nombre: "Cuentas por Cobrar", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 25000, activa: true },
-    { codigo: "1122", nombre: "Documentos por Cobrar", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 5000, activa: true },
-    { codigo: "1142", nombre: "IVA Crédito Fiscal", tipo: "activo", nivel: 4, padre: "112", naturaleza: "deudora", saldo: 0, activa: true },
-    
-    { codigo: "113", nombre: "REALIZABLE", tipo: "activo", nivel: 3, padre: "11", naturaleza: "deudora", saldo: 20000, activa: true },
-    { codigo: "1131", nombre: "Inventarios", tipo: "activo", nivel: 4, padre: "113", naturaleza: "deudora", saldo: 20000, activa: true },
-    
-    { codigo: "12", nombre: "ACTIVO NO CORRIENTE", tipo: "activo", nivel: 2, padre: "1", naturaleza: "deudora", saldo: 75000, activa: true },
-    { codigo: "121", nombre: "BIENES DE USO", tipo: "activo", nivel: 3, padre: "12", naturaleza: "deudora", saldo: 75000, activa: true },
-    { codigo: "1211", nombre: "Muebles y Enseres", tipo: "activo", nivel: 4, padre: "121", naturaleza: "deudora", saldo: 25000, activa: true },
-    { codigo: "1212", nombre: "Equipos de Computación", tipo: "activo", nivel: 4, padre: "121", naturaleza: "deudora", saldo: 15000, activa: true },
-    { codigo: "1213", nombre: "Vehículos", tipo: "activo", nivel: 4, padre: "121", naturaleza: "deudora", saldo: 35000, activa: true },
-    
-    // PASIVOS (2000-2999)
-    { codigo: "2", nombre: "PASIVOS", tipo: "pasivo", nivel: 1, naturaleza: "acreedora", saldo: 60000, activa: true },
-    { codigo: "21", nombre: "PASIVO CORRIENTE", tipo: "pasivo", nivel: 2, padre: "2", naturaleza: "acreedora", saldo: 40000, activa: true },
-    { codigo: "211", nombre: "EXIGIBLE", tipo: "pasivo", nivel: 3, padre: "21", naturaleza: "acreedora", saldo: 40000, activa: true },
-    { codigo: "2111", nombre: "Cuentas por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 25000, activa: true },
-    { codigo: "2112", nombre: "Documentos por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 10000, activa: true },
-    { codigo: "2113", nombre: "IVA por Pagar", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 5000, activa: true },
-    { codigo: "2141", nombre: "IVA Débito Fiscal", tipo: "pasivo", nivel: 4, padre: "211", naturaleza: "acreedora", saldo: 0, activa: true },
-    
-    { codigo: "22", nombre: "PASIVO NO CORRIENTE", tipo: "pasivo", nivel: 2, padre: "2", naturaleza: "acreedora", saldo: 20000, activa: true },
-    { codigo: "221", nombre: "DEUDAS A LARGO PLAZO", tipo: "pasivo", nivel: 3, padre: "22", naturaleza: "acreedora", saldo: 20000, activa: true },
-    { codigo: "2211", nombre: "Préstamos Bancarios LP", tipo: "pasivo", nivel: 4, padre: "221", naturaleza: "acreedora", saldo: 20000, activa: true },
-    
-    // PATRIMONIO (3000-3999)
-    { codigo: "3", nombre: "PATRIMONIO", tipo: "patrimonio", nivel: 1, naturaleza: "acreedora", saldo: 90000, activa: true },
-    { codigo: "31", nombre: "CAPITAL", tipo: "patrimonio", nivel: 2, padre: "3", naturaleza: "acreedora", saldo: 80000, activa: true },
-    { codigo: "311", nombre: "Capital Social", tipo: "patrimonio", nivel: 3, padre: "31", naturaleza: "acreedora", saldo: 80000, activa: true },
-    { codigo: "32", nombre: "RESULTADOS", tipo: "patrimonio", nivel: 2, padre: "3", naturaleza: "acreedora", saldo: 10000, activa: true },
-    { codigo: "321", nombre: "Utilidades del Ejercicio", tipo: "patrimonio", nivel: 3, padre: "32", naturaleza: "acreedora", saldo: 10000, activa: true },
-    
-    // INGRESOS (4000-4999)
-    { codigo: "4", nombre: "INGRESOS", tipo: "ingresos", nivel: 1, naturaleza: "acreedora", saldo: 0, activa: true },
-    { codigo: "41", nombre: "INGRESOS OPERACIONALES", tipo: "ingresos", nivel: 2, padre: "4", naturaleza: "acreedora", saldo: 0, activa: true },
-    { codigo: "411", nombre: "Ventas", tipo: "ingresos", nivel: 3, padre: "41", naturaleza: "acreedora", saldo: 0, activa: true },
-    { codigo: "4111", nombre: "Ventas de Productos", tipo: "ingresos", nivel: 4, padre: "411", naturaleza: "acreedora", saldo: 0, activa: true },
-    
-    // GASTOS (5000-5999)
-    { codigo: "5", nombre: "GASTOS", tipo: "gastos", nivel: 1, naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "51", nombre: "COSTO DE VENTAS", tipo: "gastos", nivel: 2, padre: "5", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "511", nombre: "Costo de Productos Vendidos", tipo: "gastos", nivel: 3, padre: "51", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "52", nombre: "GASTOS OPERACIONALES", tipo: "gastos", nivel: 2, padre: "5", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "521", nombre: "Gastos Administrativos", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "5211", nombre: "Sueldos y Salarios", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "5212", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "5231", nombre: "Servicios Básicos", tipo: "gastos", nivel: 4, padre: "521", naturaleza: "deudora", saldo: 0, activa: true },
-    { codigo: "522", nombre: "Gastos de Ventas", tipo: "gastos", nivel: 3, padre: "52", naturaleza: "deudora", saldo: 0, activa: true },
-      ];
-      setCuentas(initialCuentas);
-      localStorage.setItem('planCuentas', JSON.stringify(initialCuentas));
-    }
+    const cuentasInicializadas = inicializarPlanCuentas();
+    setCuentas(cuentasInicializadas);
   }, []);
 
   // Guardar cambios en localStorage cada vez que se actualicen las cuentas
