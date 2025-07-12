@@ -94,8 +94,8 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
 
   const calculateSubtotal = () => items.reduce((total, item) => total + item.subtotal, 0);
   const subtotal = calculateSubtotal();
-  const iva = subtotal * 0.13;
-  const total = subtotal + iva;
+  const iva = subtotal * 0.13; // IVA débito fiscal - se registra por separado
+  const total = subtotal; // En compras, el total es solo el subtotal, el IVA se debita aparte
 
   const handleSubmit = () => {
     if (!validateForm()) {
@@ -115,7 +115,7 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
       subtotal,
       descuentoTotal: 0,
       iva,
-      total,
+      total: subtotal + iva, // Total real incluye IVA para el pago, pero contablemente se separa
       estado: 'recibida',
       observaciones: observaciones,
       fechaCreacion: new Date().toISOString().slice(0, 10),
@@ -204,17 +204,20 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
         <div className="flex justify-end pt-6">
             <div className="w-full max-w-sm space-y-2 p-4 bg-slate-50 rounded-lg border">
                 <div className="flex justify-between text-slate-600">
-                    <span>Subtotal</span>
+                    <span>Subtotal (Costo de Productos)</span>
                     <span>Bs. {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                    <span>IVA (13%)</span>
+                    <span>IVA Débito Fiscal (13%)</span>
                     <span>Bs. {iva.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                    <span>Total a Pagar</span>
-                    <span className="text-blue-600">Bs. {total.toFixed(2)}</span>
+                    <span>Total a Pagar (Subtotal + IVA)</span>
+                    <span className="text-blue-600">Bs. {(subtotal + iva).toFixed(2)}</span>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  * El IVA débito fiscal se registra por separado en contabilidad
+                </p>
             </div>
         </div>
 
