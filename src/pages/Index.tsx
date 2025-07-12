@@ -69,7 +69,7 @@ const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModul
 const AnalisisRentabilidad = lazy(() => import('@/components/contable/rentabilidad/AnalisisRentabilidad'));
 const ConciliacionBancaria = lazy(() => import('@/components/contable/bancario/ConciliacionBancaria'));
 const PresupuestosEmpresariales = lazy(() => import('@/components/contable/presupuestos/PresupuestosEmpresariales'));
-const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
+const UserManagement = lazy(() => import('@/components/contable/users/UserProductionManager'));
 const CentrosCostoModule = lazy(() => import('@/components/contable/costos/CentrosCostoModule'));
 const TutorialInteractivo = lazy(() => import('@/components/contable/tutorial/TutorialInteractivo'));
 const AuditoriaTransacciones = lazy(() => import('@/components/contable/auditoria/AuditoriaTransacciones'));
