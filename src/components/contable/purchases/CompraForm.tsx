@@ -12,6 +12,7 @@ import { Proveedor, ItemCompra, Compra } from "./PurchasesData";
 import { Producto } from "../products/ProductsData";
 import ProductSearchCombobox from "../billing/ProductSearchCombobox";
 import ProveedorSearchCombobox from "./ProveedorSearchCombobox";
+import ProveedorForm from "./ProveedorForm";
 
 interface CompraFormProps {
   proveedores: Proveedor[];
@@ -19,9 +20,10 @@ interface CompraFormProps {
   compras: Compra[];
   onSave: (compra: Compra) => void;
   onCancel: () => void;
+  onAddProveedor: (proveedor: Proveedor) => void;
 }
 
-const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: CompraFormProps) => {
+const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddProveedor }: CompraFormProps) => {
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
   const [items, setItems] = useState<ItemCompra[]>([
     {
@@ -35,6 +37,7 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
   ]);
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [showProveedorForm, setShowProveedorForm] = useState(false);
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -133,13 +136,24 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
       <CardContent className="space-y-6">
         <div>
           <Label>Proveedor</Label>
-          <div className={errors.proveedor ? "border border-red-500 rounded-md" : ""}>
-            <ProveedorSearchCombobox 
-              proveedores={proveedores} 
-              value={selectedProveedor?.id || ""} 
-              onValueChange={(id) => setSelectedProveedor(proveedores.find(p => p.id === id) || null)}
-              placeholder="Buscar proveedor..."
-            />
+          <div className="flex gap-2">
+            <div className={`flex-1 ${errors.proveedor ? "border border-red-500 rounded-md" : ""}`}>
+              <ProveedorSearchCombobox 
+                proveedores={proveedores} 
+                value={selectedProveedor?.id || ""} 
+                onValueChange={(id) => setSelectedProveedor(proveedores.find(p => p.id === id) || null)}
+                placeholder="Buscar proveedor..."
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setShowProveedorForm(true)}
+              title="Agregar nuevo proveedor"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
           {errors.proveedor && <p className="text-sm text-red-500 mt-1">{errors.proveedor}</p>}
         </div>
@@ -209,6 +223,12 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel }: Compr
             <Button onClick={handleSubmit}>Guardar Compra</Button>
         </div>
       </CardContent>
+      
+      <ProveedorForm
+        open={showProveedorForm}
+        onOpenChange={setShowProveedorForm}
+        onSave={onAddProveedor}
+      />
     </Card>
   );
 };

@@ -103,6 +103,17 @@ const ComprasModule = () => {
     });
   };
 
+  const handleAddProveedor = (nuevoProveedor: Proveedor) => {
+    const proveedoresActualizados = [...proveedores, nuevoProveedor];
+    setProveedores(proveedoresActualizados);
+    localStorage.setItem('proveedores', JSON.stringify(proveedoresActualizados));
+    
+    toast({
+      title: "Proveedor agregado",
+      description: `${nuevoProveedor.nombre} ha sido agregado exitosamente.`,
+    });
+  };
+
   if (showNewCompraForm) {
     return (
       <CompraForm
@@ -111,6 +122,7 @@ const ComprasModule = () => {
         compras={compras}
         onSave={handleSaveCompra}
         onCancel={() => setShowNewCompraForm(false)}
+        onAddProveedor={handleAddProveedor}
       />
     );
   }
