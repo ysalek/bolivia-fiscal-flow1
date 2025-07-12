@@ -16,6 +16,7 @@ interface Usuario {
   id: number;
   usuario: string;
   email: string;
+  password: string;
   nombre: string;
   rol: string;
   empresa: string;
@@ -31,6 +32,7 @@ const UserProductionManager = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+  const [changePassword, setChangePassword] = useState('');
   const [newUser, setNewUser] = useState({
     usuario: '',
     email: '',
@@ -88,6 +90,7 @@ const UserProductionManager = () => {
       id: Math.max(...usuarios.map(u => u.id), 0) + 1,
       usuario: newUser.usuario,
       email: newUser.email,
+      password: newUser.password,
       nombre: newUser.nombre,
       rol: newUser.rol,
       empresa: user?.empresa || 'Sistema Contable',
@@ -115,10 +118,18 @@ const UserProductionManager = () => {
   const actualizarUsuario = () => {
     if (!editingUser) return;
 
+    const usuarioActualizado = {
+      ...editingUser,
+      fechaModificacion: new Date().toISOString()
+    };
+
+    // Si se especificó una nueva contraseña, actualizarla
+    if (changePassword.trim()) {
+      usuarioActualizado.password = changePassword;
+    }
+
     const usuariosActualizados = usuarios.map(u => 
-      u.id === editingUser.id 
-        ? { ...editingUser, fechaModificacion: new Date().toISOString() }
-        : u
+      u.id === editingUser.id ? usuarioActualizado : u
     );
     guardarUsuarios(usuariosActualizados);
 
@@ -128,6 +139,7 @@ const UserProductionManager = () => {
     });
 
     setEditingUser(null);
+    setChangePassword('');
   };
 
   const eliminarUsuario = (userId: number) => {
@@ -368,6 +380,17 @@ const UserProductionManager = () => {
                   type="email"
                   value={editingUser.email}
                   onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Nueva Contraseña (opcional)</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={changePassword}
+                  onChange={(e) => setChangePassword(e.target.value)}
+                  placeholder="Dejar vacío para mantener la actual"
                 />
               </div>
               
