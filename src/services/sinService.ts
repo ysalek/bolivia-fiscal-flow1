@@ -1,4 +1,3 @@
-
 // Servicio para integración con el SIN (Servicio de Impuestos Nacionales)
 export interface CUFDResponse {
   codigo: string;
