@@ -214,20 +214,33 @@ const AdvancesManagement = () => {
 
               <div>
                 <Label>{newAnticipo.tipo === 'cliente' ? 'Cliente' : 'Proveedor'}</Label>
-                <Select value={newAnticipo.entidadId} onValueChange={(value) => 
-                  setNewAnticipo({...newAnticipo, entidadId: value})
-                }>
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Seleccionar ${newAnticipo.tipo}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(newAnticipo.tipo === 'cliente' ? clientes : proveedores).map((entidad: any) => (
-                      <SelectItem key={entidad.id} value={entidad.id}>
-                        {entidad.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={newAnticipo.entidadId} onValueChange={(value) => 
+                    setNewAnticipo({...newAnticipo, entidadId: value})
+                  }>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={`Seleccionar ${newAnticipo.tipo}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(newAnticipo.tipo === 'cliente' ? clientes : proveedores).map((entidad: any) => (
+                        <SelectItem key={entidad.id} value={entidad.id}>
+                          {entidad.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      // TODO: Abrir modal para agregar nuevo cliente/proveedor
+                      console.log(`Agregar nuevo ${newAnticipo.tipo}`);
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div>

@@ -291,7 +291,7 @@ const EnhancedPOSModule = () => {
     });
   };
 
-  const procesarVenta = () => {
+  const procesarVenta = (esCredito = false) => {
     if (carrito.length === 0) {
       toast({
         title: "Carrito vacío",
@@ -303,7 +303,7 @@ const EnhancedPOSModule = () => {
 
     const total = calcularTotal();
     
-    if (metodoPago === "efectivo" && montoRecibido < total) {
+    if (!esCredito && metodoPago === "efectivo" && montoRecibido < total) {
       toast({
         title: "Monto insuficiente",
         description: "El monto recibido es menor al total de la venta",
@@ -340,11 +340,11 @@ const EnhancedPOSModule = () => {
       descuentoTotal: calcularDescuentos(),
       impuestos: calcularImpuestos(),
       total: total,
-      metodoPago,
-      montoRecibido: metodoPago === "efectivo" ? montoRecibido : total,
-      cambio: metodoPago === "efectivo" ? montoRecibido - total : 0,
+      metodoPago: esCredito ? 'credito' : metodoPago,
+      montoRecibido: esCredito ? 0 : (metodoPago === "efectivo" ? montoRecibido : total),
+      cambio: esCredito ? 0 : (metodoPago === "efectivo" ? montoRecibido - total : 0),
       vendedor: "Usuario Actual",
-      estado: 'completada'
+      estado: esCredito ? 'pendiente' : 'completada'
     };
 
     // Guardar venta
@@ -390,11 +390,31 @@ const EnhancedPOSModule = () => {
               <p className="text-slate-600">Sistema POS profesional integrado</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm text-slate-600">Ventas del día</p>
-                <p className="text-lg font-bold text-green-600">
-                  Bs. {ventasDelDia.toFixed(2)} ({cantidadVentas})
-                </p>
+              <div className="grid grid-cols-2 gap-4 text-right">
+                <div>
+                  <p className="text-sm text-slate-600">Ventas del día</p>
+                  <p className="text-lg font-bold text-green-600">
+                    Bs. {ventasDelDia.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Clientes atendidos</p>
+                  <p className="text-lg font-bold text-blue-600">
+                    {cantidadVentas} personas
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Productos vendidos</p>
+                  <p className="text-lg font-bold text-purple-600">
+                    {ventasHoy.reduce((sum, venta) => sum + venta.items.reduce((itemSum, item) => itemSum + item.cantidad, 0), 0)} unidades
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Cajero 1</p>
+                  <p className="text-lg font-bold text-orange-600">
+                    {cantidadVentas} ventas
+                  </p>
+                </div>
               </div>
               <Separator orientation="vertical" className="h-8" />
               <div className="flex gap-2">
@@ -723,14 +743,25 @@ const EnhancedPOSModule = () => {
                   )}
                 </div>
 
-                <Button 
-                  onClick={procesarVenta} 
-                  className="w-full h-12 text-lg" 
-                  disabled={carrito.length === 0}
-                >
-                  <Receipt className="w-5 h-5 mr-2" />
-                  Procesar Venta
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => procesarVenta(false)} 
+                    className="w-full h-12 text-lg" 
+                    disabled={carrito.length === 0}
+                  >
+                    <Receipt className="w-5 h-5 mr-2" />
+                    Procesar Venta
+                  </Button>
+                  <Button 
+                    onClick={() => procesarVenta(true)} 
+                    className="w-full h-10 text-sm" 
+                    variant="outline"
+                    disabled={carrito.length === 0 || !cliente || cliente.id === "1"}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Venta a Crédito
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

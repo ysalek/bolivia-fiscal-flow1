@@ -25,6 +25,7 @@ interface ComprobanteFormData {
   beneficiario: string;
   monto: number;
   metodoPago: string;
+  cuentaGasto?: string;
   referencia: string;
   observaciones: string;
   estado: 'borrador' | 'autorizado';
@@ -198,10 +199,12 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
           const baseImponible = formData.monto / 1.13; // Monto sin IVA
           const creditoFiscal = baseImponible * 0.13; // 13% de IVA
           
-          // Débito a gastos (sin IVA)
+          // Débito a gastos (sin IVA) - usar cuenta seleccionada o por defecto
+          const codigoCuentaGasto = formData.cuentaGasto || "5191";
+          const cuentaGasto = planCuentas.find(c => c.codigo === codigoCuentaGasto);
           cuentasGeneradas.push({
-            codigo: "5191",
-            nombre: "Gastos Varios",
+            codigo: codigoCuentaGasto,
+            nombre: cuentaGasto?.nombre || "Gastos Varios",
             debe: baseImponible,
             haber: 0
           });
@@ -223,10 +226,12 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
           });
         } else {
           // Sin factura: asiento simple
-          // Débito a gastos
+          // Débito a gastos - usar cuenta seleccionada o por defecto
+          const codigoCuentaGastoSinIva = formData.cuentaGasto || "5191";
+          const cuentaGastoSinIva = planCuentas.find(c => c.codigo === codigoCuentaGastoSinIva);
           cuentasGeneradas.push({
-            codigo: "5191",
-            nombre: "Gastos Varios",
+            codigo: codigoCuentaGastoSinIva,
+            nombre: cuentaGastoSinIva?.nombre || "Gastos Varios",
             debe: formData.monto,
             haber: 0
           });
@@ -333,6 +338,27 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                 placeholder="Número de cheque, boleta, etc."
               />
             </div>
+
+            {tipo === 'egreso' && (
+              <div className="space-y-2">
+                <Label htmlFor="cuentaGasto">Cuenta del Gasto</Label>
+                <Select value={formData.cuentaGasto || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, cuentaGasto: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar cuenta de gasto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {planCuentas
+                      .filter(cuenta => cuenta.activa && (cuenta.tipo === 'gastos' || cuenta.codigo.startsWith('5')))
+                      .filter((cuenta, index, arr) => arr.findIndex(c => c.codigo === cuenta.codigo) === index)
+                      .map(cuenta => (
+                      <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
+                        {cuenta.codigo} - {cuenta.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {tipo === 'ingreso' && (
@@ -489,12 +515,12 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="observaciones">Observaciones</Label>
+        <Label htmlFor="observaciones">Descripción de la Operación</Label>
         <Textarea
           id="observaciones"
           value={formData.observaciones}
           onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-          placeholder="Observaciones adicionales"
+          placeholder="Descripción detallada de la operación contable"
         />
       </div>
 

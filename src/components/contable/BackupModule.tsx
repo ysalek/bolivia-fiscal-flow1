@@ -183,6 +183,8 @@ const BackupModule = () => {
           'conciliacionesBancarias': [],
           'estadosCuenta': [],
           'transferenciasInternas': [],
+          'conciliaciones': [],
+          'extractosBancarios': [],
           
           // Otros datos operativos VACÍOS
           'cuentasPorCobrar': [],
