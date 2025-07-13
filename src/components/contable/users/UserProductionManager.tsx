@@ -44,9 +44,36 @@ const UserProductionManager = () => {
 
   const rolesDisponibles = [
     { value: 'admin', label: 'Administrador', permisos: ['*'] },
-    { value: 'contador', label: 'Contador', permisos: ['dashboard', 'facturacion', 'clientes', 'productos', 'inventario', 'plan_cuentas', 'libro_diario', 'balance', 'reportes', 'configuracion'] },
-    { value: 'ventas', label: 'Vendedor', permisos: ['dashboard', 'facturacion', 'clientes', 'productos', 'inventario'] },
-    { value: 'usuario', label: 'Usuario General', permisos: ['dashboard'] }
+    { 
+      value: 'contador', 
+      label: 'Contador', 
+      permisos: [
+        'dashboard', 'facturacion', 'clientes', 'productos', 'inventario', 
+        'plan-cuentas', 'libro-diario', 'balance-comprobacion', 'balance-general', 
+        'estado-resultados', 'comprobantes', 'kardex', 'compras', 'cuentas-cobrar-pagar',
+        'bancos', 'activos-fijos', 'reportes', 'declaraciones', 'conciliacion-bancaria',
+        'analisis-rentabilidad', 'analisis-financiero', 'presupuestos', 'centros-costo',
+        'flujo-caja-avanzado', 'auditoria'
+      ] 
+    },
+    { 
+      value: 'ventas', 
+      label: 'Vendedor', 
+      permisos: [
+        'dashboard', 'facturacion', 'punto-venta', 'clientes', 'productos', 
+        'inventario', 'cuentas-cobrar-pagar'
+      ] 
+    },
+    { 
+      value: 'cajero', 
+      label: 'Cajero', 
+      permisos: ['dashboard', 'punto-venta', 'clientes', 'productos'] 
+    },
+    { 
+      value: 'usuario', 
+      label: 'Usuario General', 
+      permisos: ['dashboard'] 
+    }
   ];
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 
 import React, { Suspense, useState, useEffect, lazy } from 'react';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { inicializarSistemaCompleto } from '@/utils/inicializarSistema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -138,6 +139,7 @@ const categories = {
 };
 
 const Index = () => {
+  const { hasPermission } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -169,16 +171,28 @@ const Index = () => {
   }, []);
 
   const filteredModules = modules.filter(module => {
+    // Verificar permisos del usuario
+    const hasModulePermission = hasPermission('*') || hasPermission(module.id);
+    
     const matchesSearch = module.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          module.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          module.keywords?.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCategory = selectedCategory === 'all' || module.category === selectedCategory;
     
-    return matchesSearch && matchesCategory;
+    return hasModulePermission && matchesSearch && matchesCategory;
   });
 
+  // Verificar que el módulo activo sea accesible
+  const activeModuleAccessible = hasPermission('*') || hasPermission(activeModule);
   const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
+  
+  // Si el usuario no tiene acceso al módulo activo, cambiar a dashboard
+  useEffect(() => {
+    if (!activeModuleAccessible && activeModule !== 'dashboard') {
+      setActiveModule('dashboard');
+    }
+  }, [activeModuleAccessible, activeModule]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,7 +331,23 @@ const Index = () => {
                 </div>
               </div>
             }>
-              <ActiveComponent />
+              {activeModuleAccessible ? (
+                <ActiveComponent />
+              ) : (
+                <Card className="max-w-md mx-auto mt-8">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-600">
+                      <Shield className="w-5 h-5" />
+                      Acceso Restringido
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      No tienes permisos para acceder a este módulo. Contacta al administrador del sistema para obtener los permisos necesarios.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </Suspense>
           </div>
         </div>
