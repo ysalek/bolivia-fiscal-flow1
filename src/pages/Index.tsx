@@ -75,7 +75,7 @@ const TutorialInteractivo = lazy(() => import('@/components/contable/tutorial/Tu
 const AuditoriaTransacciones = lazy(() => import('@/components/contable/auditoria/AuditoriaTransacciones'));
 const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
 const AdvancesManagement = lazy(() => import('@/components/contable/advances/AdvancesManagement'));
-const NominaBoliviana = lazy(() => import('@/components/contable/nomina/NominaBoliviana'));
+const RecursosHumanosUnificado = lazy(() => import('@/components/contable/nomina/RecursosHumanosUnificado'));
 
 interface Module {
   id: string;
@@ -116,12 +116,11 @@ const modules: Module[] = [
   { id: 'punto-venta', label: 'Punto de Venta', icon: ShoppingCart, component: PuntoVentaModule, category: 'facturacion', description: 'Sistema POS integrado para ventas directas' },
   { id: 'notificaciones', label: 'Notificaciones', icon: Bell, component: NotificationCenter, category: 'herramientas', description: 'Centro de alertas y notificaciones del sistema' },
   { id: 'flujo-caja-avanzado', label: 'Flujo de Caja Avanzado', icon: DollarSign, component: AdvancedCashFlowModule, category: 'herramientas', description: 'Gestión avanzada de flujo de efectivo con proyecciones' },
-  { id: 'nomina', label: 'Nómina Boliviana', icon: UserCheck, component: NominaBoliviana, category: 'herramientas', description: 'Gestión de empleados según normativa boliviana (Gestoras)' },
+  { id: 'nomina', label: 'Recursos Humanos y Nómina', icon: UserCheck, component: RecursosHumanosUnificado, category: 'herramientas', description: 'Gestión completa de empleados y nómina según normativa boliviana' },
   { id: 'analisis-rentabilidad', label: 'Análisis de Rentabilidad', icon: Target, component: AnalisisRentabilidad, category: 'reportes', description: 'Análisis detallado de rentabilidad por productos y categorías' },
   { id: 'conciliacion-bancaria', label: 'Conciliación Bancaria', icon: Banknote, component: ConciliacionBancaria, category: 'herramientas', description: 'Conciliación automática de extractos bancarios' },
   { id: 'presupuestos', label: 'Presupuestos Empresariales', icon: Factory, component: PresupuestosEmpresariales, category: 'reportes', description: 'Gestión y control de presupuestos empresariales' },
   { id: 'usuarios', label: 'Gestión de Usuarios', icon: Users, component: UserManagement, category: 'configuracion', description: 'Administración de usuarios y permisos del sistema' },
-  { id: 'rrhh', label: 'Recursos Humanos', icon: UserCheck, component: NominaModule, category: 'herramientas', description: 'Gestión de personal y recursos humanos' },
   { id: 'centros-costo', label: 'Centros de Costo', icon: Building, component: CentrosCostoModule, category: 'herramientas', description: 'Gestión y control de centros de costo empresariales' },
   { id: 'tutorial', label: 'Tutorial Interactivo', icon: HelpCircle, component: TutorialInteractivo, category: 'configuracion', description: 'Aprende a usar el sistema paso a paso' },
   { id: 'auditoria', label: 'Auditoría y Control', icon: Shield, component: AuditoriaTransacciones, category: 'herramientas', description: 'Monitoreo y auditoría de transacciones del sistema' },

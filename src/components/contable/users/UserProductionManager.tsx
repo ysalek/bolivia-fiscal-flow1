@@ -56,13 +56,23 @@ const UserProductionManager = () => {
   const cargarUsuarios = () => {
     const usuariosGuardados = localStorage.getItem('usuarios_sistema');
     if (usuariosGuardados) {
-      setUsuarios(JSON.parse(usuariosGuardados));
+      const usuarios = JSON.parse(usuariosGuardados);
+      console.log('Usuarios cargados desde localStorage:', usuarios);
+      setUsuarios(usuarios);
+    } else {
+      console.log('No se encontraron usuarios en localStorage');
     }
   };
 
   const guardarUsuarios = (usuariosActualizados: Usuario[]) => {
+    console.log('Guardando usuarios:', usuariosActualizados);
     localStorage.setItem('usuarios_sistema', JSON.stringify(usuariosActualizados));
     setUsuarios(usuariosActualizados);
+    
+    // Forzar recarga para ver los cambios inmediatamente
+    setTimeout(() => {
+      cargarUsuarios();
+    }, 100);
   };
 
   const crearUsuario = () => {

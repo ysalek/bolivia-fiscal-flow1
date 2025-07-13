@@ -186,6 +186,22 @@ const BackupModule = () => {
           'conciliaciones': [],
           'extractosBancarios': [],
           
+          // USUARIOS DEL SISTEMA (MANTENER SOLO ADMIN)
+          'usuarios_sistema': [
+            {
+              id: 1,
+              usuario: "admin",
+              email: "admin@sistema.com", 
+              password: "C123081a!",
+              nombre: "Administrador del Sistema",
+              rol: "admin",
+              empresa: "Sistema Contable",
+              permisos: ["*"],
+              activo: true,
+              fechaCreacion: new Date().toISOString()
+            }
+          ],
+          
           // Otros datos operativos VACÍOS
           'cuentasPorCobrar': [],
           'cuentasPorPagar': [],
