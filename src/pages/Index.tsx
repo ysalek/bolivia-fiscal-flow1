@@ -35,7 +35,8 @@ import {
   Bell,
   Search,
   DollarSign,
-  Shield
+  Shield,
+  TestTube
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -77,6 +78,7 @@ const AuditoriaTransacciones = lazy(() => import('@/components/contable/auditori
 const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
 const AdvancesManagement = lazy(() => import('@/components/contable/advances/AdvancesManagement'));
 const RecursosHumanosUnificado = lazy(() => import('@/components/contable/nomina/RecursosHumanosUnificado'));
+const SimulacionCompleta = lazy(() => import('@/components/contable/testing/SimulacionCompleta'));
 
 interface Module {
   id: string;
@@ -126,7 +128,8 @@ const modules: Module[] = [
   { id: 'tutorial', label: 'Tutorial Interactivo', icon: HelpCircle, component: TutorialInteractivo, category: 'configuracion', description: 'Aprende a usar el sistema paso a paso' },
   { id: 'auditoria', label: 'Auditoría y Control', icon: Shield, component: AuditoriaTransacciones, category: 'herramientas', description: 'Monitoreo y auditoría de transacciones del sistema' },
   { id: 'analisis-financiero', label: 'Análisis Financiero', icon: TrendingUp, component: AnalisisFinanciero, category: 'reportes', description: 'Análisis detallado de indicadores financieros' },
-  { id: 'anticipos', label: 'Gestión de Anticipos', icon: CreditCard, component: AdvancesManagement, category: 'herramientas', description: 'Administración de anticipos y préstamos a empleados' }
+  { id: 'anticipos', label: 'Gestión de Anticipos', icon: CreditCard, component: AdvancesManagement, category: 'herramientas', description: 'Administración de anticipos y préstamos a empleados' },
+  { id: 'simulacion-pruebas', label: 'Simulación y Pruebas', icon: TestTube, component: SimulacionCompleta, category: 'configuracion', description: 'Pruebas exhaustivas del sistema contable' }
 ];
 
 const categories = {
