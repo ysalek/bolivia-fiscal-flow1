@@ -25,10 +25,17 @@ const ProductSearchSelect = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  const productosDisponibles = useMemo(() => 
-    productos.filter(p => p.categoria !== "Servicios"), 
-    [productos]
-  );
+  console.log("ProductSearchSelect - productos recibidos:", productos?.length || 0);
+
+  const productosDisponibles = useMemo(() => {
+    if (!productos || productos.length === 0) {
+      console.log("No hay productos disponibles");
+      return [];
+    }
+    const disponibles = productos.filter(p => p.categoria !== "Servicios");
+    console.log("Productos disponibles después del filtro:", disponibles.length);
+    return disponibles;
+  }, [productos]);
 
   const productosFiltrados = useMemo(() => {
     if (!searchValue) return productosDisponibles;
@@ -82,7 +89,12 @@ const ProductSearchSelect = ({
           </div>
           <CommandList className="max-h-[300px]">
             <CommandEmpty>
-              {searchValue ? "No se encontraron productos que coincidan con la búsqueda." : "No hay productos disponibles."}
+              {productos?.length === 0 
+                ? "No hay productos registrados. Debe registrar productos primero en el módulo de Productos." 
+                : searchValue 
+                  ? "No se encontraron productos que coincidan con la búsqueda." 
+                  : "No hay productos disponibles."
+              }
             </CommandEmpty>
             <CommandGroup>
               {productosFiltrados.map((producto) => (

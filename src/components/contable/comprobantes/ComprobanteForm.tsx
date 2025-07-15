@@ -42,12 +42,18 @@ import { inicializarPlanCuentas } from "@/utils/planCuentasInicial";
 
 // Función para obtener el plan de cuentas dinámico
 const obtenerPlanCuentas = () => {
-  return inicializarPlanCuentas();
+  const planCuentasData = inicializarPlanCuentas();
+  console.log("Plan de cuentas cargado:", planCuentasData);
+  return planCuentasData;
 };
 
 const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
   const { toast } = useToast();
-  const [planCuentas, setPlanCuentas] = useState(obtenerPlanCuentas());
+  const [planCuentas, setPlanCuentas] = useState(() => {
+    const plan = obtenerPlanCuentas();
+    console.log("Inicializando plan de cuentas:", plan?.length || 0, "cuentas");
+    return plan || [];
+  });
   const [formData, setFormData] = useState<ComprobanteFormData>({
     tipo,
     numero: '',
@@ -122,10 +128,32 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
 
     // Generar cuentas automáticamente para ingreso y egreso
     if (tipo !== 'traspaso') {
+      // Verificar que tenemos plan de cuentas cargado
+      if (!planCuentas || planCuentas.length === 0) {
+        toast({
+          title: "Error en Plan de Cuentas",
+          description: "El plan de cuentas no está cargado. Recargue la página e intente nuevamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar que se seleccionó un método de pago
+      if (!formData.metodoPago) {
+        toast({
+          title: "Error",
+          description: "Debe seleccionar una cuenta de método de pago",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Verificar que la cuenta del método de pago existe
       const metodoPagoSeleccionado = planCuentas.find(m => m.codigo === formData.metodoPago);
       
       if (!metodoPagoSeleccionado) {
+        console.error("Cuenta no encontrada:", formData.metodoPago);
+        console.log("Plan de cuentas disponible:", planCuentas.map(c => `${c.codigo} - ${c.nombre}`));
         toast({
           title: "Error en Cuenta",
           description: `La cuenta ${formData.metodoPago} no existe en el plan de cuentas`,

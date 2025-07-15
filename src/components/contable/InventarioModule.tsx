@@ -39,8 +39,11 @@ const InventarioModule = () => {
       // Primero cargar productos desde localStorage (del módulo de productos)
       const productosGuardados = localStorage.getItem('productos');
       
+      console.log("Cargando productos para inventario...");
+      
       if (productosGuardados) {
         const productos: Producto[] = JSON.parse(productosGuardados);
+        console.log("Productos encontrados en localStorage:", productos.length);
         
         // Convertir productos del módulo de productos a formato de inventario
         const productosInventario: ProductoInventario[] = productos
@@ -61,8 +64,10 @@ const InventarioModule = () => {
             valorTotalInventario: (producto.stockActual || 0) * (producto.costoUnitario || 0)
           }));
           
+        console.log("Productos convertidos para inventario:", productosInventario.length);
         setProductos(productosInventario);
       } else {
+        console.log("No hay productos guardados, usando datos iniciales");
         // Si no hay productos guardados, usar los datos iniciales
         setProductos(productosIniciales);
       }
