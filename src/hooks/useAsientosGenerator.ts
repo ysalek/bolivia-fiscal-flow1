@@ -142,8 +142,8 @@ export const useAsientosGenerator = () => {
     const totalCompra = inventarioValor + ivaCreditoFiscal; // Total contable = subtotal + IVA
 
     cuentas.push({
-      codigo: "1141",
-      nombre: "Inventarios",
+      codigo: "5121", 
+      nombre: "Compras",
       debe: inventarioValor,
       haber: 0
     });
