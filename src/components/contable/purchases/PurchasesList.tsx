@@ -64,7 +64,10 @@ const PurchasesList = ({ compras, onProcessPurchase }: PurchasesListProps) => {
                         variant="outline" 
                         className="h-8 w-8 p-0"
                         title="Ver detalles de la compra"
-                        onClick={() => toast({ title: "Ver Compra", description: `Detalles de la compra ${compra.numero}: ${compra.items.length} items por Bs. ${compra.total.toFixed(2)}. Proveedor: ${compra.proveedor.nombre}` })}
+                        onClick={() => toast({ 
+                          title: "Detalles de la Compra", 
+                          description: `${compra.numero} - ${compra.proveedor.nombre}\n${compra.items.length} items - Subtotal: Bs. ${compra.subtotal.toFixed(2)}\nFecha: ${compra.fecha} - Estado: ${compra.estado}` 
+                        })}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -73,7 +76,13 @@ const PurchasesList = ({ compras, onProcessPurchase }: PurchasesListProps) => {
                         variant="outline" 
                         className="h-8 w-8 p-0"
                         title="Ver asiento contable generado"
-                        onClick={() => toast({ title: "Asiento Contable", description: `Asiento generado para compra ${compra.numero}. Débito: Inventario Bs. ${compra.subtotal.toFixed(2)}, IVA Débito Fiscal Bs. ${compra.iva.toFixed(2)}. Crédito: Cuentas por Pagar Bs. ${compra.total.toFixed(2)}` })}
+                        onClick={() => {
+                          const totalContable = compra.subtotal + compra.iva;
+                          toast({ 
+                            title: "Asiento Contable de Compra", 
+                            description: `${compra.numero}\nDébito: Inventario Bs. ${compra.subtotal.toFixed(2)}\nDébito: IVA Crédito Fiscal Bs. ${compra.iva.toFixed(2)}\nCrédito: Cuentas por Pagar Bs. ${totalContable.toFixed(2)}` 
+                          });
+                        }}
                       >
                         <FileText className="h-4 w-4" />
                       </Button>

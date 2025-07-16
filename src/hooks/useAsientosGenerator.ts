@@ -137,9 +137,9 @@ export const useAsientosGenerator = () => {
   const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
-    const totalCompra = compra.total;
     const inventarioValor = compra.subtotal;
     const ivaCreditoFiscal = compra.iva;
+    const totalCompra = inventarioValor + ivaCreditoFiscal; // Total contable = subtotal + IVA
 
     cuentas.push({
       codigo: "1141",
@@ -178,27 +178,28 @@ export const useAsientosGenerator = () => {
   };
 
   const generarAsientoPagoCompra = (compra: Compra): AsientoContable | null => {
+    const totalPago = compra.subtotal + compra.iva; // Total contable = subtotal + IVA
     const asiento: AsientoContable = {
       id: Date.now().toString(),
       numero: `PGC-${compra.numero}`,
       fecha: new Date().toISOString().slice(0, 10),
       concepto: `Pago de compra N° ${compra.numero}`,
       referencia: compra.numero,
-      debe: compra.total,
-      haber: compra.total,
+      debe: totalPago,
+      haber: totalPago,
       estado: 'registrado',
       cuentas: [
         {
           codigo: "2111",
           nombre: "Cuentas por Pagar",
-          debe: compra.total,
+          debe: totalPago,
           haber: 0
         },
         {
           codigo: "1111",
           nombre: "Caja y Bancos",
           debe: 0,
-          haber: compra.total
+          haber: totalPago
         }
       ]
     };

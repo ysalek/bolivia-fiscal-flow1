@@ -94,8 +94,8 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
 
   const calculateSubtotal = () => items.reduce((total, item) => total + item.subtotal, 0);
   const subtotal = calculateSubtotal();
-  const iva = subtotal * 0.13; // IVA débito fiscal - se registra por separado
-  const total = subtotal; // En compras, el total es solo el subtotal, el IVA se debita aparte
+  const iva = subtotal * 0.13; // IVA crédito fiscal - se registra en contabilidad
+  const total = subtotal; // El total facturado es solo el subtotal
 
   const handleSubmit = () => {
     if (!validateForm()) {
@@ -115,7 +115,7 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
       subtotal,
       descuentoTotal: 0,
       iva,
-      total: subtotal + iva, // Total real incluye IVA para el pago, pero contablemente se separa
+      total: subtotal, // Total de la factura sin IVA (el IVA va en contabilidad)
       estado: 'recibida',
       observaciones: observaciones,
       fechaCreacion: new Date().toISOString().slice(0, 10),
@@ -207,16 +207,12 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
                     <span>Subtotal (Costo de Productos)</span>
                     <span>Bs. {subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-slate-600">
-                    <span>IVA Débito Fiscal (13%)</span>
-                    <span>Bs. {iva.toFixed(2)}</span>
-                </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                    <span>Total a Pagar (Subtotal + IVA)</span>
-                    <span className="text-blue-600">Bs. {(subtotal + iva).toFixed(2)}</span>
+                    <span>Total de la Factura</span>
+                    <span className="text-blue-600">Bs. {subtotal.toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  * El IVA débito fiscal se registra por separado en contabilidad
+                  * El IVA crédito fiscal (Bs. {iva.toFixed(2)}) se registra automáticamente en contabilidad
                 </p>
             </div>
         </div>
