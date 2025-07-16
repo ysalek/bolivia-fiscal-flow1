@@ -14,6 +14,7 @@ import {
   TrendingUp, 
   Scale, 
   BookOpen, 
+  BookOpenCheck,
   Building, 
   Settings, 
   HelpCircle, 
@@ -46,6 +47,7 @@ import GlobalSearch from '@/components/contable/search/GlobalSearch';
 // Lazy load components
 const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
 const LibroDiario = lazy(() => import('@/components/contable/LibroDiario'));
+const LibroMayor = lazy(() => import('@/components/contable/LibroMayor'));
 const BalanceComprobacionModule = lazy(() => import('@/components/contable/BalanceComprobacionModule'));
 const BalanceGeneralModule = lazy(() => import('@/components/contable/BalanceGeneralModule'));
 const EstadoResultadosModule = lazy(() => import('@/components/contable/EstadoResultadosModule'));
@@ -93,6 +95,7 @@ interface Module {
 const modules: Module[] = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, category: 'contabilidad', description: 'Panel principal con métricas y resumen' },
   { id: 'libro-diario', label: 'Libro Diario', icon: BookOpen, component: LibroDiario, category: 'contabilidad', description: 'Registro cronológico de transacciones' },
+  { id: 'libro-mayor', label: 'Libro Mayor', icon: BookOpenCheck, component: LibroMayor, category: 'contabilidad', description: 'Movimientos detallados por cuenta contable' },
   { id: 'balance-comprobacion', label: 'Balance de Comprobación', icon: Scale, component: BalanceComprobacionModule, category: 'contabilidad', description: 'Verificación de saldos contables' },
   { id: 'balance-general', label: 'Balance General', icon: FileBarChart, component: BalanceGeneralModule, category: 'contabilidad', description: 'Estado de situación financiera' },
   { id: 'estado-resultados', label: 'Estado de Resultados', icon: TrendingUp, component: EstadoResultadosModule, category: 'contabilidad', description: 'Estado de ganancias y pérdidas' },

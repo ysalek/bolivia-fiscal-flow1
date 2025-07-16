@@ -5,15 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAsientosGenerator } from '@/hooks/useAsientosGenerator';
 import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
-import { CheckCircle2, AlertCircle, Play, RotateCcw, Database, TrendingUp } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Play, RotateCcw, Database, TrendingUp, FileText, Calculator } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import ReporteCalculosDetallados from './ReporteCalculosDetallados';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface TestResult {
   test: string;
   success: boolean;
   message: string;
   details?: any;
+  calculation?: string; // Nuevo campo para mostrar cálculos
 }
 
 interface SimulationData {
@@ -23,12 +26,23 @@ interface SimulationData {
   compras: any[];
   asientos: any[];
   balances: any;
+  reporteCalculos: CalculationReport[]; // Nuevo campo para reportes de cálculo
+}
+
+interface CalculationReport {
+  modulo: string;
+  operacion: string;
+  formula: string;
+  valores: any;
+  resultado: number;
+  explicacion: string;
 }
 
 const SimulacionCompleta = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
+  const [calculationReports, setCalculationReports] = useState<CalculationReport[]>([]);
   const { toast } = useToast();
   const { generarAsientoVenta, generarAsientoCompra, generarAsientoInventario } = useAsientosGenerator();
   const { obtenerBalanceGeneral } = useContabilidadIntegration();
@@ -36,9 +50,11 @@ const SimulacionCompleta = () => {
   const ejecutarSimulacionCompleta = async () => {
     setIsRunning(true);
     setTestResults([]);
+    setCalculationReports([]);
     
     try {
       const results: TestResult[] = [];
+      const reports: CalculationReport[] = [];
       
       // 1. Verificar estado inicial del sistema
       results.push(await verificarEstadoInicial());
@@ -560,7 +576,8 @@ const SimulacionCompleta = () => {
       facturas,
       compras,
       asientos,
-      balances
+      balances,
+      reporteCalculos: calculationReports
     });
   };
 
@@ -632,8 +649,9 @@ const SimulacionCompleta = () => {
 
       {testResults.length > 0 && (
         <Tabs defaultValue="results" className="w-full">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="results">Resultados de Pruebas</TabsTrigger>
+            <TabsTrigger value="calculations">Cálculos Detallados</TabsTrigger>
             <TabsTrigger value="data">Datos de Simulación</TabsTrigger>
             <TabsTrigger value="summary">Resumen Final</TabsTrigger>
           </TabsList>
@@ -672,6 +690,23 @@ const SimulacionCompleta = () => {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="calculations">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5" />
+                  Reportes de Cálculos Detallados
+                </CardTitle>
+                <CardDescription>
+                  Explicación paso a paso de los cálculos realizados en cada módulo del sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ReporteCalculosDetallados reports={calculationReports} />
               </CardContent>
             </Card>
           </TabsContent>
