@@ -137,14 +137,20 @@ export const useAsientosGenerator = () => {
   const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable | null => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
-    const inventarioValor = compra.subtotal;
-    const ivaCreditoFiscal = compra.iva;
-    const totalCompra = inventarioValor + ivaCreditoFiscal; // Total contable = subtotal + IVA
+    
+    // El total de la compra es lo que realmente se debe pagar
+    const totalCompra = compra.total;
+    
+    // Compras (87% del total) 
+    const comprasValor = totalCompra / 1.13; // Dividir entre 1.13 para obtener la base sin IVA
+    
+    // IVA Crédito Fiscal (13% del total)
+    const ivaCreditoFiscal = totalCompra - comprasValor;
 
     cuentas.push({
       codigo: "5121", 
       nombre: "Compras",
-      debe: inventarioValor,
+      debe: comprasValor,
       haber: 0
     });
 
