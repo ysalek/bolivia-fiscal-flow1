@@ -76,10 +76,14 @@ const SimulacionCompleta = () => {
       // 5. Verificar reportes
       results.push(await verificarReportes());
       
-      // 6. Recopilar datos finales
+      // 6. Generar reportes de cálculos detallados
+      await generarReportesCalculos(reports);
+      
+      // 7. Recopilar datos finales
       await recopilarDatosSimulacion();
       
       setTestResults(results);
+      setCalculationReports(reports);
       
       const exitosos = results.filter(r => r.success).length;
       const fallidos = results.length - exitosos;
@@ -579,6 +583,101 @@ const SimulacionCompleta = () => {
       balances,
       reporteCalculos: calculationReports
     });
+  };
+
+  const generarReportesCalculos = async (reports: CalculationReport[]) => {
+    // Reporte de cálculo IVA en ventas
+    const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+    if (facturas.length > 0) {
+      const factura = facturas.find((f: any) => f.id === 'FACT-SIM-001');
+      if (factura) {
+        const totalConIVA = factura.total;
+        const ventaSinIVA = totalConIVA / 1.13;
+        const ivaVenta = totalConIVA - ventaSinIVA;
+        
+        reports.push({
+          modulo: "Facturación",
+          operacion: "Cálculo de IVA en Ventas",
+          formula: "IVA = Total con IVA - (Total con IVA / 1.13)",
+          valores: {
+            "Total con IVA": totalConIVA,
+            "Venta sin IVA": ventaSinIVA,
+            "IVA calculado": ivaVenta,
+            "Porcentaje IVA": "13%"
+          },
+          resultado: ivaVenta,
+          explicacion: `En Bolivia, el IVA es del 13%. Para calcular el IVA de una venta que incluye IVA: 1) Se divide el total entre 1.13 para obtener la base sin IVA (${ventaSinIVA.toFixed(2)}), 2) Se resta la base del total para obtener el IVA (${ivaVenta.toFixed(2)}). Este método asegura que el IVA sea exactamente el 13% de la base imponible.`
+        });
+      }
+    }
+
+    // Reporte de cálculo IVA en compras
+    const compras = JSON.parse(localStorage.getItem('compras') || '[]');
+    if (compras.length > 0) {
+      const compra = compras.find((c: any) => c.id === 'COMP-SIM-001');
+      if (compra) {
+        const totalCompra = compra.total;
+        const comprasValor = totalCompra / 1.13;
+        const ivaCreditoFiscal = totalCompra - comprasValor;
+        
+        reports.push({
+          modulo: "Compras",
+          operacion: "Cálculo de IVA Crédito Fiscal",
+          formula: "IVA Crédito Fiscal = Total Compra - (Total Compra / 1.13)",
+          valores: {
+            "Total compra": totalCompra,
+            "Compras (base)": comprasValor,
+            "IVA Crédito Fiscal": ivaCreditoFiscal,
+            "Porcentaje IVA": "13%"
+          },
+          resultado: ivaCreditoFiscal,
+          explicacion: `El IVA Crédito Fiscal se calcula de la misma forma que en ventas pero en sentido contrario. Se divide el total entre 1.13 para obtener la base gravable (${comprasValor.toFixed(2)}) y la diferencia es el IVA que se puede descontar (${ivaCreditoFiscal.toFixed(2)}). Este crédito fiscal se utiliza para compensar el IVA débito de las ventas.`
+        });
+      }
+    }
+
+    // Reporte de balance contable
+    const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
+    if (asientos.length > 0) {
+      const totalDebe = asientos.reduce((sum: number, asiento: any) => 
+        sum + asiento.cuentas.reduce((s: number, cuenta: any) => s + cuenta.debe, 0), 0);
+      const totalHaber = asientos.reduce((sum: number, asiento: any) => 
+        sum + asiento.cuentas.reduce((s: number, cuenta: any) => s + cuenta.haber, 0), 0);
+      
+      reports.push({
+        modulo: "Contabilidad",
+        operacion: "Verificación de Balance Contable",
+        formula: "Total Debe = Total Haber (Principio de Partida Doble)",
+        valores: {
+          "Total Debe": totalDebe,
+          "Total Haber": totalHaber,
+          "Diferencia": Math.abs(totalDebe - totalHaber),
+          "Asientos verificados": asientos.length
+        },
+        resultado: totalDebe,
+        explicacion: `El principio fundamental de la contabilidad de partida doble establece que por cada débito debe existir un crédito equivalente. Todos los asientos contables generados automáticamente por el sistema cumplen este principio, garantizando la integridad contable. El total de débitos (${totalDebe.toFixed(2)}) debe ser igual al total de créditos (${totalHaber.toFixed(2)}).`
+      });
+    }
+
+    // Reporte de valoración de inventario
+    const productos = JSON.parse(localStorage.getItem('productos') || '[]');
+    if (productos.length > 0) {
+      const valorInventario = productos.reduce((sum: number, producto: any) => 
+        sum + (producto.stockActual * producto.costoUnitario), 0);
+      
+      reports.push({
+        modulo: "Inventario",
+        operacion: "Valoración de Inventario",
+        formula: "Valor Inventario = Σ(Stock × Costo Unitario)",
+        valores: {
+          "Productos evaluados": productos.length,
+          "Valor total inventario": valorInventario,
+          "Método de valoración": "Costo Promedio Ponderado"
+        },
+        resultado: valorInventario,
+        explicacion: `La valoración del inventario se realiza mediante el método de costo promedio ponderado, donde cada producto se valora multiplicando su stock actual por su costo unitario. Este método es aceptado por las normas contables bolivianas y proporciona una valoración justa del activo corriente representado por los inventarios.`
+      });
+    }
   };
 
   const limpiarDatosSimulacion = () => {

@@ -46,6 +46,7 @@ const LibroMayor = () => {
 
   const generarLibroMayor = () => {
     const asientos = getAsientos();
+    const planCuentas = JSON.parse(localStorage.getItem('planCuentas') || '[]');
     
     // Filtrar asientos por fecha
     const asientosFiltrados = asientos.filter(asiento => {
@@ -55,9 +56,30 @@ const LibroMayor = () => {
       return fechaAsiento >= fechaInicioObj && fechaAsiento <= fechaFinObj && asiento.estado === 'registrado';
     });
 
+    // Obtener saldos iniciales (antes del período)
+    const asientosAnteriores = asientos.filter(asiento => {
+      const fechaAsiento = new Date(asiento.fecha);
+      const fechaInicioObj = new Date(fechaInicio);
+      return fechaAsiento < fechaInicioObj && asiento.estado === 'registrado';
+    });
+
+    // Calcular saldos iniciales por cuenta
+    const saldosIniciales = new Map<string, number>();
+    asientosAnteriores.forEach(asiento => {
+      asiento.cuentas.forEach(cuenta => {
+        const saldoActual = saldosIniciales.get(cuenta.codigo) || 0;
+        saldosIniciales.set(cuenta.codigo, saldoActual + cuenta.debe - cuenta.haber);
+      });
+    });
+
     // Agrupar por cuenta
     const cuentasMap = new Map<string, MovimientoCuenta[]>();
     const cuentasInfo = new Map<string, string>();
+
+    // Llenar información de cuentas desde el plan de cuentas
+    planCuentas.forEach((cuenta: any) => {
+      cuentasInfo.set(cuenta.codigo, cuenta.nombre);
+    });
 
     asientosFiltrados.forEach(asiento => {
       asiento.cuentas.forEach(cuenta => {
@@ -86,18 +108,23 @@ const LibroMayor = () => {
     const cuentasMayorData: CuentaMayor[] = [];
     
     cuentasMap.forEach((movimientos, codigo) => {
-      // Ordenar movimientos por fecha
-      movimientos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      // Ordenar movimientos por fecha y número de asiento
+      movimientos.sort((a, b) => {
+        const fechaDiff = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+        if (fechaDiff !== 0) return fechaDiff;
+        return a.numeroAsiento.localeCompare(b.numeroAsiento);
+      });
       
-      let saldoAcumulado = 0;
+      const saldoInicial = saldosIniciales.get(codigo) || 0;
+      let saldoAcumulado = saldoInicial;
       let totalDebe = 0;
       let totalHaber = 0;
 
       // Calcular saldos acumulados
       const movimientosConSaldo = movimientos.map(movimiento => {
-        saldoAcumulado += movimiento.debe - movimiento.haber;
         totalDebe += movimiento.debe;
         totalHaber += movimiento.haber;
+        saldoAcumulado += movimiento.debe - movimiento.haber;
         
         return {
           ...movimiento,
@@ -109,13 +136,29 @@ const LibroMayor = () => {
         codigo,
         nombre: cuentasInfo.get(codigo) || 'Cuenta Desconocida',
         movimientos: movimientosConSaldo,
-        saldoInicial: 0,
+        saldoInicial,
         saldoFinal: saldoAcumulado,
         totalDebe,
         totalHaber
       };
 
       cuentasMayorData.push(cuentaMayor);
+    });
+
+    // Incluir cuentas con saldo inicial pero sin movimientos en el período
+    saldosIniciales.forEach((saldo, codigo) => {
+      if (!cuentasMap.has(codigo) && Math.abs(saldo) > 0.01) {
+        const cuentaMayor: CuentaMayor = {
+          codigo,
+          nombre: cuentasInfo.get(codigo) || 'Cuenta Desconocida',
+          movimientos: [],
+          saldoInicial: saldo,
+          saldoFinal: saldo,
+          totalDebe: 0,
+          totalHaber: 0
+        };
+        cuentasMayorData.push(cuentaMayor);
+      }
     });
 
     // Ordenar por código de cuenta
@@ -297,7 +340,10 @@ const LibroMayor = () => {
                         {cuenta.movimientos.length} movimientos registrados
                       </CardDescription>
                     </div>
-                    <div className="text-right">
+                  <div className="text-right">
+                      <div className="text-lg font-medium text-muted-foreground">
+                        Saldo Inicial: Bs. {cuenta.saldoInicial.toFixed(2)}
+                      </div>
                       <div className="text-2xl font-bold">
                         Bs. {cuenta.saldoFinal.toFixed(2)}
                       </div>
@@ -327,6 +373,20 @@ const LibroMayor = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
+                      {/* Saldo inicial si existe */}
+                      {cuenta.saldoInicial !== 0 && (
+                        <TableRow className="bg-muted/50">
+                          <TableCell className="font-semibold">Saldo Inicial</TableCell>
+                          <TableCell>-</TableCell>
+                          <TableCell className="italic">Saldo del período anterior</TableCell>
+                          <TableCell>-</TableCell>
+                          <TableCell className="text-right">-</TableCell>
+                          <TableCell className="text-right">-</TableCell>
+                          <TableCell className="text-right font-bold">
+                            {cuenta.saldoInicial.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      )}
                       {cuenta.movimientos.map((movimiento, index) => (
                         <TableRow key={index}>
                           <TableCell>{new Date(movimiento.fecha).toLocaleDateString('es-BO')}</TableCell>
@@ -344,6 +404,21 @@ const LibroMayor = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {/* Totales si hay movimientos */}
+                      {cuenta.movimientos.length > 0 && (
+                        <TableRow className="bg-primary/10 font-semibold">
+                          <TableCell colSpan={4} className="text-right">TOTALES:</TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {cuenta.totalDebe.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            {cuenta.totalHaber.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-primary">
+                            {cuenta.saldoFinal.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
