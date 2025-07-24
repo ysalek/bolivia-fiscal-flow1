@@ -81,6 +81,8 @@ const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/Ana
 const AdvancesManagement = lazy(() => import('@/components/contable/advances/AdvancesManagement'));
 const RecursosHumanosUnificado = lazy(() => import('@/components/contable/nomina/RecursosHumanosUnificado'));
 const SimulacionCompleta = lazy(() => import('@/components/contable/testing/SimulacionCompleta'));
+const ReportesContablesAvanzados = lazy(() => import('@/components/contable/reports/ReportesContablesAvanzados'));
+const SistemaValidatorAvanzado = lazy(() => import('@/components/contable/testing/SistemaValidatorAvanzado'));
 
 interface Module {
   id: string;
@@ -132,7 +134,9 @@ const modules: Module[] = [
   { id: 'auditoria', label: 'Auditoría y Control', icon: Shield, component: AuditoriaTransacciones, category: 'herramientas', description: 'Monitoreo y auditoría de transacciones del sistema' },
   { id: 'analisis-financiero', label: 'Análisis Financiero', icon: TrendingUp, component: AnalisisFinanciero, category: 'reportes', description: 'Análisis detallado de indicadores financieros' },
   { id: 'anticipos', label: 'Gestión de Anticipos', icon: CreditCard, component: AdvancesManagement, category: 'herramientas', description: 'Administración de anticipos y préstamos a empleados' },
-  { id: 'simulacion-pruebas', label: 'Simulación y Pruebas', icon: TestTube, component: SimulacionCompleta, category: 'configuracion', description: 'Pruebas exhaustivas del sistema contable' }
+  { id: 'simulacion-pruebas', label: 'Simulación y Pruebas', icon: TestTube, component: SimulacionCompleta, category: 'configuracion', description: 'Pruebas exhaustivas del sistema contable' },
+  { id: 'reportes-completos', label: 'Reportes Completos', icon: FileBarChart, component: ReportesContablesAvanzados, category: 'reportes', description: 'Sistema avanzado de reportes contables' },
+  { id: 'validador-sistema', label: 'Validador del Sistema', icon: Shield, component: SistemaValidatorAvanzado, category: 'configuracion', description: 'Validación integral del sistema contable' }
 ];
 
 const categories = {
