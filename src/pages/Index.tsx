@@ -15,9 +15,10 @@ import {
   Scale, 
   BookOpen, 
   BookOpenCheck,
-  Building, 
+  Building,
+  Building2, 
   Settings, 
-  HelpCircle, 
+  HelpCircle,
   Banknote,
   FileBarChart,
   CreditCard,
@@ -83,6 +84,8 @@ const RecursosHumanosUnificado = lazy(() => import('@/components/contable/nomina
 const SimulacionCompleta = lazy(() => import('@/components/contable/testing/SimulacionCompleta'));
 const ReportesContablesAvanzados = lazy(() => import('@/components/contable/reports/ReportesContablesAvanzados'));
 const SistemaValidatorAvanzado = lazy(() => import('@/components/contable/testing/SistemaValidatorAvanzado'));
+const SecurityModule = lazy(() => import('@/components/contable/security/SecurityModule'));
+const EnterpriseModule = lazy(() => import('@/components/contable/enterprise/EnterpriseModule'));
 
 interface Module {
   id: string;
@@ -136,7 +139,9 @@ const modules: Module[] = [
   { id: 'anticipos', label: 'Gestión de Anticipos', icon: CreditCard, component: AdvancesManagement, category: 'herramientas', description: 'Administración de anticipos y préstamos a empleados' },
   { id: 'simulacion-pruebas', label: 'Simulación y Pruebas', icon: TestTube, component: SimulacionCompleta, category: 'configuracion', description: 'Pruebas exhaustivas del sistema contable' },
   { id: 'reportes-completos', label: 'Reportes Completos', icon: FileBarChart, component: ReportesContablesAvanzados, category: 'reportes', description: 'Sistema avanzado de reportes contables' },
-  { id: 'validador-sistema', label: 'Validador del Sistema', icon: Shield, component: SistemaValidatorAvanzado, category: 'configuracion', description: 'Validación integral del sistema contable' }
+  { id: 'validador-sistema', label: 'Validador del Sistema', icon: Shield, component: SistemaValidatorAvanzado, category: 'configuracion', description: 'Validación integral del sistema contable' },
+  { id: 'seguridad', label: 'Seguridad y Auditoría', icon: Shield, component: SecurityModule, category: 'configuracion', description: 'Gestión de usuarios y auditoría del sistema' },
+  { id: 'empresarial', label: 'Gestión Empresarial', icon: Building2, component: EnterpriseModule, category: 'reportes', description: 'Panel ejecutivo y análisis estratégico empresarial' }
 ];
 
 const categories = {
