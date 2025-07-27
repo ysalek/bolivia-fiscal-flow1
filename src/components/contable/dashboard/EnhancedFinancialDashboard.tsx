@@ -1,13 +1,10 @@
-import { useState } from "react";
-import { DollarSign, Users, Package, FileText, TrendingUp, AlertTriangle } from "lucide-react";
+import { DollarSign, Users, Package, FileText, TrendingUp, BarChart3, Target, Zap } from "lucide-react";
 import { ChartConfig } from "@/components/ui/chart";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Factura } from "../billing/BillingData";
 import { AsientoContable } from "../diary/DiaryData";
 import { Producto } from "../products/ProductsData";
-import EnhancedMetricCard from "./EnhancedMetricCard";
-import EnhancedSalesChart from "./EnhancedSalesChart";
+import { EnhancedMetricCard, MetricGrid, ChartContainer, Section } from "./EnhancedLayout";
+import SalesChart from "./SalesChart";
 import InvoiceStatusChart from "./InvoiceStatusChart";
 import TopProductsChart from "./TopProductsChart";
 import SystemAlerts from "./SystemAlerts";
@@ -19,86 +16,52 @@ interface EnhancedFinancialDashboardProps {
 }
 
 const EnhancedFinancialDashboard = ({ facturas, asientos, productos }: EnhancedFinancialDashboardProps) => {
-  const [draggedCard, setDraggedCard] = useState<string | null>(null);
-  const [cardOrder, setCardOrder] = useState([
-    "ventas-hoy", "ventas-mes", "facturas-pendientes", 
-    "clientes-activos", "productos-stock", "valor-inventario"
-  ]);
-
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = new Date().toISOString().slice(0, 7);
 
-  // Cálculos de métricas
+  // Cálculos de métricas mejorados
   const ventasHoy = facturas.filter(f => f.fecha === today && f.estado !== 'anulada')
     .reduce((sum, f) => sum + f.total, 0);
 
   const ventasMes = facturas.filter(f => f.fecha.startsWith(thisMonth) && f.estado !== 'anulada')
     .reduce((sum, f) => sum + f.total, 0);
 
+  const ventasMesAnterior = (() => {
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const lastMonthStr = lastMonth.toISOString().slice(0, 7);
+    return facturas.filter(f => f.fecha.startsWith(lastMonthStr) && f.estado !== 'anulada')
+      .reduce((sum, f) => sum + f.total, 0);
+  })();
+
+  const crecimientoVentas = ventasMesAnterior > 0 ? 
+    ((ventasMes - ventasMesAnterior) / ventasMesAnterior * 100) : 0;
+
   const facturasPendientes = facturas.filter(f => f.estado === 'enviada').length;
+  const facturasVencidas = facturas.filter(f => {
+    if (f.estado !== 'enviada') return false;
+    const vencimiento = new Date(f.fecha);
+    vencimiento.setDate(vencimiento.getDate() + 30);
+    return vencimiento < new Date();
+  }).length;
+
   const clientesActivos = new Set(
     facturas.filter(f => f.fecha.startsWith(thisMonth)).map(f => f.cliente.id)
   ).size;
 
+  const clientesTotales = new Set(facturas.map(f => f.cliente.id)).size;
+
   const productosStock = productos.filter(p => p.stockActual > 0).length;
   const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo && p.stockActual > 0).length;
+  const productosAgotados = productos.filter(p => p.stockActual === 0).length;
+
   const asientosHoy = asientos.filter(a => a.fecha === today && a.estado === 'registrado').length;
+  const asientosMes = asientos.filter(a => a.fecha.startsWith(thisMonth) && a.estado === 'registrado').length;
+
   const valorInventario = productos.reduce((sum, p) => sum + (p.stockActual * p.costoUnitario), 0);
+  const rotacionInventario = ventasMes > 0 ? (ventasMes / valorInventario * 12).toFixed(1) : '0';
 
-  const formatBoliviano = (amount: number) => {
-    return `Bs. ${amount.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  const metrics = {
-    "ventas-hoy": {
-      title: "Ventas Hoy",
-      value: formatBoliviano(ventasHoy),
-      description: "Ingresos del día actual",
-      icon: DollarSign,
-      trend: ventasHoy > 0 ? "up" : "neutral",
-      color: "text-primary"
-    },
-    "ventas-mes": {
-      title: "Ventas del Mes",
-      value: formatBoliviano(ventasMes),
-      description: "Ingresos acumulados",
-      icon: TrendingUp,
-      trend: "up",
-      color: "text-success"
-    },
-    "facturas-pendientes": {
-      title: "Facturas Pendientes",
-      value: facturasPendientes.toString(),
-      description: "Por cobrar",
-      icon: FileText,
-      trend: facturasPendientes > 0 ? "down" : "neutral",
-      color: "text-warning"
-    },
-    "clientes-activos": {
-      title: "Clientes Activos",
-      value: clientesActivos.toString(),
-      description: "Este mes",
-      icon: Users,
-      trend: "up",
-      color: "text-primary"
-    },
-    "productos-stock": {
-      title: "Productos en Stock",
-      value: `${productosStock}/${productos.length}`,
-      description: `${productosStockBajo} con stock bajo`,
-      icon: Package,
-      trend: productosStockBajo > 0 ? "down" : "up",
-      color: "text-success"
-    },
-    "valor-inventario": {
-      title: "Valor Inventario",
-      value: formatBoliviano(valorInventario),
-      description: `${asientosHoy} asientos hoy`,
-      icon: TrendingUp,
-      trend: "up",
-      color: "text-primary"
-    }
-  };
+  const ticketPromedio = facturas.length > 0 ? ventasMes / facturas.filter(f => f.fecha.startsWith(thisMonth) && f.estado !== 'anulada').length : 0;
 
   // --- Data for Charts ---
   const salesData = Array.from({ length: 30 }).map((_, i) => {
@@ -124,7 +87,7 @@ const EnhancedFinancialDashboard = ({ facturas, asientos, productos }: EnhancedF
   const salesChartConfig = {
     ventas: {
       label: "Ventas",
-      color: "hsl(var(--primary))",
+      color: "hsl(var(--success))",
     },
   } satisfies ChartConfig;
 
@@ -169,8 +132,11 @@ const EnhancedFinancialDashboard = ({ facturas, asientos, productos }: EnhancedF
     .slice(0, 5);
 
   const topProductsColors = [
-    "hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", 
-    "hsl(var(--destructive))", "hsl(var(--muted-foreground))"
+    "hsl(var(--primary))",
+    "hsl(var(--success))", 
+    "hsl(var(--warning))",
+    "hsl(var(--destructive))",
+    "hsl(var(--muted-foreground))",
   ];
 
   const topProductsChartData = topProductsData.map((entry, index) => ({
@@ -183,70 +149,132 @@ const EnhancedFinancialDashboard = ({ facturas, asientos, productos }: EnhancedF
     return acc;
   }, {} as ChartConfig);
 
-  const handleDragStart = (cardId: string) => {
-    setDraggedCard(cardId);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedCard(null);
-  };
-
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">Escritorio Financiero</h2>
-          <p className="text-muted-foreground mt-1">
-            Sistema contable boliviano - Resumen ejecutivo
-          </p>
-        </div>
-        <Button className="bg-gradient-primary hover:opacity-90 transition-opacity">
-          <AlertTriangle className="w-4 h-4 mr-2" />
-          SIAT Conectado
-        </Button>
-      </div>
+      {/* Métricas principales */}
+      <Section
+        title="Métricas de Rendimiento"
+        subtitle="Indicadores clave de desempeño empresarial"
+      >
+        <MetricGrid columns={3}>
+          <EnhancedMetricCard
+            title="Ventas Hoy"
+            value={`Bs. ${ventasHoy.toLocaleString()}`}
+            subtitle={`Ticket promedio: Bs. ${ticketPromedio.toFixed(0)}`}
+            icon={DollarSign}
+            variant="success"
+            trend={ventasHoy > 0 ? "up" : "neutral"}
+            trendValue={ventasHoy > 0 ? "+100%" : "Sin ventas"}
+          />
+          <EnhancedMetricCard
+            title="Ventas del Mes"
+            value={`Bs. ${ventasMes.toLocaleString()}`}
+            subtitle={`${asientosMes} asientos registrados`}
+            icon={TrendingUp}
+            variant={crecimientoVentas > 0 ? "success" : crecimientoVentas < 0 ? "destructive" : "default"}
+            trend={crecimientoVentas > 0 ? "up" : crecimientoVentas < 0 ? "down" : "neutral"}
+            trendValue={`${crecimientoVentas > 0 ? '+' : ''}${crecimientoVentas.toFixed(1)}%`}
+          />
+          <EnhancedMetricCard
+            title="Cuentas por Cobrar"
+            value={facturasPendientes}
+            subtitle={`${facturasVencidas} vencidas`}
+            icon={FileText}
+            variant={facturasVencidas > 0 ? "destructive" : facturasPendientes > 0 ? "warning" : "success"}
+            trend={facturasPendientes > 0 ? "down" : "neutral"}
+            trendValue={facturasPendientes > 0 ? "Pendientes" : "Al día"}
+          />
+        </MetricGrid>
+      </Section>
 
-      {/* KPI Cards Grid - Draggable */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cardOrder.map((cardId) => {
-          const metric = metrics[cardId as keyof typeof metrics];
-          return (
-            <EnhancedMetricCard
-              key={cardId}
-              title={metric.title}
-              value={metric.value}
-              description={metric.description}
-              icon={metric.icon}
-              trend={metric.trend as "up" | "down" | "neutral"}
-              color={metric.color}
-              isDragging={draggedCard === cardId}
-              onDragStart={() => handleDragStart(cardId)}
-              onDragEnd={handleDragEnd}
-            />
-          );
-        })}
-      </div>
-      
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <EnhancedSalesChart salesChartData={salesChartData} salesChartConfig={salesChartConfig} />
-        </div>
-        
-        <div className="space-y-6">
-          <InvoiceStatusChart pieChartData={pieChartData} statusChartConfig={statusChartConfig} />
-          <TopProductsChart topProductsChartData={topProductsChartData} topProductsChartConfig={topProductsChartConfig} />
-        </div>
-      </div>
+      {/* Métricas operacionales */}
+      <Section
+        title="Operaciones"
+        subtitle="Control de inventario y gestión comercial"
+      >
+        <MetricGrid columns={4}>
+          <EnhancedMetricCard
+            title="Clientes Activos"
+            value={`${clientesActivos}/${clientesTotales}`}
+            subtitle="Este mes / Total"
+            icon={Users}
+            variant="default"
+            trend="up"
+            trendValue={`${((clientesActivos / clientesTotales) * 100).toFixed(0)}%`}
+          />
+          <EnhancedMetricCard
+            title="Productos en Stock"
+            value={`${productosStock}/${productos.length}`}
+            subtitle={`${productosStockBajo} stock bajo`}
+            icon={Package}
+            variant={productosStockBajo > 0 ? "warning" : "success"}
+            trend={productosStockBajo > 0 ? "down" : "up"}
+            trendValue={productosAgotados > 0 ? `${productosAgotados} agotados` : "Óptimo"}
+          />
+          <EnhancedMetricCard
+            title="Valor Inventario"
+            value={`Bs. ${valorInventario.toLocaleString()}`}
+            subtitle={`Rotación: ${rotacionInventario}x/año`}
+            icon={BarChart3}
+            variant="default"
+            trend="up"
+            trendValue="Estable"
+          />
+          <EnhancedMetricCard
+            title="Asientos Contables"
+            value={asientosHoy}
+            subtitle={`${asientosMes} este mes`}
+            icon={Target}
+            variant="default"
+            trend="up"
+            trendValue="Activo"
+          />
+        </MetricGrid>
+      </Section>
 
-      {/* System Alerts */}
-      <SystemAlerts
-        productosStockBajo={productosStockBajo}
-        facturasPendientes={facturasPendientes}
-        asientosHoy={asientosHoy}
-        ventasHoy={ventasHoy}
-      />
+      {/* Gráficos */}
+      <Section
+        title="Análisis Visual"
+        subtitle="Tendencias y distribución de datos"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <ChartContainer
+            title="Tendencia de Ventas"
+            subtitle="Últimos 30 días"
+          >
+            <SalesChart salesChartData={salesChartData} salesChartConfig={salesChartConfig} />
+          </ChartContainer>
+          
+          <div className="space-y-6">
+            <ChartContainer
+              title="Estado de Facturas"
+              subtitle="Distribución actual"
+            >
+              <InvoiceStatusChart pieChartData={pieChartData} statusChartConfig={statusChartConfig} />
+            </ChartContainer>
+            
+            <ChartContainer
+              title="Top Productos"
+              subtitle="Más vendidos"
+            >
+              <TopProductsChart topProductsChartData={topProductsChartData} topProductsChartConfig={topProductsChartConfig} />
+            </ChartContainer>
+          </div>
+        </div>
+      </Section>
+
+      {/* Alertas del sistema */}
+      <Section
+        title="Alertas y Notificaciones"
+        subtitle="Seguimiento de elementos críticos"
+      >
+        <SystemAlerts
+          productosStockBajo={productosStockBajo}
+          facturasPendientes={facturasPendientes}
+          asientosHoy={asientosHoy}
+          ventasHoy={ventasHoy}
+        />
+      </Section>
     </div>
   );
 };

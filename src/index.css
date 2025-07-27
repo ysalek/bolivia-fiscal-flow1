@@ -7,66 +7,85 @@
 
 @layer base {
   :root {
-    /* Paleta de colores boliviana corporativa */
-    --background: 220 20% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* Paleta de colores boliviana corporativa mejorada */
+    --background: 215 25% 97%;
+    --foreground: 220 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 15% 15%;
 
-    /* #005BAA - Azul institucional boliviano */
-    --primary: 211 100% 33%;
-    --primary-foreground: 210 40% 98%;
+    /* #0D47A1 - Azul institucional boliviano mejorado */
+    --primary: 212 92% 35%;
+    --primary-foreground: 0 0% 98%;
+    --primary-muted: 212 50% 85%;
 
-    /* #00A651 - Verde acento positivo */
-    --success: 148 100% 33%;
-    --success-foreground: 210 40% 98%;
+    /* #2E7D32 - Verde acento positivo */
+    --success: 145 85% 32%;
+    --success-foreground: 0 0% 98%;
+    --success-muted: 145 40% 85%;
 
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 215 25% 93%;
+    --secondary-foreground: 220 15% 25%;
 
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 215 20% 95%;
+    --muted-foreground: 215 15% 50%;
 
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 212 15% 92%;
+    --accent-foreground: 220 15% 25%;
 
-    /* #FFC107 - Warning amarillo */
-    --warning: 45 100% 51%;
-    --warning-foreground: 222.2 84% 4.9%;
+    /* #FF8F00 - Warning naranja boliviano */
+    --warning: 35 100% 50%;
+    --warning-foreground: 220 15% 15%;
+    --warning-muted: 35 50% 85%;
 
-    /* #E53935 - Danger rojo */
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 210 40% 98%;
+    /* #C62828 - Danger rojo */
+    --destructive: 4 85% 47%;
+    --destructive-foreground: 0 0% 98%;
+    --destructive-muted: 4 40% 85%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 211 100% 33%;
+    --border: 215 15% 88%;
+    --input: 215 15% 90%;
+    --ring: 212 92% 35%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Sidebar con colores bolivianos */
+    /* Sidebar con diseño mejorado */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 211 100% 33%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 212 92% 35%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 220 14.3% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 211 100% 33%;
+    --sidebar-accent: 212 15% 95%;
+    --sidebar-accent-foreground: 220 15% 25%;
+    --sidebar-border: 215 15% 92%;
+    --sidebar-ring: 212 92% 35%;
 
-    /* Gradientes bolivianos */
-    --gradient-primary: linear-gradient(135deg, hsl(211 100% 33%), hsl(211 100% 40%));
-    --gradient-success: linear-gradient(135deg, hsl(148 100% 33%), hsl(148 100% 40%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 20% 98%));
+    /* Gradientes mejorados */
+    --gradient-primary: linear-gradient(135deg, hsl(212 92% 35%), hsl(212 92% 45%));
+    --gradient-success: linear-gradient(135deg, hsl(145 85% 32%), hsl(145 85% 42%));
+    --gradient-warning: linear-gradient(135deg, hsl(35 100% 50%), hsl(35 100% 60%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(215 25% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(212 92% 35%), hsl(212 92% 45%), hsl(145 85% 42%));
 
-    /* Sombras corporativas */
-    --shadow-card: 0 2px 8px -2px hsl(211 100% 33% / 0.1);
-    --shadow-elevated: 0 8px 24px -4px hsl(211 100% 33% / 0.15);
-    --shadow-kpi: 0 4px 12px -2px hsl(211 100% 33% / 0.12);
+    /* Sombras corporativas mejoradas */
+    --shadow-sm: 0 1px 3px 0 hsl(212 92% 35% / 0.08);
+    --shadow-card: 0 4px 12px -2px hsl(212 92% 35% / 0.12);
+    --shadow-elevated: 0 12px 32px -4px hsl(212 92% 35% / 0.18);
+    --shadow-kpi: 0 6px 16px -2px hsl(212 92% 35% / 0.15);
+    --shadow-glow: 0 0 24px hsl(212 92% 35% / 0.25);
+
+    /* Colores de estado financiero */
+    --profit: 145 85% 32%;
+    --loss: 4 85% 47%;
+    --neutral: 215 15% 50%;
+    
+    /* Nuevos colores para KPIs */
+    --kpi-revenue: 145 85% 32%;
+    --kpi-expense: 4 85% 47%;
+    --kpi-profit: 35 100% 50%;
+    --kpi-growth: 212 92% 35%;
   }
 
   .dark {
@@ -117,5 +136,89 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Componentes corporativos mejorados */
+  .card-gradient {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border) / 0.8);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+  }
+
+  .card-kpi {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-kpi);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-kpi:hover {
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
+  }
+
+  .btn-primary-gradient {
+    background: var(--gradient-primary);
+    border: none;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary-gradient:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+  }
+
+  .metric-positive {
+    color: hsl(var(--success));
+    background: hsl(var(--success-muted) / 0.5);
+  }
+
+  .metric-negative {
+    color: hsl(var(--destructive));
+    background: hsl(var(--destructive-muted) / 0.5);
+  }
+
+  .metric-neutral {
+    color: hsl(var(--neutral));
+    background: hsl(var(--muted) / 0.5);
+  }
+
+  .glass-effect {
+    background: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .nav-gradient {
+    background: var(--gradient-primary);
+    background-size: 200% 200%;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
