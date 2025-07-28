@@ -12,18 +12,6 @@ const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
 const AnalisisInteligente = lazy(() => import('@/components/contable/analisis/AnalisisInteligente'));
 const LibroDiario = lazy(() => import('@/components/contable/LibroDiario'));
 const LibroMayor = lazy(() => import('@/components/contable/LibroMayor'));
-const BalanceComprobacionModule = lazy(() => import('@/components/contable/BalanceComprobacionModule'));
-const BalanceGeneralModule = lazy(() => import('@/components/contable/BalanceGeneralModule'));
-const EstadoResultadosModule = lazy(() => import('@/components/contable/EstadoResultadosModule'));
-const PlanCuentasModule = lazy(() => import('@/components/contable/PlanCuentasModule'));
-const ComprobantesModule = lazy(() => import('@/components/contable/comprobantes/ComprobantesModule'));
-const ProductosModule = lazy(() => import('@/components/contable/ProductosModule'));
-const InventarioModule = lazy(() => import('@/components/contable/InventarioModule'));
-const KardexModule = lazy(() => import('@/components/contable/KardexModule'));
-const FacturacionModule = lazy(() => import('@/components/contable/FacturacionModule'));
-const ComprasModule = lazy(() => import('@/components/contable/ComprasModule'));
-const ClientesModule = lazy(() => import('@/components/contable/ClientesModule'));
-const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
 
 const Index = () => {
   const { hasPermission } = useAuth();
@@ -31,22 +19,6 @@ const Index = () => {
   // Obtener el view desde la URL
   const urlParams = new URLSearchParams(window.location.search);
   const currentView = urlParams.get('view') || 'dashboard';
-
-  // Función para cambiar el view
-  const setView = (view: string) => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', view);
-    window.history.pushState({}, '', newUrl.toString());
-    window.location.reload(); // Recargar para actualizar el componente
-  };
-
-  // Función para manejar navegación desde búsqueda global
-  const handleGlobalNavigation = (moduleId: string, itemId?: string) => {
-    setView(moduleId);
-    if (itemId) {
-      console.log(`Navegando a ${moduleId} con item ${itemId}`);
-    }
-  };
 
   // Inicializar sistema al cargar
   useEffect(() => {
@@ -64,30 +36,6 @@ const Index = () => {
         return <LibroDiario />;
       case 'mayor':
         return <LibroMayor />;
-      case 'balance-comprobacion':
-        return <BalanceComprobacionModule />;
-      case 'balance-general':
-        return <BalanceGeneralModule />;
-      case 'estado-resultados':
-        return <EstadoResultadosModule />;
-      case 'plan-cuentas':
-        return <PlanCuentasModule />;
-      case 'comprobantes-integrados':
-        return <ComprobantesModule />;
-      case 'productos':
-        return <ProductosModule />;
-      case 'inventario':
-        return <InventarioModule />;
-      case 'kardex':
-        return <KardexModule />;
-      case 'facturacion':
-        return <FacturacionModule />;
-      case 'compras':
-        return <ComprasModule />;
-      case 'clientes':
-        return <ClientesModule />;
-      case 'search':
-        return <GlobalSearch onNavigate={handleGlobalNavigation} />;
       default:
         return <Dashboard />;
     }
@@ -98,19 +46,7 @@ const Index = () => {
       'dashboard': 'Panel de Control',
       'analisis-inteligente': 'Análisis Inteligente',
       'diario': 'Libro Diario',
-      'mayor': 'Libro Mayor',
-      'balance-comprobacion': 'Balance de Comprobación',
-      'balance-general': 'Balance General',
-      'estado-resultados': 'Estado de Resultados',
-      'plan-cuentas': 'Plan de Cuentas',
-      'comprobantes-integrados': 'Comprobantes Integrados',
-      'productos': 'Gestión de Productos',
-      'inventario': 'Control de Inventario',
-      'kardex': 'Kardex de Productos',
-      'facturacion': 'Sistema de Facturación',
-      'compras': 'Gestión de Compras',
-      'clientes': 'Gestión de Clientes',
-      'search': 'Búsqueda Global'
+      'mayor': 'Libro Mayor'
     };
     return titles[currentView as keyof typeof titles] || 'Sistema Contable';
   };
