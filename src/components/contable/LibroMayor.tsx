@@ -33,7 +33,7 @@ interface CuentaMayor {
 const LibroMayor = () => {
   const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
-  const [cuentaSeleccionada, setCuentaSeleccionada] = useState<string>('');
+  const [cuentaSeleccionada, setCuentaSeleccionada] = useState<string>('all');
   const [busquedaCuenta, setBusquedaCuenta] = useState('');
   const [cuentasMayor, setCuentasMayor] = useState<CuentaMayor[]>([]);
   const [cuentasDisponibles, setCuentasDisponibles] = useState<{codigo: string, nombre: string}[]>([]);
@@ -177,7 +177,7 @@ const LibroMayor = () => {
   const filtrarCuentas = () => {
     let cuentasFiltradas = cuentasMayor;
 
-    if (cuentaSeleccionada) {
+    if (cuentaSeleccionada && cuentaSeleccionada !== 'all') {
       cuentasFiltradas = cuentasFiltradas.filter(cuenta => cuenta.codigo === cuentaSeleccionada);
     }
 
@@ -278,7 +278,7 @@ const LibroMayor = () => {
                     <SelectValue placeholder="Todas las cuentas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las cuentas</SelectItem>
+                    <SelectItem value="all">Todas las cuentas</SelectItem>
                     {cuentasDisponibles.map(cuenta => (
                       <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
                         {cuenta.codigo} - {cuenta.nombre}
