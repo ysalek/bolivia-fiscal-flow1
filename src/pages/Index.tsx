@@ -28,9 +28,22 @@ const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearc
 const Index = () => {
   const { hasPermission } = useAuth();
   
-  // Obtener el view desde la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const currentView = urlParams.get('view') || 'dashboard';
+  // Obtener el view desde la URL y actualizar cuando cambie
+  const [currentView, setCurrentView] = React.useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('view') || 'dashboard';
+  });
+
+  // Escuchar cambios en la URL
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      setCurrentView(urlParams.get('view') || 'dashboard');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Inicializar sistema al cargar
   useEffect(() => {

@@ -90,9 +90,20 @@ const menuItems = [
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = React.useState(false);
   const location = useLocation();
-  const currentPath = location.pathname + location.search;
+  
+  // Obtener el view actual desde los parámetros de URL
+  const urlParams = new URLSearchParams(location.search);
+  const currentView = urlParams.get('view') || 'dashboard';
 
-  const isActive = (url: string) => currentPath === url;
+  const isActive = (url: string) => {
+    const viewParam = new URLSearchParams(url.split('?')[1] || '').get('view');
+    return viewParam === currentView;
+  };
+
+  const handleNavigation = (url: string) => {
+    window.history.pushState({}, '', url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   const getNavClasses = (active: boolean) => 
     active 
@@ -135,13 +146,11 @@ const AppSidebar = () => {
                 {group.items.map((item, itemIndex) => (
                   <SidebarMenuItem key={itemIndex}>
                     <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className={({ isActive: navIsActive }) => 
-                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                            getNavClasses(navIsActive || isActive(item.url))
-                          }`
-                        }
+                      <button
+                        onClick={() => handleNavigation(item.url)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                          getNavClasses(isActive(item.url))
+                        }`}
                       >
                         <item.icon className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} flex-shrink-0`} />
                         {!collapsed && (
@@ -157,7 +166,7 @@ const AppSidebar = () => {
                             )}
                           </>
                         )}
-                      </NavLink>
+                      </button>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
