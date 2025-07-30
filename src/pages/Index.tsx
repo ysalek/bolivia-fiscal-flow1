@@ -1,7 +1,8 @@
+
 import React, { Suspense, useState, useEffect, lazy } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { inicializarSistemaCompleto } from '@/utils/inicializarSistema';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -159,17 +160,14 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full bg-background">
+      <div className="min-h-screen w-full flex">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0 ml-0 transition-all duration-300"
-             style={{ 
-               marginLeft: 'var(--sidebar-width, 0px)',
-               width: 'calc(100% - var(--sidebar-width, 0px))'
-             }}>
+        <SidebarInset>
           {/* Header */}
-          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 relative z-30">
-            <SidebarTrigger className="mr-4" />
+          <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
+            <SidebarTrigger className="-ml-1" />
+            
             <div className="flex-1 max-w-md">
               <Suspense fallback={<div className="h-8 bg-muted rounded animate-pulse" />}>
                 <GlobalSearch onNavigate={(moduleId) => {
@@ -197,9 +195,11 @@ const Index = () => {
                 }} />
               </Suspense>
             </div>
+            
             <h1 className="font-semibold text-lg mx-4">
               {getPageTitle()}
             </h1>
+            
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
                 <Bell className="w-4 h-4" />
@@ -208,9 +208,9 @@ const Index = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto bg-background relative z-10">
+          <main className="flex-1 overflow-auto p-4">
             <Suspense fallback={
-              <div className="p-6 space-y-4">
+              <div className="space-y-4">
                 <Skeleton className="h-8 w-64" />
                 <Skeleton className="h-64 w-full" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,7 +223,7 @@ const Index = () => {
               {renderCurrentView()}
             </Suspense>
           </main>
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
