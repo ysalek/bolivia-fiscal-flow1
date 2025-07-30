@@ -60,13 +60,13 @@ const menuItems = [
     items: [
       { title: 'Dashboard', url: '/?view=dashboard', icon: Home, badge: null },
       { title: 'Análisis IA', url: '/?view=analisis-inteligente', icon: Brain, badge: 'Nuevo' },
-      { title: 'Búsqueda Global', url: '/?view=search', icon: Search, badge: null },
     ]
   },
   {
     group: 'Contabilidad',
     items: [
       { title: 'Plan de Cuentas', url: '/?view=plan-cuentas', icon: BookOpen, badge: null },
+      { title: 'Comprobantes', url: '/?view=comprobantes-integrados', icon: FileCheck, badge: null },
       { title: 'Libro Diario', url: '/?view=diario', icon: FileText, badge: null },
       { title: 'Libro Mayor', url: '/?view=mayor', icon: BookOpenCheck, badge: null },
       { title: 'Balance de Comprobación', url: '/?view=balance-comprobacion', icon: Scale, badge: null },
@@ -81,8 +81,48 @@ const menuItems = [
       { title: 'Punto de Venta', url: '/?view=punto-venta', icon: CreditCard, badge: null },
       { title: 'Ventas a Crédito', url: '/?view=credit-sales', icon: DollarSign, badge: null },
       { title: 'Compras', url: '/?view=compras', icon: ShoppingCart, badge: null },
-      { title: 'Inventario', url: '/?view=inventario', icon: Package, badge: null },
+      { title: 'Clientes', url: '/?view=clientes', icon: Users, badge: null },
+    ]
+  },
+  {
+    group: 'Inventario',
+    items: [
+      { title: 'Productos', url: '/?view=productos', icon: Package, badge: null },
+      { title: 'Inventario', url: '/?view=inventario', icon: Archive, badge: null },
       { title: 'Kardex', url: '/?view=kardex', icon: ClipboardList, badge: null },
+    ]
+  },
+  {
+    group: 'Finanzas',
+    items: [
+      { title: 'Bancos', url: '/?view=bancos', icon: Building2, badge: null },
+      { title: 'Flujo de Caja', url: '/?view=flujo-caja', icon: PiggyBank, badge: null },
+      { title: 'Cuentas por Cobrar/Pagar', url: '/?view=cuentas-cobrar-pagar', icon: CreditCard, badge: null },
+      { title: 'Declaraciones IVA', url: '/?view=declaraciones-tributarias', icon: FileText, badge: null },
+    ]
+  },
+  {
+    group: 'Recursos Humanos',
+    items: [
+      { title: 'Nómina', url: '/?view=nomina', icon: UserCheck, badge: null },
+      { title: 'Empleados', url: '/?view=empleados', icon: Users, badge: null },
+    ]
+  },
+  {
+    group: 'Reportes',
+    items: [
+      { title: 'Reportes', url: '/?view=reportes', icon: BarChart3, badge: null },
+      { title: 'Análisis Financiero', url: '/?view=analisis-financiero', icon: TrendingUp, badge: null },
+      { title: 'Análisis de Rentabilidad', url: '/?view=rentabilidad', icon: Target, badge: null },
+    ]
+  },
+  {
+    group: 'Configuración',
+    items: [
+      { title: 'Configuración', url: '/?view=configuracion', icon: Settings, badge: null },
+      { title: 'Usuarios', url: '/?view=usuarios', icon: UserCheck, badge: null },
+      { title: 'Backup', url: '/?view=backup', icon: HardDrive, badge: null },
+      { title: 'Tutorial', url: '/?view=tutorial', icon: HelpCircle, badge: null },
     ]
   }
 ];

@@ -85,6 +85,36 @@ const Index = () => {
         return <ClientesModule />;
       case 'search':
         return <GlobalSearch onNavigate={() => {}} />;
+      case 'bancos':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Módulo de Bancos - En desarrollo</h2></div>;
+      case 'flujo-caja':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Flujo de Caja - En desarrollo</h2></div>;
+      case 'cuentas-cobrar-pagar':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Cuentas por Cobrar/Pagar - En desarrollo</h2></div>;
+      case 'declaraciones-tributarias':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Declaraciones Tributarias - En desarrollo</h2></div>;
+      case 'nomina':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Nómina - En desarrollo</h2></div>;
+      case 'empleados':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Empleados - En desarrollo</h2></div>;
+      case 'reportes':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Reportes - En desarrollo</h2></div>;
+      case 'analisis-financiero':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Análisis Financiero - En desarrollo</h2></div>;
+      case 'rentabilidad':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Análisis de Rentabilidad - En desarrollo</h2></div>;
+      case 'configuracion':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Configuración - En desarrollo</h2></div>;
+      case 'usuarios':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Gestión de Usuarios - En desarrollo</h2></div>;
+      case 'backup':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Backup - En desarrollo</h2></div>;
+      case 'tutorial':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Tutorial - En desarrollo</h2></div>;
+      case 'punto-venta':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Punto de Venta - En desarrollo</h2></div>;
+      case 'credit-sales':
+        return <div className="p-6"><h2 className="text-2xl font-bold">Ventas a Crédito - En desarrollo</h2></div>;
       default:
         return <Dashboard />;
     }
@@ -107,7 +137,22 @@ const Index = () => {
       'facturacion': 'Sistema de Facturación',
       'compras': 'Gestión de Compras',
       'clientes': 'Gestión de Clientes',
-      'search': 'Búsqueda Global'
+      'search': 'Búsqueda Global',
+      'bancos': 'Gestión de Bancos',
+      'flujo-caja': 'Flujo de Caja',
+      'cuentas-cobrar-pagar': 'Cuentas por Cobrar/Pagar',
+      'declaraciones-tributarias': 'Declaraciones Tributarias',
+      'nomina': 'Nómina',
+      'empleados': 'Gestión de Empleados',
+      'reportes': 'Reportes',
+      'analisis-financiero': 'Análisis Financiero',
+      'rentabilidad': 'Análisis de Rentabilidad',
+      'configuracion': 'Configuración',
+      'usuarios': 'Gestión de Usuarios',
+      'backup': 'Backup',
+      'tutorial': 'Tutorial',
+      'punto-venta': 'Punto de Venta',
+      'credit-sales': 'Ventas a Crédito'
     };
     return titles[currentView as keyof typeof titles] || 'Sistema Contable';
   };
@@ -121,11 +166,36 @@ const Index = () => {
           {/* Header */}
           <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4">
             <SidebarTrigger className="mr-4" />
-            <div className="flex-1">
-              <h1 className="font-semibold text-lg">
-                {getPageTitle()}
-              </h1>
+            <div className="flex-1 max-w-md">
+              <Suspense fallback={<div className="h-8 bg-muted rounded animate-pulse" />}>
+                <GlobalSearch onNavigate={(moduleId) => {
+                  const viewMap: { [key: string]: string } = {
+                    'dashboard': 'dashboard',
+                    'analisis-inteligente': 'analisis-inteligente',
+                    'diario': 'diario',
+                    'mayor': 'mayor',
+                    'balance-comprobacion': 'balance-comprobacion',
+                    'balance-general': 'balance-general',
+                    'estado-resultados': 'estado-resultados',
+                    'plan-cuentas': 'plan-cuentas',
+                    'comprobantes-integrados': 'comprobantes-integrados',
+                    'productos': 'productos',
+                    'inventario': 'inventario',
+                    'kardex': 'kardex',
+                    'facturacion': 'facturacion',
+                    'compras': 'compras',
+                    'clientes': 'clientes'
+                  };
+                  const view = viewMap[moduleId] || 'dashboard';
+                  const url = `/?view=${view}`;
+                  window.history.pushState({}, '', url);
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }} />
+              </Suspense>
             </div>
+            <h1 className="font-semibold text-lg mx-4">
+              {getPageTitle()}
+            </h1>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
                 <Bell className="w-4 h-4" />
