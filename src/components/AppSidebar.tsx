@@ -152,8 +152,11 @@ const AppSidebar = () => {
 
   return (
     <Sidebar
-      className={`border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${collapsed ? "w-16" : "w-72"}`}
-      style={{ zIndex: 40 }}
+      className={`fixed left-0 top-0 h-full border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${collapsed ? "w-16" : "w-72"}`}
+      style={{ 
+        zIndex: 40,
+        '--sidebar-width': collapsed ? '64px' : '288px'
+      } as React.CSSProperties & { '--sidebar-width': string }}
     >
       <SidebarContent className="p-2">
         {/* Logo/Brand */}

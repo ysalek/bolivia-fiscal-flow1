@@ -159,10 +159,14 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen w-full bg-background">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 ml-0 transition-all duration-300"
+             style={{ 
+               marginLeft: 'var(--sidebar-width, 0px)',
+               width: 'calc(100% - var(--sidebar-width, 0px))'
+             }}>
           {/* Header */}
           <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 relative z-30">
             <SidebarTrigger className="mr-4" />
