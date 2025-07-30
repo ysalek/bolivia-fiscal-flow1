@@ -159,12 +159,12 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4">
+          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 relative z-30">
             <SidebarTrigger className="mr-4" />
             <div className="flex-1 max-w-md">
               <Suspense fallback={<div className="h-8 bg-muted rounded animate-pulse" />}>
@@ -204,7 +204,7 @@ const Index = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-auto bg-background relative z-10">
             <Suspense fallback={
               <div className="p-6 space-y-4">
                 <Skeleton className="h-8 w-64" />

@@ -152,7 +152,8 @@ const AppSidebar = () => {
 
   return (
     <Sidebar
-      className={`border-r transition-all duration-300 ${collapsed ? "w-16" : "w-72"}`}
+      className={`border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${collapsed ? "w-16" : "w-72"}`}
+      style={{ zIndex: 40 }}
     >
       <SidebarContent className="p-2">
         {/* Logo/Brand */}

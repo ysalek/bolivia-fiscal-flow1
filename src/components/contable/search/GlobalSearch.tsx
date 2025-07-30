@@ -121,7 +121,7 @@ const GlobalSearch = ({ onNavigate }: GlobalSearchProps) => {
       />
       
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-1 z-50 shadow-lg border-primary/20">
+        <Card className="absolute top-full left-0 right-0 mt-1 z-[100] shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
           <CardContent className="p-0 max-h-96 overflow-y-auto">
             {!searchTerm && recentSearches.length > 0 && (
               <div className="p-2 border-b">
