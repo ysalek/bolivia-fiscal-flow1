@@ -24,6 +24,20 @@ const KardexModule = lazy(() => import('@/components/contable/KardexModule'));
 const FacturacionModule = lazy(() => import('@/components/contable/FacturacionModule'));
 const ComprasModule = lazy(() => import('@/components/contable/ComprasModule'));
 const ClientesModule = lazy(() => import('@/components/contable/ClientesModule'));
+const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
+const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
+const DeclaracionesTributariasModule = lazy(() => import('@/components/contable/DeclaracionesTributariasModule'));
+const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
+const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
+const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
+const AnalisisRentabilidad = lazy(() => import('@/components/contable/rentabilidad/AnalisisRentabilidad'));
+const ConfiguracionModule = lazy(() => import('@/components/contable/ConfiguracionModule'));
+const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
+const BackupModule = lazy(() => import('@/components/contable/BackupModule'));
+const TutorialModule = lazy(() => import('@/components/contable/TutorialModule'));
+const PuntoVentaModule = lazy(() => import('@/components/contable/PuntoVentaModule'));
+const CreditSalesModule = lazy(() => import('@/components/contable/billing/CreditSalesModule'));
+const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPorCobrarPagar'));
 const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
 
 const Index = () => {
@@ -87,35 +101,35 @@ const Index = () => {
       case 'search':
         return <GlobalSearch onNavigate={() => {}} />;
       case 'bancos':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Módulo de Bancos - En desarrollo</h2></div>;
+        return <BancosModule />;
       case 'flujo-caja':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Flujo de Caja - En desarrollo</h2></div>;
+        return <AdvancedCashFlowModule />;
       case 'cuentas-cobrar-pagar':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Cuentas por Cobrar/Pagar - En desarrollo</h2></div>;
+        return <CuentasPorCobrarPagar />;
       case 'declaraciones-tributarias':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Declaraciones Tributarias - En desarrollo</h2></div>;
+        return <DeclaracionesTributariasModule />;
       case 'nomina':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Nómina - En desarrollo</h2></div>;
+        return <NominaModule />;
       case 'empleados':
         return <div className="p-6"><h2 className="text-2xl font-bold">Empleados - En desarrollo</h2></div>;
       case 'reportes':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Reportes - En desarrollo</h2></div>;
+        return <ReportesModule />;
       case 'analisis-financiero':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Análisis Financiero - En desarrollo</h2></div>;
+        return <AnalisisFinanciero />;
       case 'rentabilidad':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Análisis de Rentabilidad - En desarrollo</h2></div>;
+        return <AnalisisRentabilidad />;
       case 'configuracion':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Configuración - En desarrollo</h2></div>;
+        return <ConfiguracionModule />;
       case 'usuarios':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Gestión de Usuarios - En desarrollo</h2></div>;
+        return <UserManagement />;
       case 'backup':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Backup - En desarrollo</h2></div>;
+        return <BackupModule />;
       case 'tutorial':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Tutorial - En desarrollo</h2></div>;
+        return <TutorialModule />;
       case 'punto-venta':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Punto de Venta - En desarrollo</h2></div>;
+        return <PuntoVentaModule />;
       case 'credit-sales':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Ventas a Crédito - En desarrollo</h2></div>;
+        return <CreditSalesModule />;
       default:
         return <Dashboard />;
     }
