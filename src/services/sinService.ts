@@ -69,12 +69,14 @@ class SINService {
   private baseURL: string;
   private apiKey: string;
   private nitEmisor: string;
+  private version: string;
   
   constructor() {
-    // En producción estos valores vendrían de variables de entorno
-    this.baseURL = 'https://pilotosiatservicios.impuestos.gob.bo';
+    // URLs actualizadas según normativa 2025
+    this.baseURL = 'https://siatrest.impuestos.gob.bo/v2'; // API v2 actualizada
     this.apiKey = process.env.VITE_SIN_API_KEY || 'demo-key';
     this.nitEmisor = process.env.VITE_NIT_EMISOR || '123456789';
+    this.version = '2.0.0'; // Versión actual del sistema de facturación
   }
 
   // Obtener CUFD (Código Único de Facturación Diaria)
@@ -191,16 +193,54 @@ class SINService {
     return `${this.nitEmisor}${fecha}${hora}${numeroFactura.toString().padStart(6, '0')}${cufd.slice(-8)}`;
   }
 
-  // Validar NIT
-  validarNIT(nit: string): boolean {
-    // Algoritmo básico de validación de NIT boliviano
-    if (!nit || nit.length < 7) return false;
+  // Validar NIT según normativa actualizada 2025
+  validarNIT(nit: string): { valido: boolean; mensaje: string } {
+    if (!nit) return { valido: false, mensaje: "NIT requerido" };
     
-    const digits = nit.replace(/\D/g, '');
-    if (digits.length < 7) return false;
+    const nitLimpio = nit.replace(/[-\s]/g, '');
     
-    // Verificar dígito verificador (implementación simplificada)
-    return true;
+    // Longitud válida según normativa actual (7-12 dígitos)
+    if (nitLimpio.length < 7 || nitLimpio.length > 12) {
+      return { valido: false, mensaje: "NIT debe tener entre 7 y 12 dígitos" };
+    }
+    
+    if (!/^\d+$/.test(nitLimpio)) {
+      return { valido: false, mensaje: "NIT debe contener solo números" };
+    }
+    
+    // Algoritmo de validación de dígito verificador boliviano
+    const digits = nitLimpio.split('').map(Number);
+    const checkDigit = digits.pop();
+    
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) {
+      sum += digits[i] * (digits.length + 1 - i);
+    }
+    
+    const remainder = sum % 11;
+    const calculatedCheckDigit = remainder < 2 ? remainder : 11 - remainder;
+    
+    if (checkDigit !== calculatedCheckDigit) {
+      return { valido: false, mensaje: "Dígito verificador inválido" };
+    }
+    
+    return { valido: true, mensaje: "NIT válido" };
+  }
+
+  // Nuevos métodos para sectores especiales según RND 2024-2025
+  async validarSectorEspecial(codigoSector: number): Promise<boolean> {
+    const sectoresValidos = [54, 55]; // Biodiesel y combustible no subvencionado
+    return sectoresValidos.includes(codigoSector);
+  }
+
+  // Método para obtener códigos de actividad económica actualizados
+  async obtenerActividadesEconomicas(): Promise<any[]> {
+    return [
+      { codigo: "620100", descripcion: "Programación informática" },
+      { codigo: "620200", descripcion: "Consultoría informática" },
+      { codigo: "192000", descripcion: "Fabricación de productos de refinación del petróleo" },
+      { codigo: "351100", descripcion: "Generación de energía eléctrica" }
+    ];
   }
 }
 

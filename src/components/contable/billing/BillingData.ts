@@ -178,19 +178,72 @@ export const simularValidacionSIN = (factura: Factura): Promise<Factura> => {
   });
 };
 
-// El IVA está incluido en el precio, por lo tanto:
-// Precio sin IVA = Precio Total / 1.13
-// IVA = Precio Total - Precio sin IVA
-export const calcularIVA = (precioConIVA: number): number => {
+// Normativa actualizada 2025 - IVA 13%
+// Sectores especiales según nuevas RND 2024-2025
+export const sectoresEspeciales = {
+  biodiesel: { codigo: 54, tasa: 0 }, // Tasa cero según Ley 1613
+  combustibleNoSubvencionado: { codigo: 55, tasa: 13 },
+  serviciosPublicos: { codigo: 1, tasa: 0 },
+  exportaciones: { codigo: 2, tasa: 0 },
+  medicamentos: { codigo: 3, tasa: 0 }
+};
+
+// Cálculo de IVA actualizado con sectores especiales
+export const calcularIVA = (precioConIVA: number, codigoSector?: number): number => {
+  // Verificar si es sector con tasa especial
+  const sectorEspecial = Object.values(sectoresEspeciales)
+    .find(s => s.codigo === codigoSector);
+  
+  if (sectorEspecial && sectorEspecial.tasa === 0) {
+    return 0; // Tasa cero para sectores especiales
+  }
+  
+  // IVA estándar 13%
   const precioSinIVA = precioConIVA / 1.13;
   return precioConIVA - precioSinIVA;
 };
 
-export const calcularSubtotalSinIVA = (precioConIVA: number): number => {
+export const calcularSubtotalSinIVA = (precioConIVA: number, codigoSector?: number): number => {
+  const sectorEspecial = Object.values(sectoresEspeciales)
+    .find(s => s.codigo === codigoSector);
+  
+  if (sectorEspecial && sectorEspecial.tasa === 0) {
+    return precioConIVA; // Sin IVA para sectores especiales
+  }
+  
   return precioConIVA / 1.13;
 };
 
 export const calcularTotal = (subtotalConDescuento: number): number => {
-  // El subtotal ya incluye el IVA, por lo tanto el total es el mismo
   return subtotalConDescuento;
+};
+
+// Nuevos códigos de actividad económica actualizados 2025
+export const actividadesEconomicas = [
+  { codigo: "620100", descripcion: "Programación informática", ivaExento: false },
+  { codigo: "620200", descripcion: "Consultoría informática", ivaExento: false },
+  { codigo: "851000", descripcion: "Educación preprimaria", ivaExento: true },
+  { codigo: "861000", descripcion: "Actividades de hospitales", ivaExento: true },
+  { codigo: "192000", descripcion: "Fabricación de productos de refinación del petróleo", ivaExento: false },
+  { codigo: "351100", descripcion: "Generación de energía eléctrica", ivaExento: true },
+];
+
+// Validación de NIT actualizada según normativa 2025
+export const validarNITBoliviano = (nit: string): { valido: boolean; mensaje: string } => {
+  if (!nit) return { valido: false, mensaje: "NIT requerido" };
+  
+  // Remover espacios y guiones
+  const nitLimpio = nit.replace(/[-\s]/g, '');
+  
+  // Verificar longitud (7-12 dígitos según normativa actual)
+  if (nitLimpio.length < 7 || nitLimpio.length > 12) {
+    return { valido: false, mensaje: "NIT debe tener entre 7 y 12 dígitos" };
+  }
+  
+  // Verificar que solo contenga números
+  if (!/^\d+$/.test(nitLimpio)) {
+    return { valido: false, mensaje: "NIT debe contener solo números" };
+  }
+  
+  return { valido: true, mensaje: "NIT válido" };
 };

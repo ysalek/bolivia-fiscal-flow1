@@ -38,6 +38,8 @@ const TutorialModule = lazy(() => import('@/components/contable/TutorialModule')
 const PuntoVentaModule = lazy(() => import('@/components/contable/PuntoVentaModule'));
 const CreditSalesModule = lazy(() => import('@/components/contable/billing/CreditSalesModule'));
 const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPorCobrarPagar'));
+const FacturacionElectronicaModule = lazy(() => import('@/components/contable/facturacion/FacturacionElectronicaModule'));
+const RetencionesModule = lazy(() => import('@/components/contable/retenciones/RetencionesModule'));
 const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
 
 const Index = () => {
@@ -130,6 +132,10 @@ const Index = () => {
         return <PuntoVentaModule />;
       case 'credit-sales':
         return <CreditSalesModule />;
+      case 'facturacion-electronica':
+        return <FacturacionElectronicaModule />;
+      case 'retenciones':
+        return <RetencionesModule />;
       default:
         return <Dashboard />;
     }

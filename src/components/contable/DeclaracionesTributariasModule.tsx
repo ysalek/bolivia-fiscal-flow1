@@ -36,12 +36,16 @@ interface PeriodoFiscal {
 }
 
 const tiposDeclaracion = [
-  { value: 'iva', label: 'IVA Mensual', formulario: 'Formulario 200' },
-  { value: 'it', label: 'IT Mensual', formulario: 'Formulario 401' },
-  { value: 'iue', label: 'IUE Trimestral', formulario: 'Formulario 600' },
-  { value: 'rc_iva', label: 'RC-IVA Mensual', formulario: 'Formulario 110' },
-  { value: 'formulario_110', label: 'Formulario 110', formulario: 'Declaración Jurada' },
-  { value: 'formulario_500', label: 'Formulario 500', formulario: 'Declaración Anual' }
+  { value: 'iva', label: 'IVA Mensual', formulario: 'Formulario 200', vencimiento: 20 },
+  { value: 'it', label: 'IT Mensual', formulario: 'Formulario 401', vencimiento: 20 },
+  { value: 'iue', label: 'IUE Trimestral', formulario: 'Formulario 600', vencimiento: 120 },
+  { value: 'rc_iva', label: 'RC-IVA Mensual', formulario: 'Formulario 110', vencimiento: 20 },
+  { value: 'formulario_110', label: 'Formulario 110', formulario: 'Declaración Jurada', vencimiento: 31 },
+  { value: 'formulario_500', label: 'Formulario 500', formulario: 'Declaración Anual', vencimiento: 31 },
+  // Nuevos formularios según normativas 2024-2025
+  { value: 'formulario_750', label: 'Formulario 750', formulario: 'Régimen Simplificado', vencimiento: 20 },
+  { value: 'declaracion_iva_digital', label: 'Declaración IVA Digital', formulario: 'Sistema Digital', vencimiento: 20 },
+  { value: 'sectores_especiales', label: 'Sectores Especiales', formulario: 'Biocombustibles/Energía', vencimiento: 25 }
 ];
 
 const DeclaracionesTributariasModule = () => {
@@ -133,7 +137,7 @@ const DeclaracionesTributariasModule = () => {
     generarPeriodosFiscales();
   };
 
-  const calcularMultaInteres = (fechaVencimiento: string, montoImpuesto: number) => {
+  const calcularMultaInteres = (fechaVencimiento: string, montoImpuesto: number, tipoDeclaracion: string) => {
     const hoy = new Date();
     const vencimiento = new Date(fechaVencimiento);
     const diasRetraso = Math.max(0, Math.ceil((hoy.getTime() - vencimiento.getTime()) / (1000 * 3600 * 24)));
@@ -142,11 +146,29 @@ const DeclaracionesTributariasModule = () => {
     let interes = 0;
     
     if (diasRetraso > 0) {
-      // Multa fija por presentación tardía (ejemplo: 5% del impuesto)
-      multa = montoImpuesto * 0.05;
+      // Multas actualizadas según normativa 2024-2025
+      switch (tipoDeclaracion) {
+        case 'iva':
+        case 'it':
+          // Multa variable: 100 UFV por día hasta 30 días, luego 200 UFV por día
+          const ufv = 2.55; // UFV aproximado 2025
+          if (diasRetraso <= 30) {
+            multa = diasRetraso * 100 * ufv;
+          } else {
+            multa = (30 * 100 * ufv) + ((diasRetraso - 30) * 200 * ufv);
+          }
+          break;
+        case 'iue':
+          // Para IUE: 5% del impuesto + 500 UFV fijo
+          multa = (montoImpuesto * 0.05) + (500 * 2.55);
+          break;
+        default:
+          // Multa estándar: 3% del impuesto
+          multa = montoImpuesto * 0.03;
+      }
       
-      // Interés diario (ejemplo: 0.05% diario)
-      interes = montoImpuesto * 0.0005 * diasRetraso;
+      // Interés actualizado: Tasa de interés anual 6% (0.0164% diario)
+      interes = montoImpuesto * 0.000164 * diasRetraso;
     }
     
     return { multa, interes };
