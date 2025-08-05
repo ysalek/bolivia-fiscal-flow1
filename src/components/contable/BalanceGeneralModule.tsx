@@ -5,13 +5,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Scale, Download, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { Scale, Download, Calendar, CheckCircle, AlertCircle, CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 
 const BalanceGeneralModule = () => {
-  const [fechaCorte, setFechaCorte] = useState(new Date().toISOString().slice(0, 10));
+  const [fechaInicio, setFechaInicio] = useState<Date>(new Date(new Date().getFullYear(), 0, 1));
+  const [fechaCorte, setFechaCorte] = useState<Date>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
   const { getBalanceSheetData } = useContabilidadIntegration();
 
@@ -28,9 +33,12 @@ const BalanceGeneralModule = () => {
   const { activos, pasivos, patrimonio, totalPasivoPatrimonio, ecuacionCuadrada } = balanceData;
 
   const exportarExcel = () => {
+    const fechaInicioStr = format(fechaInicio, 'dd/MM/yyyy');
+    const fechaCorteStr = format(fechaCorte, 'dd/MM/yyyy');
+    
     const datos = [
       ['BALANCE GENERAL'],
-      [`Al ${fechaCorte}`],
+      [`Período: ${fechaInicioStr} al ${fechaCorteStr}`],
       [''],
       ['ACTIVOS', '', 'Bs.'],
       ...activos.cuentas.map(cuenta => [cuenta.codigo, cuenta.nombre, cuenta.saldo.toFixed(2)]),
@@ -52,7 +60,7 @@ const BalanceGeneralModule = () => {
     const ws = XLSX.utils.aoa_to_sheet(datos);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Balance General');
-    XLSX.writeFile(wb, `Balance_General_${fechaCorte}.xlsx`);
+    XLSX.writeFile(wb, `Balance_General_${format(fechaInicio, 'yyyy-MM-dd')}_${format(fechaCorte, 'yyyy-MM-dd')}.xlsx`);
   };
 
   return (
@@ -76,21 +84,63 @@ const BalanceGeneralModule = () => {
             </Button>
           </CardTitle>
           <CardDescription>
-            Estado de situación financiera a una fecha determinada
+            Estado de situación financiera por período - Cumple normativa SIN Bolivia
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <Label htmlFor="fecha-corte">Fecha de Corte:</Label>
-              <Input
-                id="fecha-corte"
-                type="date"
-                value={fechaCorte}
-                onChange={(e) => setFechaCorte(e.target.value)}
-                className="w-auto"
-              />
+              <Label>Fecha Inicio:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !fechaInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fechaInicio ? format(fechaInicio, "dd/MM/yyyy") : <span>Seleccionar fecha</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fechaInicio}
+                    onSelect={(date) => date && setFechaInicio(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label>Fecha Corte:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !fechaCorte && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fechaCorte ? format(fechaCorte, "dd/MM/yyyy") : <span>Seleccionar fecha</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fechaCorte}
+                    onSelect={(date) => date && setFechaCorte(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <Button onClick={exportarExcel} variant="outline" className="flex items-center gap-2">
               <Download className="w-4 h-4" />

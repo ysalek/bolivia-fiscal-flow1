@@ -7,12 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Scale, FileWarning, Filter } from 'lucide-react';
+import { Scale, FileWarning, Filter, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const BalanceComprobacionModule = () => {
     const { getTrialBalanceData } = useReportesContables();
-    const [fechaInicio, setFechaInicio] = useState('');
-    const [fechaFin, setFechaFin] = useState('');
+    const [fechaInicio, setFechaInicio] = useState<Date | undefined>();
+    const [fechaFin, setFechaFin] = useState<Date | undefined>();
     const [cuentaInicio, setCuentaInicio] = useState('');
     const [cuentaFin, setCuentaFin] = useState('');
     const [formato4Columnas, setFormato4Columnas] = useState(false);
@@ -27,7 +31,12 @@ const BalanceComprobacionModule = () => {
         window.location.hash = `#${Date.now()}`;
     };
     
-    const { details, totals } = getTrialBalanceData({ fechaInicio, fechaFin, cuentaInicio, cuentaFin });
+    const { details, totals } = getTrialBalanceData({ 
+        fechaInicio: fechaInicio ? format(fechaInicio, 'yyyy-MM-dd') : '', 
+        fechaFin: fechaFin ? format(fechaFin, 'yyyy-MM-dd') : '', 
+        cuentaInicio, 
+        cuentaFin 
+    });
 
     const totalsMatch = Math.abs(totals.sumaDebe - totals.sumaHaber) < 0.01;
     const balancesMatch = Math.abs(totals.saldoDeudor - totals.saldoAcreedor) < 0.01;
@@ -52,7 +61,7 @@ const BalanceComprobacionModule = () => {
                     </Button>
                 </CardTitle>
                 <CardDescription>
-                    Verifica que la suma de los débitos sea igual a la suma de los créditos, y que la suma de los saldos deudores sea igual a la de los acreedores.
+                    Balance de sumas y saldos por período - Cumple normativa contable boliviana
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -65,24 +74,58 @@ const BalanceComprobacionModule = () => {
                         {/* Filtros */}
                         <Card>
                             <CardContent className="pt-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                                     <div>
-                                        <Label htmlFor="fechaInicio">Fecha Inicio</Label>
-                                        <Input
-                                            id="fechaInicio"
-                                            type="date"
-                                            value={fechaInicio}
-                                            onChange={(e) => setFechaInicio(e.target.value)}
-                                        />
+                                        <Label>Fecha Inicio</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !fechaInicio && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {fechaInicio ? format(fechaInicio, "dd/MM/yyyy") : <span>Seleccionar</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CalendarComponent
+                                                    mode="single"
+                                                    selected={fechaInicio}
+                                                    onSelect={setFechaInicio}
+                                                    initialFocus
+                                                    className={cn("p-3 pointer-events-auto")}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     <div>
-                                        <Label htmlFor="fechaFin">Fecha Fin</Label>
-                                        <Input
-                                            id="fechaFin"
-                                            type="date"
-                                            value={fechaFin}
-                                            onChange={(e) => setFechaFin(e.target.value)}
-                                        />
+                                        <Label>Fecha Fin</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !fechaFin && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {fechaFin ? format(fechaFin, "dd/MM/yyyy") : <span>Seleccionar</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CalendarComponent
+                                                    mode="single"
+                                                    selected={fechaFin}
+                                                    onSelect={setFechaFin}
+                                                    initialFocus
+                                                    className={cn("p-3 pointer-events-auto")}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     <div>
                                         <Label htmlFor="cuentaInicio">Cuenta Inicio</Label>

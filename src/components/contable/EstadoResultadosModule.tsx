@@ -4,15 +4,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Download, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
+import { TrendingUp, Download, Calendar, ChevronDown, ChevronRight, CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReportesContables } from '@/hooks/useReportesContables';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 
 const EstadoResultadosModule = () => {
-  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
+  const [fechaInicio, setFechaInicio] = useState<Date>(new Date(new Date().getFullYear(), 0, 1));
+  const [fechaFin, setFechaFin] = useState<Date>(new Date());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const { getIncomeStatementData, getTrialBalanceData } = useReportesContables();
@@ -320,9 +324,12 @@ const EstadoResultadosModule = () => {
   };
 
   const exportarExcel = () => {
+    const fechaInicioStr = format(fechaInicio, 'dd/MM/yyyy');
+    const fechaFinStr = format(fechaFin, 'dd/MM/yyyy');
+    
     const datos = [
       ['ESTADO DE RESULTADOS'],
-      [`Período: ${fechaInicio} al ${fechaFin}`],
+      [`Período: ${fechaInicioStr} al ${fechaFinStr}`],
       [''],
       ['Concepto', 'Importe (Bs.)', '% de Ventas'],
       ['INGRESOS', estadoResultados.ingresos.totalIngresos.toFixed(2), '100.0%'],
@@ -348,7 +355,7 @@ const EstadoResultadosModule = () => {
     const ws = XLSX.utils.aoa_to_sheet(datos);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Estado de Resultados');
-    XLSX.writeFile(wb, `Estado_Resultados_${fechaInicio}_${fechaFin}.xlsx`);
+    XLSX.writeFile(wb, `Estado_Resultados_${format(fechaInicio, 'yyyy-MM-dd')}_${format(fechaFin, 'yyyy-MM-dd')}.xlsx`);
   };
 
   return (
@@ -383,31 +390,63 @@ const EstadoResultadosModule = () => {
             </div>
           </CardTitle>
           <CardDescription>
-            Estado de ganancias y pérdidas del período seleccionado con detalle completo de cuentas contables
+            Estado de ganancias y pérdidas por período - Cumple normativa contable boliviana
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <Label htmlFor="fecha-inicio">Desde:</Label>
-              <Input
-                id="fecha-inicio"
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="w-auto"
-              />
+              <Label>Desde:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !fechaInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fechaInicio ? format(fechaInicio, "dd/MM/yyyy") : <span>Seleccionar fecha</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fechaInicio}
+                    onSelect={(date) => date && setFechaInicio(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="fecha-fin">Hasta:</Label>
-              <Input
-                id="fecha-fin"
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="w-auto"
-              />
+              <Label>Hasta:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !fechaFin && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fechaFin ? format(fechaFin, "dd/MM/yyyy") : <span>Seleccionar fecha</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fechaFin}
+                    onSelect={(date) => date && setFechaFin(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -568,7 +607,7 @@ const EstadoResultadosModule = () => {
               {utilidadNeta >= 0 ? 'Utilidad' : 'Pérdida'}: Bs. {Math.abs(utilidadNeta).toFixed(2)}
             </Badge>
             <div className="text-sm text-muted-foreground">
-              Período: {fechaInicio} al {fechaFin}
+              Período: {format(fechaInicio, 'dd/MM/yyyy')} al {format(fechaFin, 'dd/MM/yyyy')}
             </div>
           </div>
         </CardContent>
