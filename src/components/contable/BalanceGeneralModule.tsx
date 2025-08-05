@@ -12,7 +12,17 @@ import * as XLSX from 'xlsx';
 
 const BalanceGeneralModule = () => {
   const [fechaCorte, setFechaCorte] = useState(new Date().toISOString().slice(0, 10));
+  const [isGenerating, setIsGenerating] = useState(false);
   const { getBalanceSheetData } = useContabilidadIntegration();
+
+  const generarReporte = async () => {
+    setIsGenerating(true);
+    // Simular proceso de generación
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsGenerating(false);
+    // Forzar actualización de datos
+    window.location.hash = `#${Date.now()}`;
+  };
 
   const balanceData = getBalanceSheetData();
   const { activos, pasivos, patrimonio, totalPasivoPatrimonio, ecuacionCuadrada } = balanceData;
@@ -55,13 +65,14 @@ const BalanceGeneralModule = () => {
               Balance General
             </div>
             <Button 
-              onClick={() => window.location.reload()}
+              onClick={generarReporte}
+              disabled={isGenerating}
               variant="default"
               size="sm"
               className="flex items-center gap-2"
             >
               <Scale className="w-4 h-4" />
-              Generar Reporte
+              {isGenerating ? 'Generando...' : 'Generar Reporte'}
             </Button>
           </CardTitle>
           <CardDescription>

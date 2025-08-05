@@ -16,6 +16,16 @@ const BalanceComprobacionModule = () => {
     const [cuentaInicio, setCuentaInicio] = useState('');
     const [cuentaFin, setCuentaFin] = useState('');
     const [formato4Columnas, setFormato4Columnas] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    
+    const generarReporte = async () => {
+        setIsGenerating(true);
+        // Simular proceso de generación
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsGenerating(false);
+        // Forzar actualización de datos
+        window.location.hash = `#${Date.now()}`;
+    };
     
     const { details, totals } = getTrialBalanceData({ fechaInicio, fechaFin, cuentaInicio, cuentaFin });
 
@@ -31,13 +41,14 @@ const BalanceComprobacionModule = () => {
                         Balance de Comprobación de Sumas y Saldos
                     </div>
                     <Button 
-                        onClick={() => window.location.reload()}
+                        onClick={generarReporte}
+                        disabled={isGenerating}
                         variant="default"
                         size="sm"
                         className="flex items-center gap-2"
                     >
                         <Filter className="w-4 h-4" />
-                        Generar Reporte
+                        {isGenerating ? 'Generando...' : 'Generar Reporte'}
                     </Button>
                 </CardTitle>
                 <CardDescription>
