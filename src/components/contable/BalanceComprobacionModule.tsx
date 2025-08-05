@@ -25,9 +25,20 @@ const BalanceComprobacionModule = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Scale className="w-6 h-6" />
-                    Balance de Comprobación de Sumas y Saldos
+                <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Scale className="w-6 h-6" />
+                        Balance de Comprobación de Sumas y Saldos
+                    </div>
+                    <Button 
+                        onClick={() => window.location.reload()}
+                        variant="default"
+                        size="sm"
+                        className="flex items-center gap-2"
+                    >
+                        <Filter className="w-4 h-4" />
+                        Generar Reporte
+                    </Button>
                 </CardTitle>
                 <CardDescription>
                     Verifica que la suma de los débitos sea igual a la suma de los créditos, y que la suma de los saldos deudores sea igual a la de los acreedores.

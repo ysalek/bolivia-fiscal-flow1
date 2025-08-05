@@ -49,9 +49,20 @@ const BalanceGeneralModule = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="w-6 h-6" />
-            Balance General
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="w-6 h-6" />
+              Balance General
+            </div>
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Scale className="w-4 h-4" />
+              Generar Reporte
+            </Button>
           </CardTitle>
           <CardDescription>
             Estado de situación financiera a una fecha determinada

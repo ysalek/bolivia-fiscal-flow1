@@ -345,9 +345,31 @@ const EstadoResultadosModule = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
-            Estado de Resultados
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-6 h-6" />
+              Estado de Resultados
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Generar Reporte
+              </Button>
+              <Button 
+                onClick={exportarExcel}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Exportar Excel
+              </Button>
+            </div>
           </CardTitle>
           <CardDescription>
             Estado de ganancias y pérdidas del período seleccionado con detalle completo de cuentas contables
@@ -376,10 +398,6 @@ const EstadoResultadosModule = () => {
                 className="w-auto"
               />
             </div>
-            <Button onClick={exportarExcel} variant="outline" className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Exportar Excel
-            </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
