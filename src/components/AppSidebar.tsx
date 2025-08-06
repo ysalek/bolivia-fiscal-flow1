@@ -100,6 +100,8 @@ const menuItems = [
       { title: 'Cuentas por Cobrar/Pagar', url: '/?view=cuentas-cobrar-pagar', icon: CreditCard, badge: null },
       { title: 'Declaraciones IVA', url: '/?view=declaraciones-tributarias', icon: FileText, badge: null },
       { title: 'Cumplimiento Normativo', url: '/?view=cumplimiento-normativo', icon: Shield, badge: 'Nuevo' },
+      { title: 'Auditoría Avanzada', url: '/?view=auditoria-avanzada', icon: TestTube, badge: 'Nuevo' },
+      { title: 'Plan Cuentas 2025', url: '/?view=plan-cuentas-2025', icon: BookOpen, badge: 'Actualizado' },
     ]
   },
   {

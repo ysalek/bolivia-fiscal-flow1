@@ -28,6 +28,8 @@ const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
 const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
 const DeclaracionesTributariasModule = lazy(() => import('@/components/contable/DeclaracionesTributariasModule'));
 const CumplimientoNormativoModule = lazy(() => import('@/components/contable/cumplimiento/CumplimientoNormativoModule'));
+const AuditoriaContableAvanzada = lazy(() => import('@/components/contable/auditoria/AuditoriaContableAvanzada'));
+const PlanCuentasBoliviano2025Module = lazy(() => import('@/components/contable/PlanCuentasBoliviano2025Module'));
 const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
 const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
 const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
@@ -113,6 +115,10 @@ const Index = () => {
         return <DeclaracionesTributariasModule />;
       case 'cumplimiento-normativo':
         return <CumplimientoNormativoModule />;
+      case 'auditoria-avanzada':
+        return <AuditoriaContableAvanzada />;
+      case 'plan-cuentas-2025':
+        return <PlanCuentasBoliviano2025Module />;
       case 'nomina':
         return <NominaModule />;
       case 'empleados':
@@ -167,6 +173,8 @@ const Index = () => {
       'cuentas-cobrar-pagar': 'Cuentas por Cobrar/Pagar',
       'declaraciones-tributarias': 'Declaraciones Tributarias',
       'cumplimiento-normativo': 'Cumplimiento Normativo',
+      'auditoria-avanzada': 'Auditoría Avanzada',
+      'plan-cuentas-2025': 'Plan de Cuentas 2025',
       'nomina': 'Nómina',
       'empleados': 'Gestión de Empleados',
       'reportes': 'Reportes',
