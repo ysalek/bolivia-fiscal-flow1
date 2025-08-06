@@ -99,6 +99,7 @@ const menuItems = [
       { title: 'Flujo de Caja', url: '/?view=flujo-caja', icon: PiggyBank, badge: null },
       { title: 'Cuentas por Cobrar/Pagar', url: '/?view=cuentas-cobrar-pagar', icon: CreditCard, badge: null },
       { title: 'Declaraciones IVA', url: '/?view=declaraciones-tributarias', icon: FileText, badge: null },
+      { title: 'Cumplimiento Normativo', url: '/?view=cumplimiento-normativo', icon: Shield, badge: 'Nuevo' },
     ]
   },
   {

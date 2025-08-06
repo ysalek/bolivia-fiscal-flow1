@@ -27,6 +27,7 @@ const ClientesModule = lazy(() => import('@/components/contable/ClientesModule')
 const BancosModule = lazy(() => import('@/components/contable/BancosModule'));
 const AdvancedCashFlowModule = lazy(() => import('@/components/contable/cashflow/AdvancedCashFlowModule'));
 const DeclaracionesTributariasModule = lazy(() => import('@/components/contable/DeclaracionesTributariasModule'));
+const CumplimientoNormativoModule = lazy(() => import('@/components/contable/cumplimiento/CumplimientoNormativoModule'));
 const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
 const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
 const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
@@ -110,6 +111,8 @@ const Index = () => {
         return <CuentasPorCobrarPagar />;
       case 'declaraciones-tributarias':
         return <DeclaracionesTributariasModule />;
+      case 'cumplimiento-normativo':
+        return <CumplimientoNormativoModule />;
       case 'nomina':
         return <NominaModule />;
       case 'empleados':
@@ -163,6 +166,7 @@ const Index = () => {
       'flujo-caja': 'Flujo de Caja',
       'cuentas-cobrar-pagar': 'Cuentas por Cobrar/Pagar',
       'declaraciones-tributarias': 'Declaraciones Tributarias',
+      'cumplimiento-normativo': 'Cumplimiento Normativo',
       'nomina': 'Nómina',
       'empleados': 'Gestión de Empleados',
       'reportes': 'Reportes',

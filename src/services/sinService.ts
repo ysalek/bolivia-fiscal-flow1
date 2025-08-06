@@ -72,7 +72,7 @@ class SINService {
   private version: string;
   
   constructor() {
-    // URLs actualizadas según normativa 2025
+    // URLs actualizadas según normativa 2025 - SIAT v2.0
     this.baseURL = 'https://siatrest.impuestos.gob.bo/v2'; // API v2 actualizada
     this.apiKey = process.env.VITE_SIN_API_KEY || 'demo-key';
     this.nitEmisor = process.env.VITE_NIT_EMISOR || '123456789';
@@ -229,18 +229,60 @@ class SINService {
 
   // Nuevos métodos para sectores especiales según RND 2024-2025
   async validarSectorEspecial(codigoSector: number): Promise<boolean> {
-    const sectoresValidos = [54, 55]; // Biodiesel y combustible no subvencionado
+    const sectoresValidos = [54, 55, 56]; // Biodiesel, combustible no subvencionado y energía eléctrica
     return sectoresValidos.includes(codigoSector);
   }
 
-  // Método para obtener códigos de actividad económica actualizados
+  // Método para obtener códigos de actividad económica actualizados 2025
   async obtenerActividadesEconomicas(): Promise<any[]> {
     return [
-      { codigo: "620100", descripcion: "Programación informática" },
-      { codigo: "620200", descripcion: "Consultoría informática" },
-      { codigo: "192000", descripcion: "Fabricación de productos de refinación del petróleo" },
-      { codigo: "351100", descripcion: "Generación de energía eléctrica" }
+      { codigo: "620100", descripcion: "Programación informática", sector: "Servicios tecnológicos" },
+      { codigo: "620200", descripcion: "Consultoría informática", sector: "Servicios tecnológicos" },
+      { codigo: "192000", descripcion: "Fabricación de productos de refinación del petróleo", sector: "Combustibles" },
+      { codigo: "351100", descripcion: "Generación de energía eléctrica", sector: "Energía" },
+      { codigo: "461000", descripcion: "Venta al por mayor de maquinaria y equipo", sector: "Comercio" },
+      { codigo: "471100", descripcion: "Venta al por menor en almacenes no especializados", sector: "Comercio" },
+      { codigo: "682000", descripcion: "Alquiler de bienes inmuebles propios o arrendados", sector: "Inmobiliario" }
     ];
+  }
+
+  // Validar cumplimiento de facturación electrónica según grupo
+  async validarGrupoFacturacionElectronica(nit: string): Promise<{
+    obligatorio: boolean;
+    grupo: string;
+    fechaImplementacion: string;
+    estado: 'implementado' | 'en_proceso' | 'pendiente';
+  }> {
+    // Simulación - en producción consultaría base de datos del SIN
+    const grupos = {
+      'octavo': { fechaImplementacion: '2024-01-01', obligatorio: true },
+      'noveno': { fechaImplementacion: '2024-06-01', obligatorio: true },
+      'decimo': { fechaImplementacion: '2024-12-01', obligatorio: true }
+    };
+
+    return {
+      obligatorio: true,
+      grupo: 'octavo',
+      fechaImplementacion: '2024-01-01',
+      estado: 'implementado'
+    };
+  }
+
+  // Obtener tasas de impuestos actualizadas 2025
+  async obtenerTasasImpuestos(): Promise<{
+    iva: number;
+    it: number;
+    rcIva: number;
+    ufv: number;
+    fechaActualizacion: string;
+  }> {
+    return {
+      iva: 13, // 13% IVA estándar
+      it: 3, // 3% IT estándar
+      rcIva: 13, // 13% RC-IVA
+      ufv: 2.55, // UFV aproximado 2025
+      fechaActualizacion: new Date().toISOString().slice(0, 10)
+    };
   }
 }
 

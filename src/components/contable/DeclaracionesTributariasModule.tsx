@@ -44,8 +44,9 @@ const tiposDeclaracion = [
   { value: 'formulario_500', label: 'Formulario 500', formulario: 'Declaración Anual', vencimiento: 31 },
   // Nuevos formularios según normativas 2024-2025
   { value: 'formulario_750', label: 'Formulario 750', formulario: 'Régimen Simplificado', vencimiento: 20 },
-  { value: 'declaracion_iva_digital', label: 'Declaración IVA Digital', formulario: 'Sistema Digital', vencimiento: 20 },
-  { value: 'sectores_especiales', label: 'Sectores Especiales', formulario: 'Biocombustibles/Energía', vencimiento: 25 }
+  { value: 'declaracion_iva_digital', label: 'Declaración IVA Digital', formulario: 'Sistema Digital SIN', vencimiento: 20 },
+  { value: 'sectores_especiales', label: 'Sectores Especiales', formulario: 'Biocombustibles/Energía', vencimiento: 25 },
+  { value: 'estados_financieros', label: 'Estados Financieros', formulario: 'Presentación Anual', vencimiento: 21 } // Actualizado 2025
 ];
 
 const DeclaracionesTributariasModule = () => {
