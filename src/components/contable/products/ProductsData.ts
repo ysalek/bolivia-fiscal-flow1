@@ -15,6 +15,7 @@ export interface Producto {
   activo: boolean;
   fechaCreacion: string;
   fechaActualizacion: string;
+  imagenUrl?: string; // soporte opcional para imágenes en POS y catálogos
 }
 
 export interface CategoriaProducto {

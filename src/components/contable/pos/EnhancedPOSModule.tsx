@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -517,8 +517,17 @@ const EnhancedPOSModule = () => {
                     >
                       <CardContent className="p-3">
                         <div className="space-y-2">
-                          <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Package className="w-8 h-8 text-slate-400" />
+                          <div className="aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                            {producto.imagenUrl ? (
+                              <img
+                                src={producto.imagenUrl}
+                                alt={`Imagen producto ${producto.nombre}`}
+                                loading="lazy"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-8 h-8 text-muted-foreground" />
+                            )}
                           </div>
                           <div>
                             <h4 className="font-medium text-sm line-clamp-2">{producto.nombre}</h4>
@@ -773,6 +782,7 @@ const EnhancedPOSModule = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Nuevo Cliente</DialogTitle>
+            <DialogDescription>Complete los datos del cliente para registrarlo en el POS.</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -835,6 +845,7 @@ const EnhancedPOSModule = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-center">Ticket de Venta</DialogTitle>
+            <DialogDescription>Resumen de la venta procesada. Imprima o cierre para continuar.</DialogDescription>
           </DialogHeader>
           
           {ultimaVenta && (

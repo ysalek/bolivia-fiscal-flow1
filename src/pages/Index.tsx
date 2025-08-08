@@ -6,7 +6,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/s
 import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/contable/notifications/NotificationCenter';
 
@@ -259,6 +259,7 @@ const Index = () => {
             <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Centro de Notificaciones</DialogTitle>
+                <DialogDescription>Alertas del sistema: inventario, finanzas y obligaciones fiscales.</DialogDescription>
               </DialogHeader>
               <Suspense fallback={<div className="h-32 bg-muted rounded animate-pulse" />}> 
                 <NotificationCenter />
