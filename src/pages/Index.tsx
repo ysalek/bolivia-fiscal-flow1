@@ -6,7 +6,9 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/s
 import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Bell } from 'lucide-react';
+import NotificationCenter from '@/components/contable/notifications/NotificationCenter';
 
 // Lazy load components
 const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
@@ -47,6 +49,7 @@ const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearc
 
 const Index = () => {
   const { hasPermission } = useAuth();
+  const [openNotifications, setOpenNotifications] = useState(false);
   
   // Obtener el view desde la URL y actualizar cuando cambie
   const [currentView, setCurrentView] = React.useState(() => {
@@ -63,6 +66,19 @@ const Index = () => {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Escuchar eventos de navegación desde componentes (notificaciones, etc.)
+  useEffect(() => {
+    const handler = (e: any) => {
+      const view = e.detail || 'dashboard';
+      const url = `/?view=${view}`;
+      window.history.pushState({}, '', url);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      setOpenNotifications(false);
+    };
+    window.addEventListener('navigate-to-module', handler as EventListener);
+    return () => window.removeEventListener('navigate-to-module', handler as EventListener);
   }, []);
 
   // Inicializar sistema al cargar
@@ -233,11 +249,22 @@ const Index = () => {
             </h1>
             
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => setOpenNotifications(true)} aria-label="Abrir notificaciones">
                 <Bell className="w-4 h-4" />
               </Button>
             </div>
           </header>
+
+          <Dialog open={openNotifications} onOpenChange={setOpenNotifications}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Centro de Notificaciones</DialogTitle>
+              </DialogHeader>
+              <Suspense fallback={<div className="h-32 bg-muted rounded animate-pulse" />}> 
+                <NotificationCenter />
+              </Suspense>
+            </DialogContent>
+          </Dialog>
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto p-4">
