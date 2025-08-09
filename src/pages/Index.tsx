@@ -206,6 +206,38 @@ const Index = () => {
     return titles[currentView as keyof typeof titles] || 'Sistema Contable';
   };
 
+  // SEO dinámico por vista
+  useEffect(() => {
+    const title = `${getPageTitle()} | Sistema Contable Bolivia`;
+    document.title = title;
+
+    const descriptions: Record<string, string> = {
+      'dashboard': 'Panel de control con KPIs contables y financieros en Bolivia.',
+      'punto-venta': 'POS con precios con IVA incluido, inventario y clientes en Bolivia.',
+      'credit-sales': 'Gestión de ventas a crédito y cuentas por cobrar (1121).',
+      'facturacion': 'Facturación y control fiscal conforme normativa boliviana.',
+      'inventario': 'Control de inventario y kardex.',
+      'compras': 'Gestión de compras y proveedores.',
+    };
+    const description = descriptions[currentView] || 'Sistema contable integral para Bolivia: POS, compras, ventas e informes.';
+
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', description);
+
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', `${window.location.origin}/?view=${currentView}`);
+  }, [currentView]);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full flex">

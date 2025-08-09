@@ -132,13 +132,16 @@ const EnhancedPOSModule = () => {
   });
 
   // Categorías de productos para navegación rápida
+  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
   const categorias = [...new Set(productos.map(p => p.categoria || 'Sin categoría'))];
-
   const productosFiltrados = productos.filter(p => 
-    p.activo && 
-    (p.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
-     p.codigo.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
-     (codigoBarras && p.codigo === codigoBarras))
+    p.activo &&
+    (!selectedCategoria || (p.categoria || 'Sin categoría') === selectedCategoria) &&
+    (
+      p.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
+      p.codigo.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
+      (codigoBarras && p.codigo === codigoBarras)
+    )
   );
 
   // Búsqueda por código de barras
@@ -461,6 +464,17 @@ const EnhancedPOSModule = () => {
                       onChange={(e) => setBusquedaProducto(e.target.value)}
                       className="text-lg h-12"
                     />
+                    {selectedCategoria && (
+                      <div className="mt-2">
+                        <Badge
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => setSelectedCategoria(null)}
+                        >
+                          Categoría: {selectedCategoria} ×
+                        </Badge>
+                      </div>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="categorias" className="mt-4">
@@ -471,6 +485,7 @@ const EnhancedPOSModule = () => {
                           variant="outline"
                           className="h-16 flex flex-col items-center justify-center"
                           onClick={() => {
+                            setSelectedCategoria(categoria);
                             setBusquedaProducto("");
                             setActiveTab("productos");
                           }}
