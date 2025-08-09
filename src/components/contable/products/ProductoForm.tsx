@@ -29,7 +29,8 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
     costoUnitario: 0,
     stockActual: 0,
     stockMinimo: 0,
-    codigoSIN: ""
+    codigoSIN: "",
+    imagenUrl: ""
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
@@ -47,7 +48,8 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
         costoUnitario: producto.costoUnitario,
         stockActual: producto.stockActual,
         stockMinimo: producto.stockMinimo,
-        codigoSIN: producto.codigoSIN
+        codigoSIN: producto.codigoSIN,
+        imagenUrl: producto.imagenUrl || ""
       });
     } else {
       // Generar código automático para nuevo producto
@@ -108,6 +110,7 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
       stockActual: formData.stockActual,
       stockMinimo: formData.stockMinimo,
       codigoSIN: formData.codigoSIN.trim(),
+      imagenUrl: formData.imagenUrl || undefined,
       activo: producto?.activo ?? true,
       fechaCreacion: producto?.fechaCreacion || new Date().toISOString().slice(0, 10),
       fechaActualizacion: new Date().toISOString().slice(0, 10)
@@ -298,6 +301,22 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
               onChange={(e) => handleInputChange("codigoSIN", e.target.value)}
               placeholder="Código del SIN"
             />
+          </div>
+
+          {/* URL de Imagen */}
+          <div className="space-y-2">
+            <Label htmlFor="imagenUrl">URL de imagen (opcional)</Label>
+            <Input
+              id="imagenUrl"
+              value={formData.imagenUrl}
+              onChange={(e) => handleInputChange("imagenUrl", e.target.value)}
+              placeholder="https://.../imagen.jpg"
+            />
+            {formData.imagenUrl && (
+              <div className="mt-2">
+                <img src={formData.imagenUrl} alt="Vista previa" className="h-24 w-24 rounded object-cover border" />
+              </div>
+            )}
           </div>
         </div>
 

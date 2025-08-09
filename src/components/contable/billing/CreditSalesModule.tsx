@@ -76,7 +76,11 @@ const CreditSalesModule = () => {
       saldoPendiente: ventaData.total
     };
 
-    // Generar asiento contable para venta a crédito
+    // Generar asiento contable para venta a crédito (precios incluyen IVA)
+    const total = nuevaVenta.total;
+    const iva = total - (total / 1.13);
+    const base = total - iva;
+
     const asientoVenta = {
       id: `asiento-${Date.now()}`,
       numero: `VC-${Date.now()}`,
@@ -84,21 +88,12 @@ const CreditSalesModule = () => {
       concepto: `Venta a crédito - ${nuevaVenta.clienteNombre}`,
       referencia: `Venta Crédito ${nuevaVenta.id}`,
       estado: 'registrado' as const,
-      debe: nuevaVenta.total,
-      haber: nuevaVenta.total,
+      debe: total,
+      haber: total,
       cuentas: [
-        {
-          codigo: '1121',
-          nombre: 'Cuentas por Cobrar',
-          debe: nuevaVenta.total,
-          haber: 0
-        },
-        {
-          codigo: '4111',
-          nombre: 'Ventas',
-          debe: 0,
-          haber: nuevaVenta.total
-        }
+        { codigo: '1121', nombre: 'Cuentas por Cobrar', debe: total, haber: 0 },
+        { codigo: '4111', nombre: 'Ventas', debe: 0, haber: parseFloat(base.toFixed(2)) },
+        { codigo: '2131', nombre: 'IVA Débito Fiscal', debe: 0, haber: parseFloat(iva.toFixed(2)) }
       ]
     };
 
@@ -120,7 +115,7 @@ const CreditSalesModule = () => {
   const totalCuentasPorCobrar = ventasPendientes.reduce((sum, v) => sum + v.saldoPendiente, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Ventas a Crédito</h2>
@@ -253,6 +248,7 @@ const CreditSalesModule = () => {
                   <div className="text-right">
                     <div className="text-sm text-muted-foreground">Total</div>
                     <div className="text-2xl font-bold">Bs. {items.reduce((s, i) => s + i.subtotal, 0).toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground">IVA incluido (13%): Bs. {(items.reduce((s, i) => s + i.subtotal, 0) - (items.reduce((s, i) => s + i.subtotal, 0) / 1.13)).toFixed(2)}</div>
                   </div>
                 </div>
               </div>
@@ -391,6 +387,8 @@ const CreditSalesModule = () => {
               </Table>
               <div className="text-right pt-2">
                 <div><strong>Total:</strong> Bs. {ventaDetalle.total.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground"><strong>IVA incluido (13%):</strong> Bs. {(ventaDetalle.total - (ventaDetalle.total / 1.13)).toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground"><strong>Base imponible:</strong> Bs. {(ventaDetalle.total / 1.13).toFixed(2)}</div>
                 <div><strong>Abonado:</strong> Bs. {ventaDetalle.montoAbonado.toFixed(2)}</div>
                 <div><strong>Saldo:</strong> Bs. {ventaDetalle.saldoPendiente.toFixed(2)}</div>
               </div>
