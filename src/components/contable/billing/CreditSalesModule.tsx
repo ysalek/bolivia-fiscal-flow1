@@ -88,7 +88,7 @@ const CreditSalesModule = () => {
       haber: nuevaVenta.total,
       cuentas: [
         {
-          codigo: '1131',
+          codigo: '1121',
           nombre: 'Cuentas por Cobrar',
           debe: nuevaVenta.total,
           haber: 0
@@ -427,7 +427,7 @@ const CreditSalesModule = () => {
                   setVentasCredito(actualizadas);
                   localStorage.setItem('ventasCredito', JSON.stringify(actualizadas));
 
-                  // Asiento contable del cobro: Caja (1111) a Cuentas por Cobrar (1131)
+                  // Asiento contable del cobro: Caja (1111) a Cuentas por Cobrar (1121)
                   const asientoCobro = {
                     id: `asiento-${Date.now()}`,
                     numero: `COBRO-${Date.now()}`,
@@ -439,7 +439,7 @@ const CreditSalesModule = () => {
                     haber: monto,
                     cuentas: [
                       { codigo: '1111', nombre: 'Caja', debe: monto, haber: 0 },
-                      { codigo: '1131', nombre: 'Cuentas por Cobrar', debe: 0, haber: monto }
+                      { codigo: '1121', nombre: 'Cuentas por Cobrar', debe: 0, haber: monto }
                     ]
                   };
                   guardarAsiento(asientoCobro);

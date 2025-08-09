@@ -247,12 +247,14 @@ const EnhancedPOSModule = () => {
   };
 
   const calcularImpuestos = () => {
-    const base = calcularSubtotal() - calcularDescuentos();
-    return base * 0.13; // IVA 13%
+    const baseInclIVA = calcularSubtotal() - calcularDescuentos();
+    const ivaIncluido = baseInclIVA - (baseInclIVA / 1.13);
+    return ivaIncluido;
   };
 
   const calcularTotal = () => {
-    return calcularSubtotal() - calcularDescuentos() + calcularImpuestos();
+    // Precios incluyen IVA: el total ya incluye el impuesto
+    return calcularSubtotal() - calcularDescuentos();
   };
 
   const agregarCliente = () => {
@@ -693,7 +695,7 @@ const EnhancedPOSModule = () => {
                     <span>-Bs. {calcularDescuentos().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>IVA (13%):</span>
+                    <span>IVA incluido (13%):</span>
                     <span>Bs. {calcularImpuestos().toFixed(2)}</span>
                   </div>
                   <Separator />
@@ -898,7 +900,7 @@ const EnhancedPOSModule = () => {
                   <span>-Bs. {ultimaVenta.descuentoTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>IVA (13%):</span>
+                  <span>IVA incluido (13%):</span>
                   <span>Bs. {ultimaVenta.impuestos.toFixed(2)}</span>
                 </div>
                 <Separator />
