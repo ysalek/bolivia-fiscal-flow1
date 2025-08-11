@@ -59,6 +59,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading: true,
   });
 
+  const refreshSubscription = async () => {
+    try {
+      setSubscription((s) => ({ ...s, loading: true }));
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw error;
+      setSubscription({
+        subscribed: !!data?.subscribed,
+        subscription_tier: data?.subscription_tier ?? null,
+        subscription_end: data?.subscription_end ?? null,
+        loading: false,
+      });
+    } catch (e) {
+      console.warn('check-subscription failed', e);
+      setSubscription((s) => ({ ...s, loading: false }));
+    }
+  };
+
   // Mapear perfil + roles de Supabase a nuestro User
   const buildUserFromSupabase = async (sessionUser: any): Promise<User> => {
     const email = sessionUser.email as string | undefined;
@@ -102,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const mapped = await buildUserFromSupabase(session.user);
             setUser(mapped);
+            await refreshSubscription();
           } catch (e) {
             console.error('No se pudo construir el usuario desde Supabase:', e);
           }
@@ -117,6 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const mapped = await buildUserFromSupabase(session.user);
           setUser(mapped);
+          await refreshSubscription();
         } catch (e) {
           console.error('Error inicializando usuario:', e);
         }
@@ -182,6 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsAuthenticated(false);
       setUser(null);
+      setSubscription({ subscribed: false, subscription_tier: null, subscription_end: null, loading: false });
     }
   };
 
@@ -196,6 +216,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         isAuthenticated,
         user,
+        subscription,
+        refreshSubscription,
         login,
         register,
         logout,
