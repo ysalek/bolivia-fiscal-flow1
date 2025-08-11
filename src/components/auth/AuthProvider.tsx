@@ -18,6 +18,13 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
+  subscription: {
+    subscribed: boolean;
+    subscription_tier: string | null;
+    subscription_end: string | null;
+    loading: boolean;
+  };
+  refreshSubscription: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: {
     nombre: string;
@@ -45,6 +52,12 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [subscription, setSubscription] = useState({
+    subscribed: false,
+    subscription_tier: null as string | null,
+    subscription_end: null as string | null,
+    loading: true,
+  });
 
   // Mapear perfil + roles de Supabase a nuestro User
   const buildUserFromSupabase = async (sessionUser: any): Promise<User> => {
