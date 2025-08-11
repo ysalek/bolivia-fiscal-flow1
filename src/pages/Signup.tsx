@@ -32,16 +32,19 @@ const Signup = () => {
     link.href = window.location.href;
   }, []);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = register({ nombre, email, telefono, empresa, nitOrCI, password });
-    setLoading(false);
-    if (res.success) {
-      navigate('/');
-    } else {
-      setError(res.message || 'No fue posible crear la cuenta');
+    try {
+      const res = await register({ nombre, email, telefono, empresa, nitOrCI, password });
+      if (res.success) {
+        navigate('/');
+      } else {
+        setError(res.message || 'No fue posible crear la cuenta');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

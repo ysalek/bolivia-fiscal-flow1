@@ -1,8 +1,9 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
-  id: number;
+  id: string;
   usuario: string;
   nombre: string;
   rol: string;
@@ -17,7 +18,7 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
-  login: (emailOrUsuario: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (data: {
     nombre: string;
     email: string;
@@ -26,8 +27,8 @@ interface AuthContextProps {
     nitOrCI: string;
     usuario?: string;
     password: string;
-  }) => { success: boolean; message?: string };
-  logout: () => void;
+  }) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
 }
 
@@ -45,71 +46,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  // Cargar usuarios desde localStorage o usar administrador por defecto
-  const getUsuarios = () => {
-    const usuariosGuardados = localStorage.getItem('usuarios_sistema');
-    if (usuariosGuardados) {
-      console.log('Usuarios encontrados en localStorage:', JSON.parse(usuariosGuardados));
-      return JSON.parse(usuariosGuardados);
-    }
-    
-    // Usuario administrador por defecto para sistema de producción
-    const usuariosPorDefecto = [
-      {
-        id: 1,
-        usuario: "admin",
-        email: "admin@sistema.com",
-        password: "C123081a!",
-        nombre: "Administrador del Sistema",
-        rol: "admin",
-        empresa: "Sistema Contable",
-        permisos: ["*"], // Admin tiene todos los permisos
-        activo: true,
-        fechaCreacion: new Date().toISOString()
-      }
-    ];
-    
-    console.log('No se encontraron usuarios, creando usuario por defecto');
-    // Guardar usuarios por defecto
-    localStorage.setItem('usuarios_sistema', JSON.stringify(usuariosPorDefecto));
-    return usuariosPorDefecto;
+  // Mapear perfil + roles de Supabase a nuestro User
+  const buildUserFromSupabase = async (sessionUser: any): Promise<User> => {
+    const email = sessionUser.email as string | undefined;
+    const baseUsuario = email ? email.split('@')[0] : sessionUser.id;
+
+    // Cargar perfil
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, empresa, telefono, permisos')
+      .eq('id', sessionUser.id)
+      .maybeSingle();
+
+    // Cargar roles
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', sessionUser.id);
+
+    const isAdmin = (roles || []).some((r) => r.role === 'admin');
+
+    return {
+      id: sessionUser.id,
+      usuario: baseUsuario,
+      nombre: profile?.display_name || email || 'Usuario',
+      rol: isAdmin ? 'admin' : 'usuario',
+      empresa: profile?.empresa || 'Mi Empresa',
+      permisos: isAdmin ? ['*'] : (profile?.permisos || []),
+      email,
+      telefono: profile?.telefono,
+    };
   };
 
-  const login = (emailOrUsuario: string, password: string) => {
-    console.log('Intentando login con:', emailOrUsuario, password);
-    
-    // Recargar usuarios desde localStorage para obtener la lista más actualizada
-    const usuariosActuales = getUsuarios();
-    console.log('Usuarios actuales para login:', usuariosActuales);
-    
-    const foundUser = usuariosActuales.find(
-      (u) => (u.email === emailOrUsuario || u.usuario === emailOrUsuario) && u.password === password && u.activo
-    );
+  // Inicialización segura: listener primero, luego getSession
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+      setUser((prev) => prev); // mantener mientras actualizamos perfil
 
-    console.log('Usuario encontrado:', foundUser);
+      if (session?.user) {
+        setTimeout(async () => {
+          try {
+            const mapped = await buildUserFromSupabase(session.user);
+            setUser(mapped);
+          } catch (e) {
+            console.error('No se pudo construir el usuario desde Supabase:', e);
+          }
+        }, 0);
+      } else {
+        setUser(null);
+      }
+    });
 
-    if (foundUser) {
-      const userToSet = {
-        id: foundUser.id,
-        usuario: foundUser.usuario,
-        nombre: foundUser.nombre,
-        rol: foundUser.rol,
-        empresa: foundUser.empresa,
-        permisos: foundUser.permisos
-      };
-      
-      setIsAuthenticated(true);
-      setUser(userToSet);
-      console.log('Login exitoso, usuario configurado:', userToSet);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      if (session?.user) {
+        try {
+          const mapped = await buildUserFromSupabase(session.user);
+          setUser(mapped);
+        } catch (e) {
+          console.error('Error inicializando usuario:', e);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.warn('Login fallido:', error.message);
+        return false;
+      }
       return true;
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-      console.log('Login fallido - usuario no encontrado o inactivo');
+    } catch (e) {
+      console.error('Error en login:', e);
       return false;
     }
   };
-  const register = (data: {
+
+  const register = async (data: {
     nombre: string;
     email: string;
     telefono?: string;
@@ -119,52 +139,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string;
   }) => {
     try {
-      const usuariosActuales = getUsuarios();
-      const username = data.usuario || data.email.split('@')[0];
-      const existe = usuariosActuales.some(
-        (u: any) => u.email === data.email || u.usuario === username
-      );
-      if (existe) {
-        console.warn('Registro fallido - email o usuario ya existen');
-        return { success: false, message: 'Email o usuario ya registrados' };
-      }
-      const nuevoUsuario = {
-        id: (usuariosActuales.at(-1)?.id || 0) + 1,
-        usuario: username,
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        nombre: data.nombre,
-        rol: "user",
-        empresa: data.empresa,
-        permisos: [],
-        activo: true,
-        telefono: data.telefono,
-        nit: data.nitOrCI?.length >= 7 ? data.nitOrCI : undefined,
-        ci: data.nitOrCI?.length < 7 ? data.nitOrCI : undefined,
-        fechaCreacion: new Date().toISOString()
-      };
-      const actualizados = [...usuariosActuales, nuevoUsuario];
-      localStorage.setItem('usuarios_sistema', JSON.stringify(actualizados));
-      console.log('Usuario registrado:', { id: nuevoUsuario.id, usuario: nuevoUsuario.usuario });
-      // Auto login
-      const ok = login(data.email, data.password);
-      return ok ? { success: true } : { success: false, message: 'No se pudo iniciar sesión automáticamente' };
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            nombre: data.nombre,
+            telefono: data.telefono,
+            empresa: data.empresa,
+            nitOrCI: data.nitOrCI,
+          },
+        },
+      });
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      return { success: true };
     } catch (e) {
       console.error('Error en registro:', e);
       return { success: false, message: 'Error inesperado en el registro' };
     }
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    console.log('Logout exitoso');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setIsAuthenticated(false);
+      setUser(null);
+    }
   };
+
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    const hasAccess = user.permisos.includes(permission) || user.permisos.includes('*');
-    console.log(`Verificando permiso ${permission} para usuario ${user.usuario}:`, hasAccess);
-    return hasAccess;
+    if (user.rol === 'admin') return true;
+    return user.permisos.includes(permission) || user.permisos.includes('*');
   };
 
   return (

@@ -22,7 +22,7 @@ const LoginForm = () => {
     setError('');
 
     try {
-      const success = login(emailOrUsuario, password);
+      const success = await login(emailOrUsuario, password);
       if (!success) {
         setError('Email/Usuario o contraseña incorrectos');
       }
