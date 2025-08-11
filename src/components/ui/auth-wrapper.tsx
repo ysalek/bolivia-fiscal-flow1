@@ -11,7 +11,8 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const location = useLocation();
 
   const publicPaths = ['/signup', '/web', '/suscripcion'];
-  const isPublic = publicPaths.includes(location.pathname);
+  const pathname = location.pathname;
+  const isPublic = publicPaths.includes(pathname) || /^\/e\/[^/]+\/(web|suscripcion)$/.test(pathname);
 
   if (!isAuthenticated && !isPublic) {
     return <LoginForm />;

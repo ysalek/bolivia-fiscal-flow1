@@ -19,17 +19,29 @@ const Landing = () => {
     link.href = window.location.href;
 
     // JSON-LD Product
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.innerHTML = JSON.stringify({
+    const productScript = document.createElement('script');
+    productScript.type = 'application/ld+json';
+    productScript.innerHTML = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: content.productName,
       description: content.heroSubtitle,
       offers: { '@type': 'Offer', price: String(content.pricingUSD), priceCurrency: 'USD' },
     });
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
+
+    // JSON-LD Organization
+    const orgScript = document.createElement('script');
+    orgScript.type = 'application/ld+json';
+    orgScript.innerHTML = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: content.brandName,
+      url: window.location.origin,
+    });
+
+    document.head.appendChild(productScript);
+    document.head.appendChild(orgScript);
+    return () => { document.head.removeChild(productScript); document.head.removeChild(orgScript); };
   }, [content]);
 
   return (

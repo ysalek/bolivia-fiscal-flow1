@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useTenant } from '@/components/saas/TenantProvider';
 
 export type FeatureItem = {
   id: string;
@@ -64,7 +65,7 @@ const DEFAULT_CONTENT: SiteContent = {
   updatedAt: new Date().toISOString(),
 };
 
-const STORAGE_KEY = 'site_content_v1';
+const STORAGE_KEY_BASE = 'site_content_v1';
 
 interface SiteContentContextValue {
   content: SiteContent;
@@ -80,25 +81,31 @@ export const useSiteContent = () => {
 };
 
 export const SiteContentProvider = ({ children }: { children: React.ReactNode }) => {
+  const { slug } = useTenant();
   const [content, setContentState] = useState<SiteContent>(DEFAULT_CONTENT);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const key = `${STORAGE_KEY_BASE}:${slug}`;
+      const raw = localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw) as SiteContent;
         setContentState({ ...DEFAULT_CONTENT, ...parsed });
+      } else {
+        // Seed default per tenant on first load
+        localStorage.setItem(key, JSON.stringify({ ...DEFAULT_CONTENT, updatedAt: new Date().toISOString() }));
       }
     } catch {}
-  }, []);
+  }, [slug]);
 
   const setContent = useCallback((next: SiteContent) => {
     const value = { ...next, updatedAt: new Date().toISOString() };
     setContentState(value);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      const key = `${STORAGE_KEY_BASE}:${slug}`;
+      localStorage.setItem(key, JSON.stringify(value));
     } catch {}
-  }, []);
+  }, [slug]);
 
   const value = useMemo(() => ({ content, setContent }), [content, setContent]);
 
