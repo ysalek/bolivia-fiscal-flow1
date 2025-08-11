@@ -12,6 +12,8 @@ import TenantProvider from "@/components/saas/TenantProvider";
 import Signup from "./pages/Signup";
 import Subscription from "./pages/Subscription";
 import Landing from "./pages/Landing";
+import { SiteContentProvider } from "@/components/cms/SiteContentProvider";
+import AdminSiteEditor from "./pages/admin/SiteEditor";
 
 const queryClient = new QueryClient();
 
@@ -23,16 +25,19 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <TenantProvider>
-            <AuthWrapper>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/web" element={<Landing />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/suscripcion" element={<Subscription />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthWrapper>
+            <SiteContentProvider>
+              <AuthWrapper>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/web" element={<Landing />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/suscripcion" element={<Subscription />} />
+                  <Route path="/admin/site" element={<AdminSiteEditor />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthWrapper>
+            </SiteContentProvider>
           </TenantProvider>
         </BrowserRouter>
       </AuthProvider>
