@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import TenantProvider from "@/components/saas/TenantProvider";
 import Signup from "./pages/Signup";
 import Subscription from "./pages/Subscription";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <AuthWrapper>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/web" element={<Landing />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/suscripcion" element={<Subscription />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

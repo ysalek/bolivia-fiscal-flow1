@@ -120,8 +120,9 @@ const LoginForm = () => {
                 )}
               </Button>
             </form>
-            <div className="pt-2 text-sm text-center text-slate-600">
-              ¿No tienes cuenta? <Link to="/signup" className="text-blue-600 underline">Crear cuenta</Link>
+            <div className="pt-2 text-sm text-center text-slate-600 space-y-1">
+              <div>¿No tienes cuenta? <Link to="/signup" className="text-blue-600 underline">Crear cuenta</Link></div>
+              <div><Link to="/web" className="text-blue-600 underline">Conoce el sistema (sitio web)</Link></div>
             </div>
           </CardContent>
         </Card>
