@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useSiteContent } from '@/components/cms/SiteContentProvider';
+import { supabase } from "@/integrations/supabase/client";
 
 const Subscription = () => {
   const { toast } = useToast();
@@ -37,27 +38,48 @@ const Subscription = () => {
     return () => { document.head.removeChild(script); };
   }, [content]);
 
-  const handleSubscribe = () => {
-    // Placeholder: abrirá Stripe Checkout cuando esté configurado el edge function
-    const url = localStorage.getItem('stripe_payment_link');
-    if (url) {
-      window.open(url, '_blank');
+const handleSubscribe = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('create-checkout');
+    if (error) throw error;
+    if (data?.url) {
+      window.open(data.url, '_blank');
     } else {
-      toast({
-        title: 'Configurar Stripe',
-        description: 'Conecta tu clave secreta y crea el edge function create-checkout para abrir Stripe Checkout.',
-      });
+      throw new Error('No se recibió URL de checkout');
     }
-  };
-
-  const handleManage = () => {
+  } catch (err: any) {
     toast({
-      title: 'Portal del cliente',
-      description: 'Implementa el edge function customer-portal para gestionar la suscripción.',
+      title: 'No se pudo iniciar el checkout',
+      description: err.message || 'Inicia sesión y verifica la configuración de Stripe.',
+      variant: 'destructive',
     });
-  };
+  }
+};
 
-  return (
+const handleManage = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('customer-portal');
+    if (error) throw error;
+    if (data?.url) window.open(data.url, '_blank');
+  } catch (err: any) {
+    toast({ title: 'No se pudo abrir el portal', description: err.message || 'Verifica tu suscripción y login.', variant: 'destructive' });
+  }
+};
+
+const handleRefresh = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('check-subscription');
+    if (error) throw error;
+    toast({
+      title: data?.subscribed ? 'Suscripción activa' : 'Sin suscripción',
+      description: data?.subscription_tier ? `Plan: ${data.subscription_tier}` : undefined,
+    });
+  } catch (err: any) {
+    toast({ title: 'No se pudo comprobar', description: err.message, variant: 'destructive' });
+  }
+};
+
+return (
     <main className="p-6 flex justify-center">
       <Card className="w-full max-w-2xl">
         <CardHeader>
@@ -67,6 +89,7 @@ const Subscription = () => {
         <CardContent className="flex gap-3">
           <Button onClick={handleSubscribe} className="flex-1">Suscribirme ahora</Button>
           <Button variant="outline" onClick={handleManage}>Gestionar suscripción</Button>
+          <Button variant="ghost" onClick={handleRefresh}>Actualizar estado</Button>
         </CardContent>
       </Card>
     </main>

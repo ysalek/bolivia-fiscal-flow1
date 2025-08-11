@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { useSiteContent, SiteContent, FeatureItem } from '@/components/cms/SiteContentProvider';
-
+import { supabase } from "@/integrations/supabase/client";
 const AdminSiteEditor = () => {
   const { content, setContent } = useSiteContent();
   const { toast } = useToast();
-  const [form, setForm] = useState<SiteContent>(content);
+const [form, setForm] = useState<SiteContent>(content);
+  const [stripeKey, setStripeKey] = useState<string>('');
 
   useEffect(() => {
     document.title = 'Admin Sitio | Contabol';
@@ -19,6 +20,18 @@ const AdminSiteEditor = () => {
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
     link.href = window.location.href;
+  }, []);
+
+  useEffect(() => {
+    const loadStripeKey = async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'stripe_secret_key')
+        .single();
+      setStripeKey(data?.value ?? '');
+    };
+    loadStripeKey();
   }, []);
 
   const update = <K extends keyof SiteContent>(key: K, value: SiteContent[K]) => {
@@ -32,9 +45,18 @@ const AdminSiteEditor = () => {
     }));
   };
 
-  const onSave = () => {
+const onSave = () => {
     setContent(form);
     toast({ title: 'Contenido guardado', description: 'Los cambios fueron aplicados.' });
+  };
+
+  const saveStripe = async () => {
+    const { error } = await supabase.from('app_settings').upsert({ key: 'stripe_secret_key', value: stripeKey });
+    if (error) {
+      toast({ title: 'Error guardando Stripe', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Stripe guardado', description: 'Clave secreta actualizada.' });
+    }
   };
 
   return (
@@ -141,6 +163,23 @@ const AdminSiteEditor = () => {
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Stripe</CardTitle>
+          <CardDescription>Configura la clave secreta de Stripe (guardada en app_settings).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Stripe Secret Key</Label>
+            <Input type="password" value={stripeKey} onChange={(e) => setStripeKey(e.target.value)} placeholder="sk_live_..." />
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={saveStripe}>Guardar clave</Button>
+            <p className="text-sm text-muted-foreground">Solo admins pueden ver/editar este valor.</p>
+          </div>
         </CardContent>
       </Card>
 
