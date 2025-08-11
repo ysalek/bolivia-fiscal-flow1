@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, LogIn, Building2 } from "lucide-react";
 import { useAuth } from './AuthProvider';
+import { Link } from 'react-router-dom';
 
 const LoginForm = () => {
   const [emailOrUsuario, setEmailOrUsuario] = useState('');
@@ -119,6 +120,9 @@ const LoginForm = () => {
                 )}
               </Button>
             </form>
+            <div className="pt-2 text-sm text-center text-slate-600">
+              ¿No tienes cuenta? <Link to="/signup" className="text-blue-600 underline">Crear cuenta</Link>
+            </div>
           </CardContent>
         </Card>
 

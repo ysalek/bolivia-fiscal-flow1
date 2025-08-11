@@ -8,12 +8,25 @@ interface User {
   rol: string;
   empresa: string;
   permisos: string[];
+  email?: string;
+  telefono?: string;
+  nit?: string;
+  ci?: string;
 }
 
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
   login: (emailOrUsuario: string, password: string) => boolean;
+  register: (data: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+    empresa: string;
+    nitOrCI: string;
+    usuario?: string;
+    password: string;
+  }) => { success: boolean; message?: string };
   logout: () => void;
   hasPermission: (permission: string) => boolean;
 }
@@ -96,13 +109,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   };
+  const register = (data: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+    empresa: string;
+    nitOrCI: string;
+    usuario?: string;
+    password: string;
+  }) => {
+    try {
+      const usuariosActuales = getUsuarios();
+      const username = data.usuario || data.email.split('@')[0];
+      const existe = usuariosActuales.some(
+        (u: any) => u.email === data.email || u.usuario === username
+      );
+      if (existe) {
+        console.warn('Registro fallido - email o usuario ya existen');
+        return { success: false, message: 'Email o usuario ya registrados' };
+      }
+      const nuevoUsuario = {
+        id: (usuariosActuales.at(-1)?.id || 0) + 1,
+        usuario: username,
+        email: data.email,
+        password: data.password,
+        nombre: data.nombre,
+        rol: "user",
+        empresa: data.empresa,
+        permisos: [],
+        activo: true,
+        telefono: data.telefono,
+        nit: data.nitOrCI?.length >= 7 ? data.nitOrCI : undefined,
+        ci: data.nitOrCI?.length < 7 ? data.nitOrCI : undefined,
+        fechaCreacion: new Date().toISOString()
+      };
+      const actualizados = [...usuariosActuales, nuevoUsuario];
+      localStorage.setItem('usuarios_sistema', JSON.stringify(actualizados));
+      console.log('Usuario registrado:', { id: nuevoUsuario.id, usuario: nuevoUsuario.usuario });
+      // Auto login
+      const ok = login(data.email, data.password);
+      return ok ? { success: true } : { success: false, message: 'No se pudo iniciar sesión automáticamente' };
+    } catch (e) {
+      console.error('Error en registro:', e);
+      return { success: false, message: 'Error inesperado en el registro' };
+    }
+  };
 
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
     console.log('Logout exitoso');
   };
-
   const hasPermission = (permission: string) => {
     if (!user) return false;
     const hasAccess = user.permisos.includes(permission) || user.permisos.includes('*');
@@ -116,6 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated,
         user,
         login,
+        register,
         logout,
         hasPermission,
       }}

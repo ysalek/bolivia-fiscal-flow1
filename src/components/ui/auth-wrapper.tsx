@@ -1,5 +1,6 @@
 import { useAuth } from '@/components/auth/AuthProvider';
 import LoginForm from '@/components/auth/LoginForm';
+import { useLocation } from 'react-router-dom';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -7,8 +8,9 @@ interface AuthWrapperProps {
 
 const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && location.pathname !== '/signup') {
     return <LoginForm />;
   }
 
