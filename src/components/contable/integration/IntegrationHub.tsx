@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,24 @@ import {
   Key,
   Webhook,
   FileJson,
-  Shield
+  Shield,
+  Smartphone,
+  Banknote,
+  FileSpreadsheet,
+  Mail,
+  MessageSquare,
+  Phone,
+  Calculator,
+  Activity,
+  Truck,
+  MapPin,
+  Users,
+  TrendingUp,
+  Download,
+  Upload,
+  Power,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,42 +47,130 @@ const IntegrationHub = () => {
     sin: true,
     bcp: false,
     mercantil: false,
+    union: false,
+    sol: false,
+    fie: false,
     stripe: false,
+    whatsapp: true,
     quickbooks: false,
-    excel: true
+    excel: true,
+    gmail: false,
+    siat: true,
+    segip: false
   });
 
+  const [isConnecting, setIsConnecting] = useState<string | null>(null);
+
   const integrations = [
+    // Tributario y Gubernamental
     {
       id: 'sin',
       name: 'SIN Bolivia',
-      description: 'Facturación electrónica y declaraciones tributarias',
+      description: 'Servicio de Impuestos Nacionales - Facturación electrónica',
       icon: Building2,
       category: 'Tributario',
       status: 'connected',
       lastSync: '2024-01-12 10:30',
-      features: ['Facturación electrónica', 'Declaraciones IVA', 'Verificación NIT']
+      priority: 'critical',
+      features: ['Facturación electrónica', 'Declaraciones IVA/IT/IUE', 'Verificación NIT', 'Consulta deudas'],
+      bolivianSpecific: true,
+      connectionStrength: 95
     },
     {
+      id: 'siat',
+      name: 'SIAT - Sistema Tributario',
+      description: 'Sistema Integrado de Administración Tributaria',
+      icon: Calculator,
+      category: 'Tributario',
+      status: 'connected',
+      lastSync: '2024-01-12 09:15',
+      priority: 'critical',
+      features: ['Declaraciones automáticas', 'Consulta contribuyente', 'Estados tributarios'],
+      bolivianSpecific: true,
+      connectionStrength: 88
+    },
+    {
+      id: 'segip',
+      name: 'SEGIP',
+      description: 'Servicio General de Identificación Personal',
+      icon: Users,
+      category: 'Tributario',
+      status: 'available',
+      lastSync: null,
+      priority: 'medium',
+      features: ['Verificación CI', 'Datos personales', 'Validación identidad'],
+      bolivianSpecific: true,
+      connectionStrength: 0
+    },
+
+    // Bancario Bolivia
+    {
       id: 'bcp',
-      name: 'Banco de Crédito BCP',
-      description: 'Conciliación bancaria automática',
+      name: 'Banco BCP Bolivia',
+      description: 'Conciliación bancaria y pagos empresariales',
       icon: CreditCard,
       category: 'Bancario',
       status: 'available',
       lastSync: null,
-      features: ['Estados de cuenta', 'Transferencias', 'Conciliación automática']
+      priority: 'high',
+      features: ['Estados de cuenta', 'Transferencias QR', 'Pagos masivos', 'Conciliación automática'],
+      bolivianSpecific: true,
+      connectionStrength: 0
     },
     {
       id: 'mercantil',
-      name: 'Banco Mercantil',
-      description: 'Integración con servicios bancarios',
+      name: 'Banco Mercantil Santa Cruz',
+      description: 'Servicios bancarios empresariales',
       icon: CreditCard,
       category: 'Bancario',
       status: 'available',
       lastSync: null,
-      features: ['Consulta saldos', 'Movimientos', 'Pagos empresariales']
+      priority: 'high',
+      features: ['Consulta saldos', 'Movimientos', 'Pagos de planillas', 'Débitos automáticos'],
+      bolivianSpecific: true,
+      connectionStrength: 0
     },
+    {
+      id: 'union',
+      name: 'Banco Unión',
+      description: 'Banco estatal de Bolivia',
+      icon: CreditCard,
+      category: 'Bancario',
+      status: 'available',
+      lastSync: null,
+      priority: 'high',
+      features: ['Cuentas corrientes', 'Pagos QR', 'Transferencias inmediatas'],
+      bolivianSpecific: true,
+      connectionStrength: 0
+    },
+    {
+      id: 'sol',
+      name: 'Banco Sol',
+      description: 'Microfinanzas y PYME',
+      icon: CreditCard,
+      category: 'Bancario',
+      status: 'available',
+      lastSync: null,
+      priority: 'medium',
+      features: ['Créditos PYME', 'Cuentas de ahorro', 'Pagos móviles'],
+      bolivianSpecific: true,
+      connectionStrength: 0
+    },
+    {
+      id: 'fie',
+      name: 'Banco FIE',
+      description: 'Fondo Financiero Privado',
+      icon: CreditCard,
+      category: 'Bancario',
+      status: 'available',
+      lastSync: null,
+      priority: 'medium',
+      features: ['Servicios empresariales', 'Pagos QR', 'Banca móvil'],
+      bolivianSpecific: true,
+      connectionStrength: 0
+    },
+
+    // Pagos y Comunicación
     {
       id: 'stripe',
       name: 'Stripe',
@@ -74,60 +179,125 @@ const IntegrationHub = () => {
       category: 'Pagos',
       status: 'available',
       lastSync: null,
-      features: ['Pagos online', 'Suscripciones', 'Reportes de ventas']
+      priority: 'low',
+      features: ['Pagos online', 'Suscripciones', 'Reportes de ventas'],
+      bolivianSpecific: false,
+      connectionStrength: 0
     },
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp Business',
+      description: 'Comunicación automática con clientes',
+      icon: MessageSquare,
+      category: 'Comunicación',
+      status: 'connected',
+      lastSync: '2024-01-12 08:45',
+      priority: 'high',
+      features: ['Envío facturas', 'Recordatorios pago', 'Soporte cliente', 'Notificaciones'],
+      bolivianSpecific: false,
+      connectionStrength: 92
+    },
+    {
+      id: 'gmail',
+      name: 'Gmail Business',
+      description: 'Envío automático de documentos',
+      icon: Mail,
+      category: 'Comunicación',
+      status: 'available',
+      lastSync: null,
+      priority: 'medium',
+      features: ['Envío facturas PDF', 'Reportes automáticos', 'Notificaciones'],
+      bolivianSpecific: false,
+      connectionStrength: 0
+    },
+
+    // Contabilidad y Datos
     {
       id: 'quickbooks',
       name: 'QuickBooks',
-      description: 'Sincronización con QuickBooks Online',
+      description: 'Sincronización contable internacional',
       icon: Database,
       category: 'Contabilidad',
       status: 'available',
       lastSync: null,
-      features: ['Sincronización de cuentas', 'Clientes', 'Facturas']
+      priority: 'low',
+      features: ['Sincronización cuentas', 'Clientes', 'Facturas', 'Reportes'],
+      bolivianSpecific: false,
+      connectionStrength: 0
     },
     {
       id: 'excel',
       name: 'Microsoft Excel',
-      description: 'Importación/exportación de datos',
-      icon: FileJson,
+      description: 'Importación/exportación de datos contables',
+      icon: FileSpreadsheet,
       category: 'Datos',
       status: 'connected',
       lastSync: '2024-01-12 08:15',
-      features: ['Importar datos', 'Exportar reportes', 'Plantillas personalizadas']
+      priority: 'high',
+      features: ['Importar datos', 'Exportar reportes', 'Plantillas NIF', 'Libros contables'],
+      bolivianSpecific: false,
+      connectionStrength: 100
     }
   ];
+
+  const bolivianIntegrationStats = {
+    connected: integrations.filter(i => i.status === 'connected' && i.bolivianSpecific).length,
+    total: integrations.filter(i => i.bolivianSpecific).length,
+    avgStrength: Math.round(
+      integrations
+        .filter(i => i.bolivianSpecific && i.status === 'connected')
+        .reduce((sum, i) => sum + i.connectionStrength, 0) / 
+      integrations.filter(i => i.bolivianSpecific && i.status === 'connected').length
+    ) || 0
+  };
 
   const webhooks = [
     {
       id: 1,
-      name: 'Notificaciones de Facturación',
-      url: 'https://api.contabolivia.com/webhooks/invoices',
-      events: ['invoice.created', 'invoice.paid'],
-      status: 'active'
+      name: 'Notificaciones SIN Bolivia',
+      url: 'https://api.contabolivia.com/webhooks/sin',
+      eventos: ['factura.autorizada', 'declaracion.vencimiento', 'certificado.expiracion'],
+      status: 'active',
+      country: 'BO'
     },
     {
       id: 2,
-      name: 'Alertas de Compliance',
-      url: 'https://api.contabolivia.com/webhooks/compliance',
-      events: ['tax.deadline', 'audit.required'],
-      status: 'active'
+      name: 'Alertas Bancarias',
+      url: 'https://api.contabolivia.com/webhooks/banks',
+      eventos: ['transferencia.recibida', 'saldo.bajo', 'pago.rechazado'],
+      status: 'active',
+      country: 'BO'
+    },
+    {
+      id: 3,
+      name: 'WhatsApp Automático',
+      url: 'https://api.whatsapp.com/business/contabolivia',
+      eventos: ['factura.enviada', 'pago.vencido', 'reporte.mensual'],
+      status: 'active',
+      country: 'GLOBAL'
     }
   ];
 
-  const handleToggleIntegration = (integrationId: string) => {
+  const handleToggleIntegration = async (integrationId: string) => {
+    setIsConnecting(integrationId);
+    
+    // Simular tiempo de conexión
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     setActiveIntegrations(prev => ({
       ...prev,
       [integrationId]: !prev[integrationId as keyof typeof prev]
     }));
 
     const integration = integrations.find(i => i.id === integrationId);
+    const isActivating = !activeIntegrations[integrationId as keyof typeof activeIntegrations];
+    
     toast({
-      title: activeIntegrations[integrationId as keyof typeof activeIntegrations] 
-        ? "Integración desactivada" 
-        : "Integración activada",
-      description: `${integration?.name} ${activeIntegrations[integrationId as keyof typeof activeIntegrations] ? 'desconectado' : 'conectado'} correctamente`,
+      title: isActivating ? "🔗 Integración activada" : "❌ Integración desactivada",
+      description: `${integration?.name} ${isActivating ? 'conectado' : 'desconectado'} correctamente`,
     });
+    
+    setIsConnecting(null);
   };
 
   const getStatusIcon = (status: string) => {
@@ -146,108 +316,315 @@ const IntegrationHub = () => {
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'text-red-600 bg-red-50 border-red-200';
+      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'low': return 'text-gray-600 bg-gray-50 border-gray-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Centro de Integraciones</h2>
-          <p className="text-muted-foreground">
-            Conecta tu sistema con servicios externos y automatiza procesos
-          </p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header mejorado con colores bolivianos */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-600 via-yellow-500 to-red-600 p-8 text-white">
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h2 className="text-4xl font-bold tracking-tight mb-2">
+              Centro de Integraciones Bolivia
+            </h2>
+            <p className="text-green-100 text-lg">
+              Conecta con servicios bancarios, tributarios y gubernamentales de Bolivia
+            </p>
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                <Building2 className="w-4 h-4" />
+                <span className="text-sm">SIN & SIAT</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                <CreditCard className="w-4 h-4" />
+                <span className="text-sm">Bancos Bolivia</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                <Zap className="w-4 h-4" />
+                <span className="text-sm">Tiempo Real</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{bolivianIntegrationStats.connected}</div>
+                <div className="text-xs text-green-100">Integraciones BO</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{bolivianIntegrationStats.avgStrength}%</div>
+                <div className="text-xs text-green-100">Fuerza Promedio</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <Button>
-          <Settings className="w-4 h-4 mr-2" />
-          Configurar Nuevas
-        </Button>
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="integrations">Integraciones</TabsTrigger>
+          <TabsTrigger value="bolivian">Servicios BO</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="monitoring">Monitoreo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="integrations">
           <div className="grid gap-6">
-            {['Tributario', 'Bancario', 'Pagos', 'Contabilidad', 'Datos'].map(category => (
-              <div key={category}>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-primary" />
-                  {category}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {integrations
-                    .filter(integration => integration.category === category)
-                    .map((integration) => (
-                      <Card key={integration.id} className="relative">
-                        <CardHeader className="pb-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-primary/10">
-                                <integration.icon className="w-6 h-6 text-primary" />
+            {['Tributario', 'Bancario', 'Comunicación', 'Pagos', 'Contabilidad', 'Datos'].map(category => {
+              const categoryIntegrations = integrations.filter(integration => integration.category === category);
+              if (categoryIntegrations.length === 0) return null;
+              
+              return (
+                <div key={category}>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    {category}
+                    {category === 'Tributario' && (
+                      <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">CRÍTICO</span>
+                    )}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {categoryIntegrations.map((integration, index) => (
+                      <div key={integration.id} className={`relative group animate-fade-in`} 
+                           style={{ animationDelay: `${index * 100}ms` }}>
+                        {integration.bolivianSpecific && (
+                          <div className="absolute -top-2 -right-2 z-10">
+                            <div className="bg-gradient-to-r from-green-500 to-red-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                              🇧🇴 Bolivia
+                            </div>
+                          </div>
+                        )}
+                        
+                        <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                          integration.status === 'connected' ? 'border-green-200 bg-green-50/50' : 'hover:border-primary/50'
+                        }`}>
+                          <CardHeader className="pb-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-xl ${
+                                  integration.status === 'connected' ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'
+                                } relative`}>
+                                  <integration.icon className="w-6 h-6" />
+                                  {integration.status === 'connected' && integration.connectionStrength && (
+                                    <div className="absolute -bottom-1 -right-1">
+                                      <div className={`w-3 h-3 rounded-full ${
+                                        integration.connectionStrength > 90 ? 'bg-green-500' :
+                                        integration.connectionStrength > 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                      } animate-pulse`} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    {integration.name}
+                                    {integration.priority === 'critical' && (
+                                      <span className="text-red-500 text-xs">●</span>
+                                    )}
+                                  </CardTitle>
+                                  <p className="text-sm text-muted-foreground">
+                                    {integration.description}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <CardTitle className="text-lg">{integration.name}</CardTitle>
-                                <p className="text-sm text-muted-foreground">
-                                  {integration.description}
-                                </p>
+                              <div className="flex items-center gap-2">
+                                {isConnecting === integration.id ? (
+                                  <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleToggleIntegration(integration.id)}
+                                    disabled={isConnecting !== null}
+                                  >
+                                    {integration.status === 'connected' ? (
+                                      <Wifi className="w-4 h-4 text-green-600" />
+                                    ) : (
+                                      <WifiOff className="w-4 h-4 text-gray-400" />
+                                    )}
+                                  </Button>
+                                )}
                               </div>
                             </div>
-                            <Switch
-                              checked={activeIntegrations[integration.id as keyof typeof activeIntegrations]}
-                              onCheckedChange={() => handleToggleIntegration(integration.id)}
-                            />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(integration.status)}
-                              <Badge className={getStatusColor(integration.status)}>
-                                {integration.status === 'connected' ? 'Conectado' : 'Disponible'}
-                              </Badge>
-                              {integration.lastSync && (
-                                <span className="text-xs text-muted-foreground">
-                                  Sync: {integration.lastSync}
-                                </span>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className={`px-2 py-1 rounded-full text-xs ${getStatusColor(integration.status)}`}>
+                                  {getStatusIcon(integration.status)}
+                                  <span className="ml-1">
+                                    {integration.status === 'connected' ? 'Conectado' : 'Disponible'}
+                                  </span>
+                                </div>
+                                
+                                <div className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(integration.priority)}`}>
+                                  {integration.priority === 'critical' ? '🔴 Crítico' :
+                                   integration.priority === 'high' ? '🟡 Alto' :
+                                   integration.priority === 'medium' ? '🔵 Medio' : '⚪ Bajo'}
+                                </div>
+                                
+                                {integration.lastSync && (
+                                  <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-1 rounded-full">
+                                    Sync: {integration.lastSync.split(' ')[1]}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {integration.status === 'connected' && integration.connectionStrength && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span>Fuerza de conexión:</span>
+                                    <span className="font-medium">{integration.connectionStrength}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div 
+                                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                                        integration.connectionStrength > 90 ? 'bg-green-500' :
+                                        integration.connectionStrength > 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${integration.connectionStrength}%` }}
+                                    />
+                                  </div>
+                                </div>
                               )}
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium mb-2">Características:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {integration.features.map((feature, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {feature}
-                                  </Badge>
-                                ))}
+                              
+                              <div>
+                                <p className="text-sm font-medium mb-2">Características:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {integration.features.slice(0, 3).map((feature, index) => (
+                                    <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                      {feature}
+                                    </span>
+                                  ))}
+                                  {integration.features.length > 3 && (
+                                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                      +{integration.features.length - 3} más
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2 pt-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="flex-1 text-xs"
+                                  disabled={integration.status !== 'connected'}
+                                >
+                                  <RefreshCw className="w-3 h-3 mr-1" />
+                                  Sync
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-xs">
+                                  <Settings className="w-3 h-3 mr-1" />
+                                  Config
+                                </Button>
                               </div>
                             </div>
-
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="flex-1"
-                                disabled={integration.status !== 'connected'}
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1" />
-                                Sincronizar
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Settings className="w-3 h-3 mr-1" />
-                                Config
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </div>
                     ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="bolivian">
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-green-50 to-red-50 p-6 rounded-xl border border-green-200">
+              <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                🇧🇴 Servicios Específicos de Bolivia
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Integraciones diseñadas específicamente para el mercado boliviano y regulaciones locales
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-white rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{bolivianIntegrationStats.connected}</div>
+                  <div className="text-sm text-green-700">Conectadas</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{bolivianIntegrationStats.total}</div>
+                  <div className="text-sm text-blue-700">Disponibles</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{bolivianIntegrationStats.avgStrength}%</div>
+                  <div className="text-sm text-purple-700">Rendimiento</div>
                 </div>
               </div>
-            ))}
+            </div>
+            
+            <div className="grid gap-4">
+              {integrations.filter(i => i.bolivianSpecific).map((integration, index) => (
+                <Card key={integration.id} className={`animate-fade-in hover:shadow-lg transition-all duration-300`}
+                      style={{ animationDelay: `${index * 100}ms` }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-4 rounded-xl ${
+                          integration.status === 'connected' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <integration.icon className="w-8 h-8" />
+                        </div>
+                        <div>
+                          <h4 className="text-xl font-bold flex items-center gap-2">
+                            {integration.name}
+                            {integration.status === 'connected' && (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            )}
+                          </h4>
+                          <p className="text-muted-foreground mb-2">{integration.description}</p>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-sm ${getPriorityColor(integration.priority)}`}>
+                              Prioridad: {integration.priority}
+                            </span>
+                            {integration.status === 'connected' && integration.lastSync && (
+                              <span className="text-sm text-muted-foreground">
+                                Último sync: {integration.lastSync}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {integration.status === 'connected' && integration.connectionStrength && (
+                          <div className="mb-2">
+                            <div className="text-2xl font-bold text-green-600">{integration.connectionStrength}%</div>
+                            <div className="text-sm text-green-700">Conexión</div>
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => handleToggleIntegration(integration.id)}
+                          disabled={isConnecting !== null}
+                          variant={integration.status === 'connected' ? 'destructive' : 'default'}
+                        >
+                          {isConnecting === integration.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                          ) : integration.status === 'connected' ? (
+                            <Power className="w-4 h-4 mr-2" />
+                          ) : (
+                            <Zap className="w-4 h-4 mr-2" />
+                          )}
+                          {isConnecting === integration.id ? 'Conectando...' :
+                           integration.status === 'connected' ? 'Desconectar' : 'Conectar'}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
@@ -267,7 +644,7 @@ const IntegrationHub = () => {
                       <h4 className="font-medium">{webhook.name}</h4>
                       <p className="text-sm text-muted-foreground">{webhook.url}</p>
                       <div className="flex gap-1 mt-2">
-                        {webhook.events.map((event, index) => (
+                        {webhook.eventos.map((event, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
                             {event}
                           </Badge>
@@ -339,53 +716,74 @@ const IntegrationHub = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="logs">
+        <TabsContent value="monitoring">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Uptime SIN</p>
+                    <p className="text-2xl font-bold text-green-600">99.8%</p>
+                  </div>
+                  <Activity className="w-8 h-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Latencia Promedio</p>
+                    <p className="text-2xl font-bold text-blue-600">245ms</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Errores Hoy</p>
+                    <p className="text-2xl font-bold text-yellow-600">2</p>
+                  </div>
+                  <AlertCircle className="w-8 h-8 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Transacciones</p>
+                    <p className="text-2xl font-bold text-purple-600">1,247</p>
+                  </div>
+                  <Database className="w-8 h-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Registro de Actividad de Integraciones</CardTitle>
+              <CardTitle>Estado de Servicios en Tiempo Real</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {[
-                  {
-                    timestamp: '2024-01-12 10:30:15',
-                    integration: 'SIN Bolivia',
-                    action: 'Sincronización de facturas',
-                    status: 'success',
-                    details: '15 facturas procesadas'
-                  },
-                  {
-                    timestamp: '2024-01-12 08:15:22',
-                    integration: 'Microsoft Excel',
-                    action: 'Exportación de reportes',
-                    status: 'success',
-                    details: 'Balance general exportado'
-                  },
-                  {
-                    timestamp: '2024-01-11 16:45:10',
-                    integration: 'BCP',
-                    action: 'Intento de conexión',
-                    status: 'error',
-                    details: 'API Key inválida'
-                  }
-                ].map((log, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                {integrations.filter(i => i.status === 'connected').map(integration => (
+                  <div key={integration.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      {log.status === 'success' ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                      )}
-                      <div>
-                        <p className="font-medium">{log.integration} - {log.action}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {log.timestamp} • {log.details}
-                        </p>
-                      </div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                      <span className="font-medium">{integration.name}</span>
+                      <Badge variant="outline">{integration.connectionStrength}%</Badge>
                     </div>
-                    <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
-                      {log.status}
-                    </Badge>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Último ping: hace 30s</span>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    </div>
                   </div>
                 ))}
               </div>
