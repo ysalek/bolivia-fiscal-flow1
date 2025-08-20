@@ -8,12 +8,8 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import AuthWrapper from "@/components/ui/auth-wrapper";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import TenantProvider from "@/components/saas/TenantProvider";
 import Signup from "./pages/Signup";
-import Subscription from "./pages/Subscription";
 import Landing from "./pages/Landing";
-import { SiteContentProvider } from "@/components/cms/SiteContentProvider";
-import AdminSiteEditor from "./pages/admin/SiteEditor";
 
 const queryClient = new QueryClient();
 
@@ -24,22 +20,15 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <TenantProvider>
-            <SiteContentProvider>
-              <AuthWrapper>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/web" element={<Landing />} />
-                  <Route path="/e/:slug/web" element={<Landing />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/suscripcion" element={<Subscription />} />
-                  <Route path="/admin/site" element={<AdminSiteEditor />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthWrapper>
-            </SiteContentProvider>
-          </TenantProvider>
+          <AuthWrapper>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/web" element={<Landing />} />
+              <Route path="/signup" element={<Signup />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthWrapper>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

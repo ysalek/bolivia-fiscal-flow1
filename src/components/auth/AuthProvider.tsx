@@ -18,13 +18,6 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
-  subscription: {
-    subscribed: boolean;
-    subscription_tier: string | null;
-    subscription_end: string | null;
-    loading: boolean;
-  };
-  refreshSubscription: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: {
     nombre: string;
@@ -52,29 +45,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [subscription, setSubscription] = useState({
-    subscribed: false,
-    subscription_tier: null as string | null,
-    subscription_end: null as string | null,
-    loading: true,
-  });
-
-  const refreshSubscription = async () => {
-    try {
-      setSubscription((s) => ({ ...s, loading: true }));
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw error;
-      setSubscription({
-        subscribed: !!data?.subscribed,
-        subscription_tier: data?.subscription_tier ?? null,
-        subscription_end: data?.subscription_end ?? null,
-        loading: false,
-      });
-    } catch (e) {
-      console.warn('check-subscription failed', e);
-      setSubscription((s) => ({ ...s, loading: false }));
-    }
-  };
 
   // Mapear perfil + roles de Supabase a nuestro User
   const buildUserFromSupabase = async (sessionUser: any): Promise<User> => {
@@ -119,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const mapped = await buildUserFromSupabase(session.user);
             setUser(mapped);
-            await refreshSubscription();
           } catch (e) {
             console.error('No se pudo construir el usuario desde Supabase:', e);
           }
@@ -135,7 +104,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const mapped = await buildUserFromSupabase(session.user);
           setUser(mapped);
-          await refreshSubscription();
         } catch (e) {
           console.error('Error inicializando usuario:', e);
         }
@@ -201,7 +169,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsAuthenticated(false);
       setUser(null);
-      setSubscription({ subscribed: false, subscription_tier: null, subscription_end: null, loading: false });
     }
   };
 
@@ -216,8 +183,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         isAuthenticated,
         user,
-        subscription,
-        refreshSubscription,
         login,
         register,
         logout,
