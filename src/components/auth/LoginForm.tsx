@@ -36,9 +36,9 @@ const LoginForm = () => {
   const credencialesProduccion = [
     { 
       role: 'Administrador', 
-      email: 'admin@sistema.com', 
-      usuario: 'admin',
-      password: 'C123081a!' 
+      email: 'ysalek@gmail.com', 
+      usuario: 'ysalek',
+      password: 'Tu contraseña de registro' 
     }
   ];
 
