@@ -24,14 +24,26 @@ export const useProductos = () => {
       }
 
       const producto = productos[productoIndex];
+      
+      // Validar cantidad positiva
+      if (cantidad <= 0) {
+        toast({
+          title: "Error de cantidad",
+          description: "La cantidad debe ser mayor a cero",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       const nuevaCantidad = tipo === 'entrada' 
         ? producto.stockActual + cantidad 
         : producto.stockActual - cantidad;
       
+      // Prevenir stocks negativos - el inventario solo debe reflejar activos disponibles
       if (nuevaCantidad < 0) {
         toast({
-          title: "Error de stock",
-          description: `No hay suficiente stock para ${producto.nombre}. Stock actual: ${producto.stockActual}`,
+          title: "Stock insuficiente",
+          description: `Stock disponible: ${producto.stockActual} unidades. No se puede crear stock negativo.`,
           variant: "destructive"
         });
         return false;

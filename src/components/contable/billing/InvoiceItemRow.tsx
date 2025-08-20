@@ -38,27 +38,30 @@ const InvoiceItemRow = ({ item, index, productos, updateItem, removeItem, itemCo
       <TableCell>
         <Input
           type="number"
-          value={item.cantidad}
-          onChange={(e) => updateItem(index, 'cantidad', parseInt(e.target.value) || 0)}
+          value={item.cantidad || ''}
+          onChange={(e) => updateItem(index, 'cantidad', parseInt(e.target.value) || '')}
           min="1"
+          placeholder="Cantidad"
         />
       </TableCell>
       <TableCell>
         <Input
           type="number"
-          value={item.precioUnitario}
-          onChange={(e) => updateItem(index, 'precioUnitario', parseFloat(e.target.value) || 0)}
+          value={item.precioUnitario || ''}
+          onChange={(e) => updateItem(index, 'precioUnitario', parseFloat(e.target.value) || '')}
           min="0"
           step="0.01"
+          placeholder="Precio"
         />
       </TableCell>
       <TableCell>
         <Input
           type="number"
-          value={item.descuento}
-          onChange={(e) => updateItem(index, 'descuento', parseFloat(e.target.value) || 0)}
+          value={item.descuento || ''}
+          onChange={(e) => updateItem(index, 'descuento', parseFloat(e.target.value) || '')}
           min="0"
           step="0.01"
+          placeholder="Descuento"
         />
       </TableCell>
       <TableCell>

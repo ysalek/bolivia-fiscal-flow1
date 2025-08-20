@@ -230,9 +230,9 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
             <Input
               id="precioVenta"
               type="number"
-              value={formData.precioVenta}
-              onChange={(e) => handleInputChange("precioVenta", parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
+              value={formData.precioVenta || ''}
+              onChange={(e) => handleInputChange("precioVenta", parseFloat(e.target.value) || '')}
+              placeholder="Precio de venta"
               min="0"
               step="0.01"
               className={errors.precioVenta ? "border-red-500" : ""}
@@ -251,9 +251,9 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
             <Input
               id="precioCompra"
               type="number"
-              value={formData.precioCompra}
-              onChange={(e) => handleInputChange("precioCompra", parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
+              value={formData.precioCompra || ''}
+              onChange={(e) => handleInputChange("precioCompra", parseFloat(e.target.value) || '')}
+              placeholder="Precio de compra"
               min="0"
               step="0.01"
             />
@@ -265,9 +265,9 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
             <Input
               id="stockActual"
               type="number"
-              value={formData.stockActual}
-              onChange={(e) => handleInputChange("stockActual", parseInt(e.target.value) || 0)}
-              placeholder="0"
+              value={formData.stockActual || ''}
+              onChange={(e) => handleInputChange("stockActual", parseInt(e.target.value) || '')}
+              placeholder="Stock inicial"
               min="0"
             />
           </div>
@@ -278,9 +278,9 @@ const ProductoForm = ({ producto, productos, onSave, onCancel }: ProductoFormPro
             <Input
               id="stockMinimo"
               type="number"
-              value={formData.stockMinimo}
-              onChange={(e) => handleInputChange("stockMinimo", parseInt(e.target.value) || 0)}
-              placeholder="0"
+              value={formData.stockMinimo || ''}
+              onChange={(e) => handleInputChange("stockMinimo", parseInt(e.target.value) || '')}
+              placeholder="Stock mínimo"
               min="0"
               className={errors.stockMinimo ? "border-red-500" : ""}
             />

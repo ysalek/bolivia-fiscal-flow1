@@ -253,7 +253,7 @@ const InventoryMovementDialog = ({ open, onOpenChange, tipo, productos, onMovimi
                     ...prev, 
                     costoUnitario: parseFloat(e.target.value) || 0 
                   }))}
-                  placeholder="0.00"
+                  placeholder="Costo del producto"
                 />
               </div>
             )}

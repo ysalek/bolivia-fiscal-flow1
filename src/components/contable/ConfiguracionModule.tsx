@@ -526,19 +526,17 @@ const ConfiguracionModule = () => {
                   <div className="space-y-2">
                     <Label htmlFor="codigoSucursalSin">Código Sucursal</Label>
                     <Input
-                      id="codigoSucursalSin"
+                      placeholder="Sucursal principal"
                       value={configSin.codigoSucursal}
                       onChange={(e) => setConfigSin({...configSin, codigoSucursal: e.target.value})}
-                      placeholder="0"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="codigoPuntoVentaSin">Código Punto Venta</Label>
                     <Input
-                      id="codigoPuntoVentaSin"
+                      placeholder="Punto de venta principal"
                       value={configSin.codigoPuntoVenta}
                       onChange={(e) => setConfigSin({...configSin, codigoPuntoVenta: e.target.value})}
-                      placeholder="0"
                     />
                   </div>
                   <div className="space-y-2">

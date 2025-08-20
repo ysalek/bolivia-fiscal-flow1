@@ -131,7 +131,6 @@ const menuItems = [
     group: 'Configuración',
     items: [
       { title: 'Configuración', url: '/?view=configuracion', icon: Settings, badge: null },
-      { title: 'Usuarios', url: '/?view=usuarios', icon: UserCheck, badge: null },
       { title: 'Backup', url: '/?view=backup', icon: HardDrive, badge: null },
       { title: 'Tutorial', url: '/?view=tutorial', icon: HelpCircle, badge: null },
     ]
