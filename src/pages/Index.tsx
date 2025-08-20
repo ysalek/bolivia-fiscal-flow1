@@ -11,6 +11,7 @@ import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/contable/notifications/NotificationCenter';
 
 // Lazy load components
+const SimpleAppTest = lazy(() => import('@/components/contable/SimpleAppTest'));
 const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
 const AnalisisInteligente = lazy(() => import('@/components/contable/analisis/AnalisisInteligente'));
 const LibroDiario = lazy(() => import('@/components/contable/LibroDiario'));
@@ -90,7 +91,7 @@ const Index = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <SimpleAppTest />;
       case 'analisis-inteligente':
         return <AnalisisInteligente />;
       case 'diario':
