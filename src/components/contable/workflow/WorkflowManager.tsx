@@ -393,6 +393,8 @@ const WorkflowManager = () => {
             )}
           </div>
         </div>
+      </div>
+      
       {/* Dashboard de métricas bolivianas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-all duration-300 hover:scale-105">
@@ -847,63 +849,227 @@ const WorkflowManager = () => {
         </TabsContent>
         <TabsContent value="analytics">
           <div className="space-y-6">
+            {/* Métricas principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="hover:shadow-lg transition-all duration-300">
+              <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Workflows Activos</p>
-                      <p className="text-2xl font-bold text-green-600">{bolivianWorkflowStats.activos}</p>
-                      <p className="text-xs text-green-700 mt-1">de {workflows.length} totales</p>
+                      <p className="text-3xl font-bold text-green-600">{bolivianWorkflowStats.activos}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <p className="text-xs text-green-700">{workflows.length} totales</p>
+                      </div>
                     </div>
-                    <GitBranch className="w-8 h-8 text-green-500" />
+                    <div className="p-3 bg-green-100 rounded-xl">
+                      <GitBranch className="w-6 h-6 text-green-600" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300">
+              <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-orange-500">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Instancias Pendientes</p>
-                      <p className="text-2xl font-bold text-orange-600">{activeInstances.filter(i => i.status === 'pending').length}</p>
-                      <p className="text-xs text-orange-700 mt-1">requieren atención</p>
+                      <p className="text-3xl font-bold text-orange-600">{activeInstances.filter(i => i.status === 'pending').length}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3 text-orange-500" />
+                        <p className="text-xs text-orange-700">requieren atención</p>
+                      </div>
                     </div>
-                    <Clock className="w-8 h-8 text-orange-500" />
+                    <div className="p-3 bg-orange-100 rounded-xl">
+                      <Clock className="w-6 h-6 text-orange-600" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300">
+              <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Tiempo Promedio</p>
-                      <p className="text-2xl font-bold text-blue-600">1.2h</p>
-                      <p className="text-xs text-blue-700 mt-1">por workflow</p>
+                      <p className="text-3xl font-bold text-blue-600">1.2h</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <TrendingUp className="w-3 h-3 text-blue-500" />
+                        <p className="text-xs text-blue-700">eficiencia 95%</p>
+                      </div>
                     </div>
-                    <Timer className="w-8 h-8 text-blue-500" />
+                    <div className="p-3 bg-blue-100 rounded-xl">
+                      <Timer className="w-6 h-6 text-blue-600" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-300">
+              <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-500">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Tasa de Éxito</p>
-                      <p className="text-2xl font-bold text-purple-600">{bolivianWorkflowStats.avgSuccessRate}%</p>
-                      <p className="text-xs text-purple-700 mt-1">promedio sistema</p>
+                      <p className="text-3xl font-bold text-purple-600">{bolivianWorkflowStats.avgSuccessRate}%</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Award className="w-3 h-3 text-purple-500" />
+                        <p className="text-xs text-purple-700">objetivo 95%</p>
+                      </div>
                     </div>
-                    <CheckCircle className="w-8 h-8 text-purple-500" />
+                    <div className="p-3 bg-purple-100 rounded-xl">
+                      <CheckCircle className="w-6 h-6 text-purple-600" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Análisis detallado por categoría */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-green-600" />
+                    Distribución por Categoría
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {['Tributario', 'Financiero', 'Bancario', 'RRHH', 'Sistema'].map((category) => {
+                      const count = workflows.filter(w => w.category === category).length;
+                      const percentage = workflows.length > 0 ? (count / workflows.length) * 100 : 0;
+                      const CategoryIcon = getCategoryIcon(category);
+                      
+                      return (
+                        <div key={category} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              <CategoryIcon className="w-4 h-4 text-primary" />
+                            </div>
+                            <span className="font-medium">{category}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-bold w-12 text-right">{count}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-red-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Flag className="w-5 h-5 text-yellow-600" />
+                    Análisis Bolivia-Específicos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-white rounded-lg border border-green-200">
+                        <div className="text-2xl font-bold text-green-600">{bolivianWorkflowStats.bolivianos}</div>
+                        <div className="text-sm text-green-700">🇧🇴 Específicos BO</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          SIN, AFP, RC-IVA
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-white rounded-lg border border-red-200">
+                        <div className="text-2xl font-bold text-red-600">{bolivianWorkflowStats.criticos}</div>
+                        <div className="text-sm text-red-700">🚨 Críticos</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Alta prioridad
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-white rounded-lg border border-yellow-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Cumplimiento Normativo</span>
+                        <span className="text-lg font-bold text-yellow-600">
+                          {Math.round((bolivianWorkflowStats.bolivianos / workflows.length) * 100)}%
+                        </span>
+                      </div>
+                      <Progress value={(bolivianWorkflowStats.bolivianos / workflows.length) * 100} className="h-2" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Workflows adaptados a normativa boliviana
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold">Próximos Vencimientos</h4>
+                      {activeInstances
+                        .filter(i => i.priority === 'critical')
+                        .slice(0, 3)
+                        .map(instance => (
+                          <div key={instance.id} className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
+                            <span className="text-xs font-medium truncate">{instance.documentId}</span>
+                            <Badge variant="destructive" className="text-xs">
+                              {new Date(instance.deadline).toLocaleDateString('es-BO')}
+                            </Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Resumen de rendimiento */}
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-slate-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-slate-600" />
+                  Rendimiento del Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600 mb-2">
+                      Bs. {workflows.reduce((sum, w) => sum + w.estimatedAmount, 0).toLocaleString()}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Monto Total Procesado Mensual</p>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      <span className="text-xs text-green-600">+15% vs mes anterior</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-2">
+                      {activeInstances.length}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Instancias Activas Total</p>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      <Activity className="w-3 h-3 text-blue-500" />
+                      <span className="text-xs text-blue-600">Processing 24/7</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600 mb-2">
+                      {Math.round(workflows.reduce((sum, w) => sum + w.instances, 0) / workflows.length * 10) / 10}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Instancias Promedio por Workflow</p>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      <Target className="w-3 h-3 text-purple-500" />
+                      <span className="text-xs text-purple-600">Optimal range</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
-      </div>
     </div>
   );
 };
