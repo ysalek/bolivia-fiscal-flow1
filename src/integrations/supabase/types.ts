@@ -35,6 +35,107 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracion_tributaria: {
+        Row: {
+          actividad_economica: string
+          codigo_actividad: string
+          created_at: string
+          id: string
+          it_tasa: number
+          iue_tasa: number
+          iva_tasa: number
+          nit_empresa: string
+          razon_social: string
+          rc_it_tasa: number
+          rc_iva_tasa: number
+          regimen_tributario: string
+          tipo_cambio_usd: number
+          ufv_actual: number
+          updated_at: string
+        }
+        Insert: {
+          actividad_economica: string
+          codigo_actividad: string
+          created_at?: string
+          id?: string
+          it_tasa?: number
+          iue_tasa?: number
+          iva_tasa?: number
+          nit_empresa: string
+          razon_social: string
+          rc_it_tasa?: number
+          rc_iva_tasa?: number
+          regimen_tributario?: string
+          tipo_cambio_usd?: number
+          ufv_actual?: number
+          updated_at?: string
+        }
+        Update: {
+          actividad_economica?: string
+          codigo_actividad?: string
+          created_at?: string
+          id?: string
+          it_tasa?: number
+          iue_tasa?: number
+          iva_tasa?: number
+          nit_empresa?: string
+          razon_social?: string
+          rc_it_tasa?: number
+          rc_iva_tasa?: number
+          regimen_tributario?: string
+          tipo_cambio_usd?: number
+          ufv_actual?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plan_cuentas_2025: {
+        Row: {
+          activa: boolean
+          codigo: string
+          created_at: string
+          cuenta_padre: string | null
+          descripcion: string | null
+          id: string
+          nivel: number
+          nombre: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          codigo: string
+          created_at?: string
+          cuenta_padre?: string | null
+          descripcion?: string | null
+          id?: string
+          nivel: number
+          nombre: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          codigo?: string
+          created_at?: string
+          cuenta_padre?: string | null
+          descripcion?: string | null
+          id?: string
+          nivel?: number
+          nombre?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_cuentas_2025_cuenta_padre_fkey"
+            columns: ["cuenta_padre"]
+            isOneToOne: false
+            referencedRelation: "plan_cuentas_2025"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
