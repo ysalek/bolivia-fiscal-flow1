@@ -6,6 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 import { 
   GitBranch, 
   Clock, 
@@ -41,12 +48,56 @@ import {
   RefreshCw,
   Timer,
   Flag,
-  MapPin
+  MapPin,
+  Search,
+  Filter,
+  Plus,
+  History,
+  Bell,
+  BellRing,
+  UserCheck,
+  Lock,
+  Unlock,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  Trash2,
+  MoreHorizontal,
+  Bookmark,
+  BookmarkCheck,
+  Zap as Lightning,
+  WifiOff,
+  Wifi,
+  Database,
+  FileOutput,
+  PieChart,
+  BarChart,
+  LineChart
 } from 'lucide-react';
 
 const WorkflowManager = () => {
+  const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('2024-01');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedPriority, setSelectedPriority] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [newWorkflow, setNewWorkflow] = useState({
+    name: '',
+    description: '',
+    category: 'Tributario',
+    priority: 'medium',
+    trigger: '',
+    responsable: '',
+    bolivianSpecific: true
+  });
+
   const [workflows] = useState([
     // Workflows específicos bolivianos
     {
@@ -171,6 +222,88 @@ const WorkflowManager = () => {
     }
   ]);
 
+  const [notifications] = useState([
+    {
+      id: 1,
+      type: 'warning',
+      title: 'Declaración IVA Pendiente',
+      message: 'La declaración IVA de Diciembre 2023 vence mañana',
+      timestamp: '2024-01-14 10:30',
+      read: false,
+      workflowId: 1,
+      priority: 'critical'
+    },
+    {
+      id: 2,
+      type: 'success',
+      title: 'Conciliación BCP Completada',
+      message: 'La conciliación bancaria se completó exitosamente',
+      timestamp: '2024-01-14 08:15',
+      read: false,
+      workflowId: 3,
+      priority: 'medium'
+    },
+    {
+      id: 3,
+      type: 'info',
+      title: 'Nueva Factura Alto Valor',
+      message: 'Factura de Bs. 25,000 requiere aprobación gerencial',
+      timestamp: '2024-01-14 14:20',
+      read: true,
+      workflowId: 2,
+      priority: 'high'
+    },
+    {
+      id: 4,
+      type: 'error',
+      title: 'Error en Validación RC-IVA',
+      message: 'No se pudo validar el NIT del proveedor en SIAT',
+      timestamp: '2024-01-14 11:45',
+      read: false,
+      workflowId: 4,
+      priority: 'high'
+    }
+  ]);
+
+  const [auditHistory] = useState([
+    {
+      id: 1,
+      action: 'workflow_completed',
+      workflow: 'Declaración IVA Mensual SIN',
+      user: 'María García',
+      timestamp: '2024-01-13 16:45',
+      details: 'IVA Noviembre 2023 - Monto: Bs. 14,250.30',
+      status: 'success'
+    },
+    {
+      id: 2,
+      action: 'instance_approved',
+      workflow: 'Aprobación Facturas Alto Valor',
+      user: 'Carlos Mendez',
+      timestamp: '2024-01-13 14:20',
+      details: 'FACT-2024-0145 - Monto: Bs. 18,500.00',
+      status: 'approved'
+    },
+    {
+      id: 3,
+      action: 'workflow_paused',
+      workflow: 'Validación RC-IVA Proveedores',
+      user: 'Admin Sistema',
+      timestamp: '2024-01-13 09:15',
+      details: 'Mantenimiento programado SIAT',
+      status: 'paused'
+    },
+    {
+      id: 4,
+      action: 'configuration_updated',
+      workflow: 'Planillas AFP - Envío Automático',
+      user: 'Ana Rodríguez',
+      timestamp: '2024-01-12 11:30',
+      details: 'Actualización tasa AFP Futuro: 12.21%',
+      status: 'updated'
+    }
+  ]);
+
   const [activeInstances] = useState([
     // Instancias específicas bolivianas
     {
@@ -285,6 +418,73 @@ const WorkflowManager = () => {
     }
   ]);
 
+  // Efectos para simular actualizaciones en tiempo real
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsConnected(prev => Math.random() > 0.1 ? true : prev); // 90% uptime
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleProcessInstance = async (instanceId: string) => {
+    setIsProcessing(instanceId);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsProcessing(null);
+    
+    toast({
+      title: "Instancia procesada",
+      description: `La instancia ${instanceId} ha sido procesada exitosamente`,
+    });
+  };
+
+  const handleCreateWorkflow = () => {
+    if (!newWorkflow.name || !newWorkflow.description) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos requeridos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Workflow creado",
+      description: `El workflow "${newWorkflow.name}" ha sido creado exitosamente`,
+    });
+    
+    setShowCreateDialog(false);
+    setNewWorkflow({
+      name: '',
+      description: '',
+      category: 'Tributario',
+      priority: 'medium',
+      trigger: '',
+      responsable: '',
+      bolivianSpecific: true
+    });
+  };
+
+  const filteredWorkflows = workflows.filter(workflow => {
+    const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         workflow.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || workflow.category === selectedCategory;
+    const matchesStatus = selectedStatus === 'all' || workflow.status === selectedStatus;
+    const matchesPriority = selectedPriority === 'all' || workflow.priority === selectedPriority;
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+  });
+
+  const filteredInstances = activeInstances.filter(instance => {
+    const matchesSearch = instance.documentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         instance.workflowName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || instance.status === selectedStatus;
+    const matchesPriority = selectedPriority === 'all' || instance.priority === selectedPriority;
+    
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-50 text-green-700 border-green-200';
@@ -317,12 +517,6 @@ const WorkflowManager = () => {
     pendingCritical: activeInstances.filter(i => i.priority === 'critical' && i.status === 'pending').length
   };
 
-  const handleProcessInstance = async (instanceId: string) => {
-    setIsProcessing(instanceId);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsProcessing(null);
-  };
-
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'Tributario': return Building2;
@@ -351,13 +545,74 @@ const WorkflowManager = () => {
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-4xl font-bold tracking-tight mb-2">
-              Gestión de Workflows Bolivia
-            </h2>
-            <p className="text-green-100 text-lg">
+            <div className="flex items-center gap-4 mb-4">
+              <h2 className="text-4xl font-bold tracking-tight">
+                Gestión de Workflows Bolivia
+              </h2>
+              <div className="flex items-center gap-2">
+                {isConnected ? (
+                  <div className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-full">
+                    <Wifi className="w-3 h-3 text-green-300" />
+                    <span className="text-xs text-green-200">Conectado</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 bg-red-500/20 px-2 py-1 rounded-full">
+                    <WifiOff className="w-3 h-3 text-red-300" />
+                    <span className="text-xs text-red-200">Desconectado</span>
+                  </div>
+                )}
+                <Dialog open={showNotifications} onOpenChange={setShowNotifications}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20 relative">
+                      {unreadNotifications > 0 ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                      {unreadNotifications > 0 && (
+                        <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                          {unreadNotifications}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Notificaciones del Sistema</DialogTitle>
+                      <DialogDescription>
+                        Alertas y actualizaciones de workflows activos
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {notifications.map((notification) => (
+                        <div key={notification.id} className={`p-3 rounded-lg border ${
+                          !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <div className={`p-1 rounded-full ${
+                              notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                              notification.type === 'error' ? 'bg-red-100 text-red-600' :
+                              notification.type === 'success' ? 'bg-green-100 text-green-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              {notification.type === 'warning' ? <AlertCircle className="w-3 h-3" /> :
+                               notification.type === 'error' ? <XCircle className="w-3 h-3" /> :
+                               notification.type === 'success' ? <CheckCircle className="w-3 h-3" /> :
+                               <Bell className="w-3 h-3" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{notification.title}</p>
+                              <p className="text-xs text-muted-foreground">{notification.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{notification.timestamp}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+            <p className="text-green-100 text-lg mb-4">
               Automatización de procesos contables y tributarios según normativa boliviana
             </p>
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
                 <Building2 className="w-4 h-4" />
                 <span className="text-sm">{bolivianWorkflowStats.tributarios} Tributarios</span>
@@ -373,7 +628,7 @@ const WorkflowManager = () => {
             </div>
           </div>
           <div className="text-right">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <div className="text-3xl font-bold">{bolivianWorkflowStats.activos}</div>
                 <div className="text-xs text-green-100">Workflows Activos</div>
@@ -384,7 +639,7 @@ const WorkflowManager = () => {
               </div>
             </div>
             {bolivianWorkflowStats.pendingCritical > 0 && (
-              <Alert className="mt-4 bg-red-100 border-red-300">
+              <Alert className="bg-red-100 border-red-300">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800 text-sm">
                   {bolivianWorkflowStats.pendingCritical} proceso(s) crítico(s) pendiente(s)
@@ -463,12 +718,235 @@ const WorkflowManager = () => {
         </Card>
       </div>
 
+      {/* Barra de herramientas avanzada */}
+      <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar workflows, instancias, documentos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filtros
+              {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nuevo Workflow
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Crear Nuevo Workflow</DialogTitle>
+                  <DialogDescription>
+                    Configure un nuevo workflow para automatizar procesos contables
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nombre del Workflow</Label>
+                      <Input
+                        id="name"
+                        value={newWorkflow.name}
+                        onChange={(e) => setNewWorkflow({...newWorkflow, name: e.target.value})}
+                        placeholder="Ej: Declaración IUS Mensual"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Categoría</Label>
+                      <Select
+                        value={newWorkflow.category}
+                        onValueChange={(value) => setNewWorkflow({...newWorkflow, category: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Tributario">Tributario</SelectItem>
+                          <SelectItem value="Financiero">Financiero</SelectItem>
+                          <SelectItem value="Bancario">Bancario</SelectItem>
+                          <SelectItem value="RRHH">RRHH</SelectItem>
+                          <SelectItem value="Sistema">Sistema</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea
+                      id="description"
+                      value={newWorkflow.description}
+                      onChange={(e) => setNewWorkflow({...newWorkflow, description: e.target.value})}
+                      placeholder="Describa el propósito y funcionamiento del workflow..."
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="priority">Prioridad</Label>
+                      <Select
+                        value={newWorkflow.priority}
+                        onValueChange={(value) => setNewWorkflow({...newWorkflow, priority: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Baja</SelectItem>
+                          <SelectItem value="medium">Media</SelectItem>
+                          <SelectItem value="high">Alta</SelectItem>
+                          <SelectItem value="critical">Crítica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="responsable">Responsable</Label>
+                      <Input
+                        id="responsable"
+                        value={newWorkflow.responsable}
+                        onChange={(e) => setNewWorkflow({...newWorkflow, responsable: e.target.value})}
+                        placeholder="Nombre del responsable"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="trigger">Disparador (Trigger)</Label>
+                    <Input
+                      id="trigger"
+                      value={newWorkflow.trigger}
+                      onChange={(e) => setNewWorkflow({...newWorkflow, trigger: e.target.value})}
+                      placeholder="Ej: monthly.day_15, invoice.created, etc."
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="bolivian-specific"
+                      checked={newWorkflow.bolivianSpecific}
+                      onCheckedChange={(checked) => setNewWorkflow({...newWorkflow, bolivianSpecific: checked})}
+                    />
+                    <Label htmlFor="bolivian-specific">
+                      Específico para normativa boliviana
+                    </Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateWorkflow}>
+                    Crear Workflow
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-1" />
+              Exportar
+            </Button>
+            <Button variant="outline" size="sm">
+              <History className="w-4 h-4 mr-1" />
+              Historial
+            </Button>
+          </div>
+        </div>
+        
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="Tributario">Tributario</SelectItem>
+                  <SelectItem value="Financiero">Financiero</SelectItem>
+                  <SelectItem value="Bancario">Bancario</SelectItem>
+                  <SelectItem value="RRHH">RRHH</SelectItem>
+                  <SelectItem value="Sistema">Sistema</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Activo</SelectItem>
+                  <SelectItem value="paused">Pausado</SelectItem>
+                  <SelectItem value="pending">Pendiente</SelectItem>
+                  <SelectItem value="approved">Aprobado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Prioridad</Label>
+              <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="low">Baja</SelectItem>
+                  <SelectItem value="medium">Media</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="critical">Crítica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setSelectedStatus('all');
+                  setSelectedPriority('all');
+                }}
+                className="w-full"
+              >
+                Limpiar Filtros
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <Tabs defaultValue="instances" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="instances">Instancias Activas</TabsTrigger>
           <TabsTrigger value="workflows">Workflows Bolivia</TabsTrigger>
           <TabsTrigger value="tributarios">Procesos Tributarios</TabsTrigger>
           <TabsTrigger value="analytics">Analíticas</TabsTrigger>
+          <TabsTrigger value="audit">Auditoría</TabsTrigger>
         </TabsList>
 
         <TabsContent value="instances">
@@ -488,7 +966,7 @@ const WorkflowManager = () => {
             </div>
             
             <div className="grid gap-4">
-              {activeInstances.map((instance, index) => {
+              {filteredInstances.map((instance, index) => {
                 const CategoryIcon = getCategoryIcon(workflows.find(w => w.name === instance.workflowName)?.category || '');
                 
                 return (
@@ -638,7 +1116,7 @@ const WorkflowManager = () => {
 
         <TabsContent value="workflows">
           <div className="grid gap-4">
-            {workflows.map((workflow) => (
+            {filteredWorkflows.map((workflow) => (
               <Card key={workflow.id}>
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
@@ -847,6 +1325,7 @@ const WorkflowManager = () => {
             </div>
           </div>
         </TabsContent>
+
         <TabsContent value="analytics">
           <div className="space-y-6">
             {/* Métricas principales */}
@@ -1067,6 +1546,118 @@ const WorkflowManager = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold">Historial de Auditoría</h3>
+                <p className="text-muted-foreground">
+                  Registro completo de acciones y cambios en el sistema de workflows
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <FileOutput className="w-4 h-4 mr-1" />
+                  Exportar Log
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Database className="w-4 h-4 mr-1" />
+                  Backup
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 p-4 rounded-lg border">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-white rounded border">
+                  <div className="text-2xl font-bold text-blue-600">{auditHistory.length}</div>
+                  <div className="text-sm text-blue-700">Acciones Registradas</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded border">
+                  <div className="text-2xl font-bold text-green-600">
+                    {auditHistory.filter(h => h.status === 'success' || h.status === 'approved').length}
+                  </div>
+                  <div className="text-sm text-green-700">Exitosas</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded border">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {auditHistory.filter(h => h.status === 'paused' || h.status === 'updated').length}
+                  </div>
+                  <div className="text-sm text-yellow-700">Modificaciones</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded border">
+                  <div className="text-2xl font-bold text-purple-600">100%</div>
+                  <div className="text-sm text-purple-700">Trazabilidad</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {auditHistory.map((entry) => (
+                <Card key={entry.id} className="hover:shadow-md transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2 rounded-lg ${
+                          entry.status === 'success' ? 'bg-green-100 text-green-600' :
+                          entry.status === 'approved' ? 'bg-blue-100 text-blue-600' :
+                          entry.status === 'paused' ? 'bg-yellow-100 text-yellow-600' :
+                          'bg-purple-100 text-purple-600'
+                        }`}>
+                          {entry.status === 'success' ? <CheckCircle className="w-5 h-5" /> :
+                           entry.status === 'approved' ? <UserCheck className="w-5 h-5" /> :
+                           entry.status === 'paused' ? <Pause className="w-5 h-5" /> :
+                           <Settings className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium capitalize">
+                              {entry.action.replace('_', ' ')}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {entry.workflow}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {entry.details}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              <span>{entry.user}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{entry.timestamp}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="w-3 h-3 mr-1" />
+                          Detalles
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Copy className="w-3 h-3 mr-1" />
+                          Copiar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center mt-6">
+              <Button variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Cargar Más Registros
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
