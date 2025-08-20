@@ -38,7 +38,8 @@ import {
   Brain,
   Sparkles,
   ChevronDown,
-  Home
+  Home,
+  GitBranch
 } from 'lucide-react';
 import {
   Sidebar,
@@ -99,7 +100,7 @@ const menuItems = [
       { title: 'Flujo de Caja', url: '/?view=flujo-caja', icon: PiggyBank, badge: null },
       { title: 'Cuentas por Cobrar/Pagar', url: '/?view=cuentas-cobrar-pagar', icon: CreditCard, badge: null },
       { title: 'Declaraciones IVA', url: '/?view=declaraciones-tributarias', icon: FileText, badge: null },
-      { title: 'Cumplimiento Normativo', url: '/?view=cumplimiento-normativo', icon: Shield, badge: 'Nuevo' },
+      { title: 'Cumplimiento Normativo', url: '/?view=compliance', icon: Shield, badge: 'Nuevo' },
       { title: 'Auditoría Avanzada', url: '/?view=auditoria-avanzada', icon: TestTube, badge: 'Nuevo' },
       { title: 'Plan Cuentas 2025', url: '/?view=plan-cuentas-2025', icon: BookOpen, badge: 'Actualizado' },
     ]
@@ -117,6 +118,13 @@ const menuItems = [
       { title: 'Reportes', url: '/?view=reportes', icon: BarChart3, badge: null },
       { title: 'Análisis Financiero', url: '/?view=analisis-financiero', icon: TrendingUp, badge: null },
       { title: 'Análisis de Rentabilidad', url: '/?view=rentabilidad', icon: Target, badge: null },
+    ]
+  },
+  {
+    group: 'Enterprise',
+    items: [
+      { title: 'Integraciones', url: '/?view=integrations', icon: Zap, badge: 'Pro' },
+      { title: 'Workflows', url: '/?view=workflows', icon: GitBranch, badge: 'Pro' },
     ]
   },
   {

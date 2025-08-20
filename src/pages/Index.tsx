@@ -12,6 +12,9 @@ import NotificationCenter from '@/components/contable/notifications/Notification
 
 // Lazy load components
 const SimpleAppTest = lazy(() => import('@/components/contable/SimpleAppTest'));
+const ComplianceModule = lazy(() => import('@/components/contable/enterprise/ComplianceModule'));
+const IntegrationHub = lazy(() => import('@/components/contable/integration/IntegrationHub'));
+const WorkflowManager = lazy(() => import('@/components/contable/workflow/WorkflowManager'));
 const Dashboard = lazy(() => import('@/components/contable/Dashboard'));
 const AnalisisInteligente = lazy(() => import('@/components/contable/analisis/AnalisisInteligente'));
 const LibroDiario = lazy(() => import('@/components/contable/LibroDiario'));
@@ -162,6 +165,12 @@ const Index = () => {
         return <FacturacionElectronicaModule />;
       case 'retenciones':
         return <RetencionesModule />;
+      case 'compliance':
+        return <ComplianceModule />;
+      case 'integrations':
+        return <IntegrationHub />;
+      case 'workflows':
+        return <WorkflowManager />;
       default:
         return <Dashboard />;
     }
@@ -202,7 +211,10 @@ const Index = () => {
       'backup': 'Backup',
       'tutorial': 'Tutorial',
       'punto-venta': 'Punto de Venta',
-      'credit-sales': 'Ventas a Crédito'
+      'credit-sales': 'Ventas a Crédito',
+      'compliance': 'Cumplimiento Normativo',
+      'integrations': 'Centro de Integraciones',
+      'workflows': 'Gestión de Workflows'
     };
     return titles[currentView as keyof typeof titles] || 'Sistema Contable';
   };
