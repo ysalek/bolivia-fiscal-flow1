@@ -91,7 +91,7 @@ const Index = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <SimpleAppTest />;
+        return <Dashboard />;
       case 'analisis-inteligente':
         return <AnalisisInteligente />;
       case 'diario':
