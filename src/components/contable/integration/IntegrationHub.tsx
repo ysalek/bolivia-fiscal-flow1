@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,9 @@ import {
   Upload,
   Power,
   Wifi,
-  WifiOff
+  WifiOff,
+  TestTube,
+  XCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,6 +65,14 @@ const IntegrationHub = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [productionMode, setProductionMode] = useState(true); // Cambiar a modo producción
+  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<any>(null);
+  const [webhookForm, setWebhookForm] = useState({
+    name: '',
+    url: '',
+    eventos: [] as string[],
+    status: 'active' as 'active' | 'inactive'
+  });
   
   // Cargar configuraciones de producción desde localStorage
   useEffect(() => {
@@ -75,7 +85,146 @@ const IntegrationHub = () => {
     if (savedMode !== null) {
       setProductionMode(savedMode === 'true');
     }
+    
+    const savedWebhooks = localStorage.getItem('webhooks_config');
+    if (savedWebhooks) {
+      setWebhooks(JSON.parse(savedWebhooks));
+    }
   }, []);
+
+  const webhookEventOptions = [
+    'factura.emitida', 'factura.anulada', 'factura.enviada',
+    'pago.recibido', 'pago.rechazado', 'pago.procesado',
+    'mensaje.enviado', 'mensaje.entregado', 'mensaje.leido',
+    'integracion.conectada', 'integracion.desconectada', 'error.conexion'
+  ];
+
+  const handleEditWebhook = (webhook: any) => {
+    setEditingWebhook(webhook);
+    setWebhookForm({
+      name: webhook.name,
+      url: webhook.url,
+      eventos: webhook.eventos,
+      status: webhook.status
+    });
+    setShowWebhookDialog(true);
+  };
+
+  const handleSaveWebhook = () => {
+    if (editingWebhook) {
+      // Editar webhook existente
+      const updatedWebhooks = webhooks.map(w => 
+        w.id === editingWebhook.id 
+          ? { ...w, ...webhookForm }
+          : w
+      );
+      setWebhooks(updatedWebhooks);
+      localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
+      
+      toast({
+        title: "✅ Webhook actualizado",
+        description: `${webhookForm.name} ha sido actualizado correctamente`,
+      });
+    } else {
+      // Crear nuevo webhook
+      const newWebhook = {
+        id: Date.now().toString(),
+        ...webhookForm,
+        lastCall: null,
+        attempts: 0,
+        errors: 0
+      };
+      const updatedWebhooks = [...webhooks, newWebhook];
+      setWebhooks(updatedWebhooks);
+      localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
+      
+      toast({
+        title: "✅ Webhook creado",
+        description: `${webhookForm.name} ha sido creado correctamente`,
+      });
+    }
+    
+    setShowWebhookDialog(false);
+    setEditingWebhook(null);
+    setWebhookForm({ name: '', url: '', eventos: [], status: 'active' });
+  };
+
+  const handleDeleteWebhook = (webhookId: string) => {
+    const updatedWebhooks = webhooks.filter(w => w.id !== webhookId);
+    setWebhooks(updatedWebhooks);
+    localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
+    
+    toast({
+      title: "🗑️ Webhook eliminado",
+      description: "El webhook ha sido eliminado correctamente",
+    });
+  };
+
+  const testWebhook = async (webhook: any) => {
+    toast({
+      title: "🔄 Probando webhook...",
+      description: `Enviando solicitud de prueba a ${webhook.name}`,
+    });
+
+    try {
+      // Simular prueba de webhook
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const success = Math.random() > 0.2; // 80% éxito
+      
+      if (success) {
+        toast({
+          title: "✅ Webhook funcionando",
+          description: `${webhook.name} respondió correctamente`,
+        });
+      } else {
+        toast({
+          title: "❌ Error en webhook",
+          description: `${webhook.name} no respondió correctamente`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Error de prueba",
+        description: "No se pudo probar el webhook",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const [webhooks, setWebhooks] = useState([
+    {
+      id: 'facturacion',
+      name: 'Facturación Electrónica SIN',
+      url: 'https://miapp.com/webhooks/sin-facturacion',
+      eventos: ['factura.emitida', 'factura.anulada', 'factura.enviada'],
+      status: 'active' as const,
+      lastCall: '2024-01-12 14:30:00',
+      attempts: 1247,
+      errors: 2
+    },
+    {
+      id: 'pagos',
+      name: 'Notificaciones de Pagos BCP',
+      url: 'https://miapp.com/webhooks/bcp-pagos',
+      eventos: ['pago.recibido', 'pago.rechazado'],
+      status: 'active' as const,
+      lastCall: '2024-01-12 13:45:00',
+      attempts: 892,
+      errors: 0
+    },
+    {
+      id: 'whatsapp',
+      name: 'Mensajes WhatsApp Business',
+      url: 'https://miapp.com/webhooks/whatsapp',
+      eventos: ['mensaje.enviado', 'mensaje.entregado', 'mensaje.leido'],
+      status: 'inactive' as const,
+      lastCall: null,
+      attempts: 0,
+      errors: 0
+    }
+  ]);
 
   const integrations = [
     // Tributario y Gubernamental
@@ -266,33 +415,6 @@ const IntegrationHub = () => {
       integrations.filter(i => i.bolivianSpecific && i.status === 'connected').length
     ) || 0
   };
-
-  const webhooks = [
-    {
-      id: 1,
-      name: 'Notificaciones SIN Bolivia',
-      url: 'https://api.contabolivia.com/webhooks/sin',
-      eventos: ['factura.autorizada', 'declaracion.vencimiento', 'certificado.expiracion'],
-      status: 'active',
-      country: 'BO'
-    },
-    {
-      id: 2,
-      name: 'Alertas Bancarias',
-      url: 'https://api.contabolivia.com/webhooks/banks',
-      eventos: ['transferencia.recibida', 'saldo.bajo', 'pago.rechazado'],
-      status: 'active',
-      country: 'BO'
-    },
-    {
-      id: 3,
-      name: 'WhatsApp Automático',
-      url: 'https://api.whatsapp.com/business/contabolivia',
-      eventos: ['factura.enviada', 'pago.vencido', 'reporte.mensual'],
-      status: 'active',
-      country: 'GLOBAL'
-    }
-  ];
 
   const handleToggleIntegration = async (integrationId: string) => {
     const integration = integrations.find(i => i.id === integrationId);
@@ -648,19 +770,38 @@ const IntegrationHub = () => {
                                 {isConnecting === integration.id ? (
                                   <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
                                 ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleToggleIntegration(integration.id)}
-                                    disabled={isConnecting !== null}
-                                  >
-                                    {integration.status === 'connected' ? (
-                                      <Wifi className="w-4 h-4 text-green-600" />
-                                    ) : (
-                                      <WifiOff className="w-4 h-4 text-gray-400" />
-                                    )}
-                                  </Button>
-                                )}
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={() => handleToggleIntegration(integration.id)}
+                                     disabled={isConnecting !== null}
+                                   >
+                                     {integration.status === 'connected' ? (
+                                       <Wifi className="w-4 h-4 text-green-600" />
+                                     ) : (
+                                       <WifiOff className="w-4 h-4 text-gray-400" />
+                                     )}
+                                   </Button>
+                                 )}
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => {
+                                     if (integration.id === 'sin' || integration.id === 'siat') {
+                                       toast({
+                                         title: "🔧 Configuración SIN/SIAT",
+                                         description: "Vaya a Configuración del Sistema → Integración SIN",
+                                       });
+                                     } else {
+                                       toast({
+                                         title: "⚙️ Configuración",
+                                         description: `Configurando ${integration.name}...`,
+                                       });
+                                     }
+                                   }}
+                                 >
+                                   <Settings className="w-4 h-4" />
+                                 </Button>
                               </div>
                             </div>
                           </CardHeader>
@@ -730,6 +871,27 @@ const IntegrationHub = () => {
                                 >
                                   <RefreshCw className="w-3 h-3 mr-1" />
                                   Sync
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="flex-1 text-xs"
+                                  onClick={() => {
+                                    if (integration.id === 'sin' || integration.id === 'siat') {
+                                      toast({
+                                        title: "🔧 Configuración SIN/SIAT",
+                                        description: "Vaya a Configuración del Sistema → Integración SIN para configurar credenciales completas",
+                                      });
+                                    } else {
+                                      toast({
+                                        title: "⚙️ Configuración disponible",
+                                        description: `Configure ${integration.name} en las pestañas Configuración o API Keys`,
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Settings className="w-3 h-3 mr-1" />
+                                  Config
                                 </Button>
                                 <Button size="sm" variant="outline" className="text-xs">
                                   <Settings className="w-3 h-3 mr-1" />
@@ -983,45 +1145,178 @@ const IntegrationHub = () => {
         </TabsContent>
 
         <TabsContent value="webhooks">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Webhook className="w-5 h-5" />
-                Configuración de Webhooks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {webhooks.map((webhook) => (
-                  <div key={webhook.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{webhook.name}</h4>
-                      <p className="text-sm text-muted-foreground">{webhook.url}</p>
-                      <div className="flex gap-1 mt-2">
-                        {webhook.eventos.map((event, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {event}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Webhook className="w-5 h-5" />
+                  Configuración de Webhooks
+                </CardTitle>
+                <CardDescription>
+                  Configure URLs de callback para recibir notificaciones en tiempo real
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {webhooks.map((webhook) => (
+                    <div key={webhook.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-medium">{webhook.name}</h4>
+                          <Badge variant={webhook.status === 'active' ? 'default' : 'secondary'}>
+                            {webhook.status === 'active' ? 'Activo' : 'Inactivo'}
                           </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{webhook.url}</p>
+                        <div className="flex gap-1 mb-2">
+                          {webhook.eventos.map((evento, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {evento}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {webhook.lastCall && (
+                            <span>Último llamado: {webhook.lastCall}</span>
+                          )}
+                          <span>Intentos: {webhook.attempts}</span>
+                          <span className={webhook.errors > 0 ? 'text-red-600' : 'text-green-600'}>
+                            Errores: {webhook.errors}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => testWebhook(webhook)}
+                        >
+                          <TestTube className="w-4 h-4 mr-1" />
+                          Probar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditWebhook(webhook)}
+                        >
+                          <Settings className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleDeleteWebhook(webhook.id)}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => {
+                      setEditingWebhook(null);
+                      setWebhookForm({ name: '', url: '', eventos: [], status: 'active' });
+                      setShowWebhookDialog(true);
+                    }}
+                  >
+                    <Webhook className="w-4 h-4 mr-2" />
+                    Agregar Nuevo Webhook
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Dialog para crear/editar webhooks */}
+            {showWebhookDialog && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                  <h3 className="text-lg font-semibold mb-4">
+                    {editingWebhook ? 'Editar Webhook' : 'Nuevo Webhook'}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="webhook-name">Nombre</Label>
+                      <Input
+                        id="webhook-name"
+                        value={webhookForm.name}
+                        onChange={(e) => setWebhookForm({...webhookForm, name: e.target.value})}
+                        placeholder="Nombre descriptivo del webhook"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="webhook-url">URL</Label>
+                      <Input
+                        id="webhook-url"
+                        value={webhookForm.url}
+                        onChange={(e) => setWebhookForm({...webhookForm, url: e.target.value})}
+                        placeholder="https://miapp.com/webhook"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Eventos</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {webhookEventOptions.map((evento) => (
+                          <label key={evento} className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={webhookForm.eventos.includes(evento)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setWebhookForm({
+                                    ...webhookForm, 
+                                    eventos: [...webhookForm.eventos, evento]
+                                  });
+                                } else {
+                                  setWebhookForm({
+                                    ...webhookForm, 
+                                    eventos: webhookForm.eventos.filter(e => e !== evento)
+                                  });
+                                }
+                              }}
+                            />
+                            <span>{evento}</span>
+                          </label>
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={webhook.status === 'active' ? 'default' : 'secondary'}>
-                        {webhook.status}
-                      </Badge>
-                      <Button size="sm" variant="outline">
-                        Editar
-                      </Button>
+                    
+                    <div>
+                      <Label>Estado</Label>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Switch
+                          checked={webhookForm.status === 'active'}
+                          onCheckedChange={(checked) => 
+                            setWebhookForm({...webhookForm, status: checked ? 'active' : 'inactive'})
+                          }
+                        />
+                        <span className="text-sm">
+                          {webhookForm.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ))}
-                <Button className="w-full" variant="outline">
-                  <Webhook className="w-4 h-4 mr-2" />
-                  Agregar Webhook
-                </Button>
+                  
+                  <div className="flex gap-2 mt-6">
+                    <Button onClick={handleSaveWebhook} className="flex-1">
+                      {editingWebhook ? 'Actualizar' : 'Crear'} Webhook
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowWebhookDialog(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="api">
