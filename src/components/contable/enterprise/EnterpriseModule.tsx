@@ -9,6 +9,7 @@ import PresupuestosEmpresariales from '../presupuestos/PresupuestosEmpresariales
 import CentrosCostoModule from '../costos/CentrosCostoModule';
 import AnalisisRentabilidad from '../rentabilidad/AnalisisRentabilidad';
 import FlujoCaja from '../finanzas/FlujoCaja';
+import IntegrationHub from '../integration/IntegrationHub';
 
 const EnterpriseModule = () => {
   const [kpiPeriodo, setKpiPeriodo] = useState('mensual');
@@ -166,7 +167,7 @@ const EnterpriseModule = () => {
       </Card>
 
       <Tabs defaultValue="presupuestos" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="presupuestos" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Presupuestos
@@ -182,6 +183,10 @@ const EnterpriseModule = () => {
           <TabsTrigger value="flujo" className="flex items-center gap-2">
             <FileBarChart className="w-4 h-4" />
             Flujo de Caja
+          </TabsTrigger>
+          <TabsTrigger value="integraciones" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            Integraciones
           </TabsTrigger>
         </TabsList>
 
@@ -199,6 +204,10 @@ const EnterpriseModule = () => {
 
         <TabsContent value="flujo">
           <FlujoCaja />
+        </TabsContent>
+
+        <TabsContent value="integraciones">
+          <IntegrationHub />
         </TabsContent>
       </Tabs>
 
