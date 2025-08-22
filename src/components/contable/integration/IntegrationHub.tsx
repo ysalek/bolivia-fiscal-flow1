@@ -782,27 +782,8 @@ const IntegrationHub = () => {
                                        <WifiOff className="w-4 h-4 text-gray-400" />
                                      )}
                                    </Button>
-                                 )}
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => {
-                                     if (integration.id === 'sin' || integration.id === 'siat') {
-                                       toast({
-                                         title: "🔧 Configuración SIN/SIAT",
-                                         description: "Vaya a Configuración del Sistema → Integración SIN",
-                                       });
-                                     } else {
-                                       toast({
-                                         title: "⚙️ Configuración",
-                                         description: `Configurando ${integration.name}...`,
-                                       });
-                                     }
-                                   }}
-                                 >
-                                   <Settings className="w-4 h-4" />
-                                 </Button>
-                              </div>
+                                  )}
+                               </div>
                             </div>
                           </CardHeader>
                           <CardContent>
@@ -892,12 +873,8 @@ const IntegrationHub = () => {
                                 >
                                   <Settings className="w-3 h-3 mr-1" />
                                   Config
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-xs">
-                                  <Settings className="w-3 h-3 mr-1" />
-                                  Config
-                                </Button>
-                              </div>
+                                 </Button>
+                               </div>
                             </div>
                           </CardContent>
                         </Card>
