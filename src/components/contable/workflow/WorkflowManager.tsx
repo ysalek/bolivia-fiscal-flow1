@@ -428,13 +428,56 @@ const WorkflowManager = () => {
 
   const handleProcessInstance = async (instanceId: string) => {
     setIsProcessing(instanceId);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsProcessing(null);
     
-    toast({
-      title: "Instancia procesada",
-      description: `La instancia ${instanceId} ha sido procesada exitosamente`,
-    });
+    try {
+      // Simular validaciones previas
+      const instance = activeInstances.find(i => i.id === instanceId);
+      if (!instance) throw new Error('Instancia no encontrada');
+      
+      // Simular verificaciones específicas para Bolivia
+      if (instance.bolivianContext) {
+        // Verificar NIT si es necesario
+        if (instance.bolivianContext.nit && instance.bolivianContext.nit.length < 5) {
+          throw new Error('NIT inválido para procesamiento');
+        }
+        
+        // Verificar estado tributario
+        if (instance.workflowName.includes('SIN') || instance.workflowName.includes('IVA')) {
+          // Simular verificación con SIN
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
+      
+      // Proceso principal
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Actualizar progreso
+      const progressIncrement = Math.floor(Math.random() * 30) + 20; // 20-50%
+      const newProgress = Math.min(100, instance.progress + progressIncrement);
+      
+      // Simular actualización en localStorage para persistencia
+      const instances = JSON.parse(localStorage.getItem('workflow_instances') || '[]');
+      const updatedInstances = instances.map((inst: any) => 
+        inst.id === instanceId 
+          ? { ...inst, progress: newProgress, status: newProgress >= 100 ? 'approved' : 'processing' }
+          : inst
+      );
+      localStorage.setItem('workflow_instances', JSON.stringify(updatedInstances));
+      
+      toast({
+        title: "✅ Instancia procesada exitosamente",
+        description: `${instance.documentId} - Progreso: ${newProgress}%`,
+      });
+      
+    } catch (error) {
+      toast({
+        title: "❌ Error en el procesamiento",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
   const handleCreateWorkflow = () => {
