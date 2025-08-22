@@ -685,80 +685,34 @@ const IntegrationHub = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Configuración Tributaria */}
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-blue-600" />
-                      Datos Tributarios
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="empresa-nit">NIT de la Empresa</Label>
-                        <Input 
-                          id="empresa-nit"
-                          placeholder="Ej: 1234567890123"
-                          defaultValue={localStorage.getItem('empresa_nit') || ''}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="razon-social">Razón Social</Label>
-                        <Input 
-                          id="razon-social"
-                          placeholder="Nombre completo de la empresa"
-                          defaultValue={localStorage.getItem('razon_social') || ''}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="actividad-economica">Actividad Económica</Label>
-                        <Input 
-                          id="actividad-economica"
-                          placeholder="Código de actividad SIN"
-                          defaultValue={localStorage.getItem('actividad_economica') || ''}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Configuración de Conectividad */}
+                  {/* Configuración de Estado de Conexiones */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-semibold flex items-center gap-2">
                       <Globe className="w-5 h-5 text-green-600" />
-                      Conectividad
+                      Estado de Conexiones
                     </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
-                          <Label>Modo de Conexión SIN</Label>
-                          <p className="text-sm text-muted-foreground">Producción vs Pruebas</p>
+                          <Label>Auto-reconexión</Label>
+                          <p className="text-sm text-muted-foreground">Reconectar automáticamente en caso de fallo</p>
                         </div>
                         <Switch 
-                          defaultChecked={localStorage.getItem('sin_produccion') === 'true'}
+                          defaultChecked={localStorage.getItem('auto_reconnect') !== 'false'}
                           onCheckedChange={(checked) => {
-                            localStorage.setItem('sin_produccion', checked.toString());
+                            localStorage.setItem('auto_reconnect', checked.toString());
                           }}
                         />
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
-                          <Label>Auto-sincronización</Label>
-                          <p className="text-sm text-muted-foreground">Sincronizar datos automáticamente</p>
+                          <Label>Notificaciones de Estado</Label>
+                          <p className="text-sm text-muted-foreground">Alertas sobre cambios de conexión</p>
                         </div>
                         <Switch 
-                          defaultChecked={localStorage.getItem('auto_sync') !== 'false'}
+                          defaultChecked={localStorage.getItem('connection_notifications') !== 'false'}
                           onCheckedChange={(checked) => {
-                            localStorage.setItem('auto_sync', checked.toString());
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Notificaciones en Tiempo Real</Label>
-                          <p className="text-sm text-muted-foreground">Recibir alertas instantáneas</p>
-                        </div>
-                        <Switch 
-                          defaultChecked={localStorage.getItem('real_time_notifications') !== 'false'}
-                          onCheckedChange={(checked) => {
-                            localStorage.setItem('real_time_notifications', checked.toString());
+                            localStorage.setItem('connection_notifications', checked.toString());
                           }}
                         />
                       </div>
@@ -770,41 +724,38 @@ const IntegrationHub = () => {
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-purple-600" />
-                    Configuraciones Avanzadas
+                    Configuraciones de Integración
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="timeout-conexion">Timeout de Conexión (segundos)</Label>
+                      <Label htmlFor="timeout-integracion">Timeout de Integración (segundos)</Label>
                       <Input 
-                        id="timeout-conexion"
+                        id="timeout-integracion"
                         type="number"
-                        defaultValue={localStorage.getItem('connection_timeout') || '30'}
+                        defaultValue={localStorage.getItem('integration_timeout') || '30'}
                         min="10"
                         max="120"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="reintentos">Número de Reintentos</Label>
+                      <Label htmlFor="reintentos-integracion">Reintentos de Conexión</Label>
                       <Input 
-                        id="reintentos"
+                        id="reintentos-integracion"
                         type="number"
-                        defaultValue={localStorage.getItem('retry_attempts') || '3'}
+                        defaultValue={localStorage.getItem('integration_retries') || '3'}
                         min="1"
                         max="10"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="log-level">Nivel de Logging</Label>
-                      <select 
-                        id="log-level"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        defaultValue={localStorage.getItem('log_level') || 'info'}
-                      >
-                        <option value="error">Solo Errores</option>
-                        <option value="warn">Advertencias</option>
-                        <option value="info">Información</option>
-                        <option value="debug">Debug Completo</option>
-                      </select>
+                      <Label htmlFor="intervalo-sync">Intervalo de Sincronización (minutos)</Label>
+                      <Input 
+                        id="intervalo-sync"
+                        type="number"
+                        defaultValue={localStorage.getItem('sync_interval') || '15'}
+                        min="5"
+                        max="60"
+                      />
                     </div>
                   </div>
                 </div>
@@ -813,26 +764,20 @@ const IntegrationHub = () => {
                   <Button onClick={async () => {
                     setIsSaving(true);
                     try {
-                      // Guardar todas las configuraciones
-                      const empresaNit = (document.getElementById('empresa-nit') as HTMLInputElement)?.value;
-                      const razonSocial = (document.getElementById('razon-social') as HTMLInputElement)?.value;
-                      const actividadEconomica = (document.getElementById('actividad-economica') as HTMLInputElement)?.value;
-                      const timeoutConexion = (document.getElementById('timeout-conexion') as HTMLInputElement)?.value;
-                      const reintentos = (document.getElementById('reintentos') as HTMLInputElement)?.value;
-                      const logLevel = (document.getElementById('log-level') as HTMLSelectElement)?.value;
+                      // Guardar configuraciones de integración
+                      const timeoutIntegracion = (document.getElementById('timeout-integracion') as HTMLInputElement)?.value;
+                      const reintentosIntegracion = (document.getElementById('reintentos-integracion') as HTMLInputElement)?.value;
+                      const intervaloSync = (document.getElementById('intervalo-sync') as HTMLInputElement)?.value;
                       
-                      if (empresaNit) localStorage.setItem('empresa_nit', empresaNit);
-                      if (razonSocial) localStorage.setItem('razon_social', razonSocial);
-                      if (actividadEconomica) localStorage.setItem('actividad_economica', actividadEconomica);
-                      if (timeoutConexion) localStorage.setItem('connection_timeout', timeoutConexion);
-                      if (reintentos) localStorage.setItem('retry_attempts', reintentos);
-                      if (logLevel) localStorage.setItem('log_level', logLevel);
+                      if (timeoutIntegracion) localStorage.setItem('integration_timeout', timeoutIntegracion);
+                      if (reintentosIntegracion) localStorage.setItem('integration_retries', reintentosIntegracion);
+                      if (intervaloSync) localStorage.setItem('sync_interval', intervaloSync);
                       
                       await new Promise(resolve => setTimeout(resolve, 1000));
                       
                       toast({
-                        title: "✅ Configuración guardada exitosamente",
-                        description: "Todas las configuraciones del sistema han sido actualizadas",
+                        title: "✅ Configuración de integraciones guardada",
+                        description: "Las configuraciones de conexión han sido actualizadas",
                       });
                     } catch (error) {
                       toast({
@@ -857,14 +802,13 @@ const IntegrationHub = () => {
                     )}
                   </Button>
                   <Button variant="outline" onClick={() => {
-                    // Resetear configuraciones
-                    const inputs = document.querySelectorAll('#empresa-nit, #razon-social, #actividad-economica, #timeout-conexion, #reintentos');
+                    // Resetear configuraciones de integración
+                    const inputs = document.querySelectorAll('#timeout-integracion, #reintentos-integracion, #intervalo-sync');
                     inputs.forEach(input => (input as HTMLInputElement).value = '');
-                    (document.getElementById('log-level') as HTMLSelectElement).value = 'info';
                     
                     toast({
                       title: "🔄 Configuración restablecida",
-                      description: "Se han restablecido los valores por defecto",
+                      description: "Se han restablecido los valores por defecto de integración",
                     });
                   }}>
                     <RefreshCw className="w-4 h-4 mr-2" />
@@ -927,60 +871,45 @@ const IntegrationHub = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <Label htmlFor="sin-api-key">SIN API Key</Label>
-                  <Input 
-                    id="sin-api-key"
-                    type="password" 
-                    placeholder="•••••••••••••••••••••••••••••••••••••••"
-                    className="font-mono"
-                    defaultValue={localStorage.getItem('sin_api_key') || ''}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Clave para facturación electrónica SIN Bolivia
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="whatsapp-token">WhatsApp Business Token</Label>
+                    <Input 
+                      id="whatsapp-token"
+                      type="password" 
+                      placeholder="•••••••••••••••••••••••••••"
+                      className="font-mono"
+                      defaultValue={localStorage.getItem('whatsapp_token') || ''}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Token para envío automático de facturas por WhatsApp
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="bcp-api-key">BCP API Key</Label>
+                    <Input 
+                      id="bcp-api-key"
+                      type="password" 
+                      placeholder="•••••••••••••••••••••••••••••••••••••••"
+                      className="font-mono"
+                      defaultValue={localStorage.getItem('bcp_api_key') || ''}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Banco BCP Bolivia - Conciliación automática
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-5 h-5 text-yellow-600" />
+                    <span className="text-sm font-medium">Configuraciones SIN/SIAT</span>
+                  </div>
+                  <p className="text-sm text-yellow-800">
+                    Para configurar credenciales SIN (Token Delegado, CUIS, CUFD), 
+                    visite la sección <strong>"Configuración del Sistema → Integración SIN"</strong>
                   </p>
                 </div>
-                <div className="space-y-3">
-                  <Label htmlFor="siat-api-key">SIAT API Key</Label>
-                  <Input 
-                    id="siat-api-key"
-                    type="password" 
-                    placeholder="•••••••••••••••••••••••••••••••••••••••"
-                    className="font-mono"
-                    defaultValue={localStorage.getItem('siat_api_key') || ''}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Sistema Integrado de Administración Tributaria
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="bcp-api-key">BCP API Key</Label>
-                  <Input 
-                    id="bcp-api-key"
-                    type="password" 
-                    placeholder="•••••••••••••••••••••••••••••••••••••••"
-                    className="font-mono"
-                    defaultValue={localStorage.getItem('bcp_api_key') || ''}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Banco BCP Bolivia - Conciliación automática
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="whatsapp-token">WhatsApp Business Token</Label>
-                  <Input 
-                    id="whatsapp-token"
-                    type="password" 
-                    placeholder="•••••••••••••••••••••••••••"
-                    className="font-mono"
-                    defaultValue={localStorage.getItem('whatsapp_token') || ''}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Token para envío automático de facturas
-                  </p>
-                </div>
-              </div>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -1021,29 +950,25 @@ const IntegrationHub = () => {
                   onClick={async () => {
                     setIsSaving(true);
                     try {
-                      // Obtener todos los valores de API keys
-                      const sinKey = (document.getElementById('sin-api-key') as HTMLInputElement)?.value;
-                      const siatKey = (document.getElementById('siat-api-key') as HTMLInputElement)?.value;
-                      const bcpKey = (document.getElementById('bcp-api-key') as HTMLInputElement)?.value;
+                      // Obtener valores de API keys (solo las que mantenemos aquí)
                       const whatsappToken = (document.getElementById('whatsapp-token') as HTMLInputElement)?.value;
+                      const bcpKey = (document.getElementById('bcp-api-key') as HTMLInputElement)?.value;
                       
-                      // Guardar todas las API keys
-                      if (sinKey) localStorage.setItem('sin_api_key', sinKey);
-                      if (siatKey) localStorage.setItem('siat_api_key', siatKey);
-                      if (bcpKey) localStorage.setItem('bcp_api_key', bcpKey);
+                      // Guardar API keys
                       if (whatsappToken) localStorage.setItem('whatsapp_token', whatsappToken);
+                      if (bcpKey) localStorage.setItem('bcp_api_key', bcpKey);
                       
                       // Simular proceso de guardado
-                      await new Promise(resolve => setTimeout(resolve, 1500));
+                      await new Promise(resolve => setTimeout(resolve, 1000));
                       
                       toast({
-                        title: "✅ Configuración guardada exitosamente",
-                        description: "Todas las API keys han sido almacenadas de forma segura con cifrado AES-256",
+                        title: "✅ API Keys guardadas exitosamente",
+                        description: "Las claves de WhatsApp y BCP han sido almacenadas de forma segura",
                       });
                     } catch (error) {
                       toast({
-                        title: "❌ Error al guardar",
-                        description: "No se pudo guardar la configuración. Intente nuevamente.",
+                        title: "❌ Error al guardar API Keys",
+                        description: "No se pudieron guardar las claves",
                         variant: "destructive"
                       });
                     } finally {
@@ -1057,7 +982,7 @@ const IntegrationHub = () => {
                   ) : (
                     <Key className="w-4 h-4 mr-2" />
                   )}
-                  {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+                  {isSaving ? 'Guardando...' : 'Guardar API Keys'}
                 </Button>
                 <Button 
                   variant="outline"
