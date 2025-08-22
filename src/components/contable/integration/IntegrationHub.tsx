@@ -415,9 +415,10 @@ const IntegrationHub = () => {
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="integrations">Integraciones</TabsTrigger>
           <TabsTrigger value="bolivian">Servicios BO</TabsTrigger>
+          <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoreo</TabsTrigger>
@@ -670,6 +671,208 @@ const IntegrationHub = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="config">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Configuración General del Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Configuración Tributaria */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                      Datos Tributarios
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="empresa-nit">NIT de la Empresa</Label>
+                        <Input 
+                          id="empresa-nit"
+                          placeholder="Ej: 1234567890123"
+                          defaultValue={localStorage.getItem('empresa_nit') || ''}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="razon-social">Razón Social</Label>
+                        <Input 
+                          id="razon-social"
+                          placeholder="Nombre completo de la empresa"
+                          defaultValue={localStorage.getItem('razon_social') || ''}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="actividad-economica">Actividad Económica</Label>
+                        <Input 
+                          id="actividad-economica"
+                          placeholder="Código de actividad SIN"
+                          defaultValue={localStorage.getItem('actividad_economica') || ''}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Configuración de Conectividad */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-green-600" />
+                      Conectividad
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Modo de Conexión SIN</Label>
+                          <p className="text-sm text-muted-foreground">Producción vs Pruebas</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={localStorage.getItem('sin_produccion') === 'true'}
+                          onCheckedChange={(checked) => {
+                            localStorage.setItem('sin_produccion', checked.toString());
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Auto-sincronización</Label>
+                          <p className="text-sm text-muted-foreground">Sincronizar datos automáticamente</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={localStorage.getItem('auto_sync') !== 'false'}
+                          onCheckedChange={(checked) => {
+                            localStorage.setItem('auto_sync', checked.toString());
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Notificaciones en Tiempo Real</Label>
+                          <p className="text-sm text-muted-foreground">Recibir alertas instantáneas</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={localStorage.getItem('real_time_notifications') !== 'false'}
+                          onCheckedChange={(checked) => {
+                            localStorage.setItem('real_time_notifications', checked.toString());
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuraciones Avanzadas */}
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                    Configuraciones Avanzadas
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="timeout-conexion">Timeout de Conexión (segundos)</Label>
+                      <Input 
+                        id="timeout-conexion"
+                        type="number"
+                        defaultValue={localStorage.getItem('connection_timeout') || '30'}
+                        min="10"
+                        max="120"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reintentos">Número de Reintentos</Label>
+                      <Input 
+                        id="reintentos"
+                        type="number"
+                        defaultValue={localStorage.getItem('retry_attempts') || '3'}
+                        min="1"
+                        max="10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="log-level">Nivel de Logging</Label>
+                      <select 
+                        id="log-level"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        defaultValue={localStorage.getItem('log_level') || 'info'}
+                      >
+                        <option value="error">Solo Errores</option>
+                        <option value="warn">Advertencias</option>
+                        <option value="info">Información</option>
+                        <option value="debug">Debug Completo</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={async () => {
+                    setIsSaving(true);
+                    try {
+                      // Guardar todas las configuraciones
+                      const empresaNit = (document.getElementById('empresa-nit') as HTMLInputElement)?.value;
+                      const razonSocial = (document.getElementById('razon-social') as HTMLInputElement)?.value;
+                      const actividadEconomica = (document.getElementById('actividad-economica') as HTMLInputElement)?.value;
+                      const timeoutConexion = (document.getElementById('timeout-conexion') as HTMLInputElement)?.value;
+                      const reintentos = (document.getElementById('reintentos') as HTMLInputElement)?.value;
+                      const logLevel = (document.getElementById('log-level') as HTMLSelectElement)?.value;
+                      
+                      if (empresaNit) localStorage.setItem('empresa_nit', empresaNit);
+                      if (razonSocial) localStorage.setItem('razon_social', razonSocial);
+                      if (actividadEconomica) localStorage.setItem('actividad_economica', actividadEconomica);
+                      if (timeoutConexion) localStorage.setItem('connection_timeout', timeoutConexion);
+                      if (reintentos) localStorage.setItem('retry_attempts', reintentos);
+                      if (logLevel) localStorage.setItem('log_level', logLevel);
+                      
+                      await new Promise(resolve => setTimeout(resolve, 1000));
+                      
+                      toast({
+                        title: "✅ Configuración guardada exitosamente",
+                        description: "Todas las configuraciones del sistema han sido actualizadas",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "❌ Error al guardar configuración",
+                        description: "No se pudieron guardar las configuraciones",
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Guardar Configuración
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    // Resetear configuraciones
+                    const inputs = document.querySelectorAll('#empresa-nit, #razon-social, #actividad-economica, #timeout-conexion, #reintentos');
+                    inputs.forEach(input => (input as HTMLInputElement).value = '');
+                    (document.getElementById('log-level') as HTMLSelectElement).value = 'info';
+                    
+                    toast({
+                      title: "🔄 Configuración restablecida",
+                      description: "Se han restablecido los valores por defecto",
+                    });
+                  }}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Restablecer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
