@@ -11,6 +11,10 @@ import IntegrationMetrics from './IntegrationMetrics';
 import IntegrationTesting from './IntegrationTesting';
 import IntegrationLogs from './IntegrationLogs';
 import IntegrationTemplates from './IntegrationTemplates';
+import IntegrationHealthMonitor from './IntegrationHealth';
+import IntegrationSecurity from './IntegrationSecurity';
+import IntegrationBackup from './IntegrationBackup';
+import IntegrationAnalytics from './IntegrationAnalytics';
 
 interface Integration {
   id: string;
@@ -244,13 +248,17 @@ const IntegrationHub = () => {
       </div>
 
       <Tabs defaultValue="integraciones" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-10 text-xs">
           <TabsTrigger value="integraciones">Integraciones</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="metricas">Métricas</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="health">Salud</TabsTrigger>
+          <TabsTrigger value="security">Seguridad</TabsTrigger>
+          <TabsTrigger value="backup">Backup</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="integraciones" className="space-y-6">
@@ -297,6 +305,22 @@ const IntegrationHub = () => {
 
         <TabsContent value="templates" className="space-y-6">
           <IntegrationTemplates />
+        </TabsContent>
+
+        <TabsContent value="health" className="space-y-6">
+          <IntegrationHealthMonitor />
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <IntegrationSecurity />
+        </TabsContent>
+
+        <TabsContent value="backup" className="space-y-6">
+          <IntegrationBackup />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <IntegrationAnalytics />
         </TabsContent>
       </Tabs>
 
