@@ -8,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ConfigurationDialog from './ConfigurationDialog';
 import WebhookManager from './WebhookManager';
 import IntegrationMetrics from './IntegrationMetrics';
+import IntegrationTesting from './IntegrationTesting';
+import IntegrationLogs from './IntegrationLogs';
+import IntegrationTemplates from './IntegrationTemplates';
 
 interface Integration {
   id: string;
@@ -241,11 +244,13 @@ const IntegrationHub = () => {
       </div>
 
       <Tabs defaultValue="integraciones" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="integraciones">Integraciones</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="metricas">Métricas</TabsTrigger>
-          <TabsTrigger value="configuracion">Configuración</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
+          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="integraciones" className="space-y-6">
@@ -282,19 +287,16 @@ const IntegrationHub = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="configuracion" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración del Sistema</CardTitle>
-              <CardDescription>
-                Ajustes generales para el funcionamiento del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Aquí irían los componentes de configuración general */}
-              <p>No hay opciones de configuración disponibles.</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="testing" className="space-y-6">
+          <IntegrationTesting />
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-6">
+          <IntegrationLogs />
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-6">
+          <IntegrationTemplates />
         </TabsContent>
       </Tabs>
 
