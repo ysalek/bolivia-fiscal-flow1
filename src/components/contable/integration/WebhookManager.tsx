@@ -1,48 +1,25 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Webhook, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  TestTube, 
-  Activity, 
-  CheckCircle, 
-  XCircle,
-  Clock,
-  AlertCircle
-} from 'lucide-react';
+import { Plus, Trash2, Edit, Globe, Clock, CheckCircle, XCircle, Activity } from 'lucide-react';
 
-interface WebhookConfig {
+interface Webhook {
   id: string;
   name: string;
   url: string;
-  method: 'POST' | 'PUT' | 'GET';
   events: string[];
-  active: boolean;
-  description: string;
+  method: 'POST' | 'PUT' | 'PATCH';
   headers: Record<string, string>;
-  retryConfig: {
-    enabled: boolean;
-    maxRetries: number;
-    backoffMultiplier: number;
-  };
-  createdAt: string;
-  lastExecuted?: string;
+  active: boolean;
+  lastTriggered?: Date;
   status: 'active' | 'inactive' | 'error';
-  successCount: number;
-  errorCount: number;
+  retryCount: number;
 }
 
 interface WebhookManagerProps {
@@ -50,135 +27,141 @@ interface WebhookManagerProps {
 }
 
 const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
-  const { toast } = useToast();
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingWebhook, setEditingWebhook] = useState<WebhookConfig | null>(null);
-  const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    url: '',
+    events: [] as string[],
+    method: 'POST' as 'POST' | 'PUT' | 'PATCH',
+    headers: {} as Record<string, string>,
+    active: true
+  });
 
   const availableEvents = [
     'invoice.created',
     'invoice.updated',
     'invoice.paid',
-    'invoice.cancelled',
+    'customer.created',
     'payment.received',
-    'payment.failed',
-    'product.created',
-    'product.updated',
-    'inventory.changed',
-    'user.login',
-    'system.error'
+    'integration.connected',
+    'integration.disconnected',
+    'error.occurred'
+  ];
+
+  const sampleWebhooks: Webhook[] = [
+    {
+      id: '1',
+      name: 'Notificaciones de Facturación',
+      url: 'https://api.empresa.com/webhooks/invoices',
+      events: ['invoice.created', 'invoice.paid'],
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ***', 'Content-Type': 'application/json' },
+      active: true,
+      lastTriggered: new Date(Date.now() - 1000 * 60 * 30),
+      status: 'active',
+      retryCount: 0
+    },
+    {
+      id: '2',
+      name: 'Sincronización de Clientes',
+      url: 'https://crm.empresa.com/api/customers',
+      events: ['customer.created'],
+      method: 'POST',
+      headers: { 'X-API-Key': '***' },
+      active: true,
+      lastTriggered: new Date(Date.now() - 1000 * 60 * 60 * 2),
+      status: 'active',
+      retryCount: 0
+    },
+    {
+      id: '3',
+      name: 'Alertas de Errores',
+      url: 'https://monitoring.empresa.com/alerts',
+      events: ['error.occurred'],
+      method: 'POST',
+      headers: {},
+      active: false,
+      status: 'inactive',
+      retryCount: 3
+    }
   ];
 
   useEffect(() => {
-    loadWebhooks();
+    setWebhooks(sampleWebhooks);
   }, [integrationId]);
 
-  const loadWebhooks = () => {
-    const stored = localStorage.getItem(`webhooks_${integrationId}`);
-    if (stored) {
-      setWebhooks(JSON.parse(stored));
-    }
-  };
-
-  const saveWebhooks = (webhooks: WebhookConfig[]) => {
-    localStorage.setItem(`webhooks_${integrationId}`, JSON.stringify(webhooks));
-    setWebhooks(webhooks);
-  };
-
-  const createWebhook = (webhookData: Omit<WebhookConfig, 'id' | 'createdAt' | 'successCount' | 'errorCount'>) => {
-    const newWebhook: WebhookConfig = {
-      ...webhookData,
-      id: `webhook_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      successCount: 0,
-      errorCount: 0
-    };
-
-    const updatedWebhooks = [...webhooks, newWebhook];
-    saveWebhooks(updatedWebhooks);
-    
-    toast({
-      title: "✅ Webhook creado",
-      description: `El webhook "${newWebhook.name}" se ha creado correctamente.`,
-    });
-  };
-
-  const updateWebhook = (id: string, updates: Partial<WebhookConfig>) => {
-    const updatedWebhooks = webhooks.map(webhook =>
-      webhook.id === id ? { ...webhook, ...updates } : webhook
-    );
-    saveWebhooks(updatedWebhooks);
-    
-    toast({
-      title: "✅ Webhook actualizado",
-      description: "Los cambios se han guardado correctamente.",
-    });
-  };
-
-  const deleteWebhook = (id: string) => {
-    const updatedWebhooks = webhooks.filter(webhook => webhook.id !== id);
-    saveWebhooks(updatedWebhooks);
-    
-    toast({
-      title: "🗑️ Webhook eliminado",
-      description: "El webhook se ha eliminado correctamente.",
-    });
-  };
-
-  const testWebhook = async (webhook: WebhookConfig) => {
-    setTestingWebhook(webhook.id);
-    
-    try {
-      // Simular llamada al webhook
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Actualizar estadísticas
-      updateWebhook(webhook.id, {
-        lastExecuted: new Date().toISOString(),
-        successCount: webhook.successCount + 1,
-        status: 'active'
-      });
-      
-      toast({
-        title: "✅ Webhook probado",
-        description: `El webhook "${webhook.name}" respondió correctamente.`,
-      });
-    } catch (error) {
-      updateWebhook(webhook.id, {
-        errorCount: webhook.errorCount + 1,
-        status: 'error'
-      });
-      
-      toast({
-        title: "❌ Error en webhook",
-        description: `El webhook "${webhook.name}" falló en la prueba.`,
-        variant: "destructive"
-      });
+  const handleSaveWebhook = () => {
+    if (selectedWebhook) {
+      setWebhooks(prev => prev.map(w => 
+        w.id === selectedWebhook.id 
+          ? { ...selectedWebhook, ...formData }
+          : w
+      ));
+    } else {
+      const newWebhook: Webhook = {
+        id: Date.now().toString(),
+        ...formData,
+        lastTriggered: undefined,
+        status: formData.active ? 'active' : 'inactive',
+        retryCount: 0
+      };
+      setWebhooks(prev => [...prev, newWebhook]);
     }
     
-    setTestingWebhook(null);
+    setIsDialogOpen(false);
+    setSelectedWebhook(null);
+    setFormData({
+      name: '',
+      url: '',
+      events: [],
+      method: 'POST' as 'POST' | 'PUT' | 'PATCH',
+      headers: {},
+      active: true
+    });
+  };
+
+  const handleEditWebhook = (webhook: Webhook) => {
+    setSelectedWebhook(webhook);
+    setFormData({
+      name: webhook.name,
+      url: webhook.url,
+      events: webhook.events,
+      method: webhook.method,
+      headers: webhook.headers,
+      active: webhook.active
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteWebhook = (id: string) => {
+    setWebhooks(prev => prev.filter(w => w.id !== id));
+  };
+
+  const handleToggleWebhook = (id: string) => {
+    setWebhooks(prev => prev.map(w => 
+      w.id === id 
+        ? { ...w, active: !w.active, status: !w.active ? 'active' : 'inactive' }
+        : w
+    ));
+  };
+
+  const testWebhook = async (webhook: Webhook) => {
+    console.log('Testing webhook:', webhook.name);
+    setWebhooks(prev => prev.map(w => 
+      w.id === webhook.id 
+        ? { ...w, lastTriggered: new Date(), status: 'active' }
+        : w
+    ));
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'active': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'inactive': return <XCircle className="w-4 h-4 text-gray-500" />;
+      case 'error': return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return <Activity className="w-4 h-4 text-blue-500" />;
     }
   };
 
@@ -186,291 +169,268 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Webhook className="w-5 h-5" />
-            Gestión de Webhooks
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Configure endpoints para recibir notificaciones de eventos
+          <h3 className="text-lg font-semibold">Gestión de Webhooks</h3>
+          <p className="text-muted-foreground text-sm">
+            Configura notificaciones automáticas para eventos del sistema
           </p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => {
+              setSelectedWebhook(null);
+              setFormData({
+                name: '',
+                url: '',
+                events: [],
+                method: 'POST' as 'POST' | 'PUT' | 'PATCH',
+                headers: {},
+                active: true
+              });
+            }}>
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Webhook
             </Button>
           </DialogTrigger>
+          
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Crear Nuevo Webhook</DialogTitle>
+              <DialogTitle>
+                {selectedWebhook ? 'Editar Webhook' : 'Nuevo Webhook'}
+              </DialogTitle>
             </DialogHeader>
-            <WebhookForm
-              onSave={(data) => {
-                createWebhook(data);
-                setIsCreateDialogOpen(false);
-              }}
-              availableEvents={availableEvents}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {webhooks.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Webhook className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Sin webhooks configurados</h3>
-            <p className="text-muted-foreground mb-4">
-              Cree su primer webhook para recibir notificaciones automáticas
-            </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Webhook
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Webhooks Configurados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Eventos</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Estadísticas</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {webhooks.map((webhook) => (
-                  <TableRow key={webhook.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(webhook.status)}
-                        <div>
-                          <div className="font-medium">{webhook.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {webhook.description}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-mono text-sm">
-                        <Badge variant="outline" className="mr-1">
-                          {webhook.method}
-                        </Badge>
-                        {webhook.url}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {webhook.events.slice(0, 2).map((event) => (
-                          <Badge key={event} variant="secondary" className="text-xs">
-                            {event}
-                          </Badge>
-                        ))}
-                        {webhook.events.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{webhook.events.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(webhook.status)}>
-                        {webhook.active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div className="text-green-600">✓ {webhook.successCount}</div>
-                        <div className="text-red-600">✗ {webhook.errorCount}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => testWebhook(webhook)}
-                          disabled={testingWebhook === webhook.id}
-                        >
-                          <TestTube className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingWebhook(webhook)}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteWebhook(webhook.id)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {editingWebhook && (
-        <Dialog open={!!editingWebhook} onOpenChange={() => setEditingWebhook(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Editar Webhook</DialogTitle>
-            </DialogHeader>
-            <WebhookForm
-              initialData={editingWebhook}
-              onSave={(data) => {
-                updateWebhook(editingWebhook.id, data);
-                setEditingWebhook(null);
-              }}
-              availableEvents={availableEvents}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-};
-
-interface WebhookFormProps {
-  initialData?: Partial<WebhookConfig>;
-  onSave: (data: Omit<WebhookConfig, 'id' | 'createdAt' | 'successCount' | 'errorCount'>) => void;
-  availableEvents: string[];
-}
-
-const WebhookForm: React.FC<WebhookFormProps> = ({ initialData, onSave, availableEvents }) => {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    url: initialData?.url || '',
-    method: initialData?.method || 'POST' as const,
-    events: initialData?.events || [],
-    active: initialData?.active !== false,
-    description: initialData?.description || '',
-    headers: initialData?.headers || {},
-    retryConfig: initialData?.retryConfig || {
-      enabled: true,
-      maxRetries: 3,
-      backoffMultiplier: 2
-    },
-    status: initialData?.status || 'inactive' as const
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  const toggleEvent = (event: string) => {
-    setFormData(prev => ({
-      ...prev,
-      events: prev.events.includes(event)
-        ? prev.events.filter(e => e !== event)
-        : [...prev.events, event]
-    }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Nombre del Webhook</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="Ej: Notificaciones de facturación"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="method">Método HTTP</Label>
-          <Select value={formData.method} onValueChange={(value: 'POST' | 'PUT' | 'GET') => setFormData(prev => ({ ...prev, method: value }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="POST">POST</SelectItem>
-              <SelectItem value="PUT">PUT</SelectItem>
-              <SelectItem value="GET">GET</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="url">URL del Endpoint</Label>
-        <Input
-          id="url"
-          type="url"
-          value={formData.url}
-          onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-          placeholder="https://tudominio.com/webhook"
-          required
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="description">Descripción</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Descripción del propósito del webhook"
-        />
-      </div>
-
-      <div>
-        <Label>Eventos a Escuchar</Label>
-        <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded p-3">
-          {availableEvents.map((event) => (
-            <div key={event} className="flex items-center space-x-2">
-              <Switch
-                id={event}
-                checked={formData.events.includes(event)}
-                onCheckedChange={() => toggleEvent(event)}
-              />
-              <Label htmlFor={event} className="text-sm">{event}</Label>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Nombre descriptivo del webhook"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="url">URL del Endpoint</Label>
+                <Input
+                  id="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  placeholder="https://api.ejemplo.com/webhook"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="method">Método HTTP</Label>
+                <Select 
+                  value={formData.method} 
+                  onValueChange={(value: 'POST' | 'PUT' | 'PATCH') => 
+                    setFormData(prev => ({ ...prev, method: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Eventos</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {availableEvents.map(event => (
+                    <label key={event} className="flex items-center space-x-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={formData.events.includes(event)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              events: [...prev.events, event] 
+                            }));
+                          } else {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              events: prev.events.filter(e => e !== event) 
+                            }));
+                          }
+                        }}
+                      />
+                      <span>{event}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveWebhook}>
+                  {selectedWebhook ? 'Actualizar' : 'Crear'}
+                </Button>
+              </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList>
+          <TabsTrigger value="list">Lista de Webhooks</TabsTrigger>
+          <TabsTrigger value="logs">Logs de Actividad</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-4">
+          {webhooks.map(webhook => (
+            <Card key={webhook.id}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center space-x-3">
+                    {getStatusIcon(webhook.status)}
+                    <div>
+                      <CardTitle className="text-base">{webhook.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <Globe className="w-3 h-3 mr-1" />
+                        {webhook.url}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={webhook.active ? "default" : "secondary"}>
+                      {webhook.active ? "Activo" : "Inactivo"}
+                    </Badge>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditWebhook(webhook)}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleWebhook(webhook.id)}
+                    >
+                      {webhook.active ? "Desactivar" : "Activar"}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => testWebhook(webhook)}
+                    >
+                      Test
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteWebhook(webhook.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Método:</span>
+                    <p className="font-medium">{webhook.method}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-muted-foreground">Eventos:</span>
+                    <p className="font-medium">{webhook.events.length}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-muted-foreground">Último disparo:</span>
+                    <p className="font-medium flex items-center">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {webhook.lastTriggered 
+                        ? webhook.lastTriggered.toLocaleDateString()
+                        : 'Nunca'
+                      }
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-muted-foreground">Reintentos:</span>
+                    <p className="font-medium">{webhook.retryCount}</p>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <span className="text-muted-foreground text-xs">Eventos suscritos:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {webhook.events.map(event => (
+                      <Badge key={event} variant="outline" className="text-xs">
+                        {event}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </div>
+          
+          {webhooks.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Globe className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Sin webhooks configurados</h3>
+                <p className="text-muted-foreground">
+                  Crea tu primer webhook para recibir notificaciones automáticas
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="active"
-          checked={formData.active}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-        />
-        <Label htmlFor="active">Webhook activo</Label>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="submit">
-          Guardar Webhook
-        </Button>
-      </div>
-    </form>
+        <TabsContent value="logs">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Logs de Webhooks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[
+                  { time: '2025-01-23 18:15:32', webhook: 'Notificaciones de Facturación', event: 'invoice.created', status: 'success' },
+                  { time: '2025-01-23 17:45:12', webhook: 'Sincronización de Clientes', event: 'customer.created', status: 'success' },
+                  { time: '2025-01-23 16:30:45', webhook: 'Alertas de Errores', event: 'error.occurred', status: 'failed' },
+                ].map((log, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
+                    <div className="flex items-center space-x-3">
+                      {log.status === 'success' ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className="font-medium">{log.webhook}</span>
+                      <Badge variant="outline">{log.event}</Badge>
+                    </div>
+                    <span className="text-muted-foreground">{log.time}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

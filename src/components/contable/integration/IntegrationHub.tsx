@@ -11,7 +11,7 @@ import IntegrationMetrics from './IntegrationMetrics';
 import IntegrationTesting from './IntegrationTesting';
 import IntegrationLogs from './IntegrationLogs';
 import IntegrationTemplates from './IntegrationTemplates';
-import IntegrationHealthMonitor from './IntegrationHealth';
+import IntegrationHealth from './IntegrationHealth';
 import IntegrationSecurity from './IntegrationSecurity';
 import IntegrationBackup from './IntegrationBackup';
 import IntegrationAnalytics from './IntegrationAnalytics';
@@ -308,7 +308,7 @@ const IntegrationHub = () => {
         </TabsContent>
 
         <TabsContent value="health" className="space-y-6">
-          <IntegrationHealthMonitor />
+          <IntegrationHealth />
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
