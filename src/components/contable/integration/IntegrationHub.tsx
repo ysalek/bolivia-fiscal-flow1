@@ -1,1543 +1,313 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Zap, 
-  Building2, 
-  CreditCard, 
-  Globe, 
-  Database, 
-  Cloud,
-  Settings,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Key,
-  Webhook,
-  FileJson,
-  Shield,
-  Smartphone,
-  Banknote,
-  FileSpreadsheet,
-  Mail,
-  MessageSquare,
-  Phone,
-  Calculator,
-  Activity,
-  Truck,
-  MapPin,
-  Users,
-  TrendingUp,
-  Download,
-  Upload,
-  Power,
-  Wifi,
-  WifiOff,
-  TestTube,
-  XCircle
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Settings, Wifi, WifiOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+import ConfigurationDialog from './ConfigurationDialog';
+import WebhookManager from './WebhookManager';
+import IntegrationMetrics from './IntegrationMetrics';
+
+interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  icon: React.ComponentType<any>;
+  connected: boolean;
+}
 
 const IntegrationHub = () => {
-  const { toast } = useToast();
-  const [activeIntegrations, setActiveIntegrations] = useState({
-    sin: true,
-    bcp: false,
-    mercantil: false,
-    union: false,
-    sol: false,
-    fie: false,
-    stripe: false,
-    whatsapp: true,
-    quickbooks: false,
-    excel: true,
-    gmail: false,
-    siat: true,
-    segip: false
-  });
-
-  const [isConnecting, setIsConnecting] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [productionMode, setProductionMode] = useState(true); // Cambiar a modo producción
-  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
-  const [editingWebhook, setEditingWebhook] = useState<any>(null);
-  const [webhookForm, setWebhookForm] = useState({
-    name: '',
-    url: '',
-    eventos: [] as string[],
-    status: 'active' as 'active' | 'inactive'
-  });
-  
-  // Cargar configuraciones de producción desde localStorage
-  useEffect(() => {
-    const savedIntegrations = localStorage.getItem('active_integrations');
-    if (savedIntegrations) {
-      setActiveIntegrations(JSON.parse(savedIntegrations));
-    }
-    
-    const savedMode = localStorage.getItem('production_mode');
-    if (savedMode !== null) {
-      setProductionMode(savedMode === 'true');
-    }
-    
-    const savedWebhooks = localStorage.getItem('webhooks_config');
-    if (savedWebhooks) {
-      setWebhooks(JSON.parse(savedWebhooks));
-    }
-  }, []);
-
-  const webhookEventOptions = [
-    'factura.emitida', 'factura.anulada', 'factura.enviada',
-    'pago.recibido', 'pago.rechazado', 'pago.procesado',
-    'mensaje.enviado', 'mensaje.entregado', 'mensaje.leido',
-    'integracion.conectada', 'integracion.desconectada', 'error.conexion'
-  ];
-
-  const handleEditWebhook = (webhook: any) => {
-    setEditingWebhook(webhook);
-    setWebhookForm({
-      name: webhook.name,
-      url: webhook.url,
-      eventos: webhook.eventos,
-      status: webhook.status
-    });
-    setShowWebhookDialog(true);
-  };
-
-  const handleSaveWebhook = () => {
-    if (editingWebhook) {
-      // Editar webhook existente
-      const updatedWebhooks = webhooks.map(w => 
-        w.id === editingWebhook.id 
-          ? { ...w, ...webhookForm }
-          : w
-      );
-      setWebhooks(updatedWebhooks);
-      localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
-      
-      toast({
-        title: "✅ Webhook actualizado",
-        description: `${webhookForm.name} ha sido actualizado correctamente`,
-      });
-    } else {
-      // Crear nuevo webhook
-      const newWebhook = {
-        id: Date.now().toString(),
-        ...webhookForm,
-        lastCall: null,
-        attempts: 0,
-        errors: 0
-      };
-      const updatedWebhooks = [...webhooks, newWebhook];
-      setWebhooks(updatedWebhooks);
-      localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
-      
-      toast({
-        title: "✅ Webhook creado",
-        description: `${webhookForm.name} ha sido creado correctamente`,
-      });
-    }
-    
-    setShowWebhookDialog(false);
-    setEditingWebhook(null);
-    setWebhookForm({ name: '', url: '', eventos: [], status: 'active' });
-  };
-
-  const handleDeleteWebhook = (webhookId: string) => {
-    const updatedWebhooks = webhooks.filter(w => w.id !== webhookId);
-    setWebhooks(updatedWebhooks);
-    localStorage.setItem('webhooks_config', JSON.stringify(updatedWebhooks));
-    
-    toast({
-      title: "🗑️ Webhook eliminado",
-      description: "El webhook ha sido eliminado correctamente",
-    });
-  };
-
-  const testWebhook = async (webhook: any) => {
-    toast({
-      title: "🔄 Probando webhook...",
-      description: `Enviando solicitud de prueba a ${webhook.name}`,
-    });
-
-    try {
-      // Simular prueba de webhook
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const success = Math.random() > 0.2; // 80% éxito
-      
-      if (success) {
-        toast({
-          title: "✅ Webhook funcionando",
-          description: `${webhook.name} respondió correctamente`,
-        });
-      } else {
-        toast({
-          title: "❌ Error en webhook",
-          description: `${webhook.name} no respondió correctamente`,
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "❌ Error de prueba",
-        description: "No se pudo probar el webhook",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const [webhooks, setWebhooks] = useState([
-    {
-      id: 'facturacion',
-      name: 'Facturación Electrónica SIN',
-      url: 'https://miapp.com/webhooks/sin-facturacion',
-      eventos: ['factura.emitida', 'factura.anulada', 'factura.enviada'],
-      status: 'active' as const,
-      lastCall: '2024-01-12 14:30:00',
-      attempts: 1247,
-      errors: 2
-    },
-    {
-      id: 'pagos',
-      name: 'Notificaciones de Pagos BCP',
-      url: 'https://miapp.com/webhooks/bcp-pagos',
-      eventos: ['pago.recibido', 'pago.rechazado'],
-      status: 'active' as const,
-      lastCall: '2024-01-12 13:45:00',
-      attempts: 892,
-      errors: 0
-    },
-    {
-      id: 'whatsapp',
-      name: 'Mensajes WhatsApp Business',
-      url: 'https://miapp.com/webhooks/whatsapp',
-      eventos: ['mensaje.enviado', 'mensaje.entregado', 'mensaje.leido'],
-      status: 'inactive' as const,
-      lastCall: null,
-      attempts: 0,
-      errors: 0
-    }
-  ]);
-
-  const integrations = [
-    // Tributario y Gubernamental
+  const [integrations, setIntegrations] = useState<Integration[]>([
     {
       id: 'sin',
-      name: 'SIN Bolivia',
-      description: 'Servicio de Impuestos Nacionales - Facturación electrónica',
-      icon: Building2,
-      category: 'Tributario',
-      status: 'connected',
-      lastSync: '2024-01-12 10:30',
-      priority: 'critical',
-      features: ['Facturación electrónica', 'Declaraciones IVA/IT/IUE', 'Verificación NIT', 'Consulta deudas'],
-      bolivianSpecific: true,
-      connectionStrength: 95
+      name: 'SIN/SIAT',
+      description: 'Integración con el Sistema de Impuestos Nacionales',
+      type: 'Gobierno',
+      icon: Settings,
+      connected: false,
     },
-    {
-      id: 'siat',
-      name: 'SIAT - Sistema Tributario',
-      description: 'Sistema Integrado de Administración Tributaria',
-      icon: Calculator,
-      category: 'Tributario',
-      status: 'connected',
-      lastSync: '2024-01-12 09:15',
-      priority: 'critical',
-      features: ['Declaraciones automáticas', 'Consulta contribuyente', 'Estados tributarios'],
-      bolivianSpecific: true,
-      connectionStrength: 88
-    },
-    {
-      id: 'segip',
-      name: 'SEGIP',
-      description: 'Servicio General de Identificación Personal',
-      icon: Users,
-      category: 'Tributario',
-      status: 'available',
-      lastSync: null,
-      priority: 'medium',
-      features: ['Verificación CI', 'Datos personales', 'Validación identidad'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-
-    // Bancario Bolivia
     {
       id: 'bcp',
-      name: 'Banco BCP Bolivia',
-      description: 'Conciliación bancaria y pagos empresariales',
-      icon: CreditCard,
-      category: 'Bancario',
-      status: 'available',
-      lastSync: null,
-      priority: 'high',
-      features: ['Estados de cuenta', 'Transferencias QR', 'Pagos masivos', 'Conciliación automática'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-    {
-      id: 'mercantil',
-      name: 'Banco Mercantil Santa Cruz',
-      description: 'Servicios bancarios empresariales',
-      icon: CreditCard,
-      category: 'Bancario',
-      status: 'available',
-      lastSync: null,
-      priority: 'high',
-      features: ['Consulta saldos', 'Movimientos', 'Pagos de planillas', 'Débitos automáticos'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-    {
-      id: 'union',
-      name: 'Banco Unión',
-      description: 'Banco estatal de Bolivia',
-      icon: CreditCard,
-      category: 'Bancario',
-      status: 'available',
-      lastSync: null,
-      priority: 'high',
-      features: ['Cuentas corrientes', 'Pagos QR', 'Transferencias inmediatas'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-    {
-      id: 'sol',
-      name: 'Banco Sol',
-      description: 'Microfinanzas y PYME',
-      icon: CreditCard,
-      category: 'Bancario',
-      status: 'available',
-      lastSync: null,
-      priority: 'medium',
-      features: ['Créditos PYME', 'Cuentas de ahorro', 'Pagos móviles'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-    {
-      id: 'fie',
-      name: 'Banco FIE',
-      description: 'Fondo Financiero Privado',
-      icon: CreditCard,
-      category: 'Bancario',
-      status: 'available',
-      lastSync: null,
-      priority: 'medium',
-      features: ['Servicios empresariales', 'Pagos QR', 'Banca móvil'],
-      bolivianSpecific: true,
-      connectionStrength: 0
-    },
-
-    // Pagos y Comunicación
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      description: 'Procesamiento de pagos internacionales',
-      icon: Globe,
-      category: 'Pagos',
-      status: 'available',
-      lastSync: null,
-      priority: 'low',
-      features: ['Pagos online', 'Suscripciones', 'Reportes de ventas'],
-      bolivianSpecific: false,
-      connectionStrength: 0
+      name: 'Banco BCP',
+      description: 'Conexión con la API del Banco de Crédito del Perú',
+      type: 'Bancaria',
+      icon: Settings,
+      connected: false,
     },
     {
       id: 'whatsapp',
       name: 'WhatsApp Business',
-      description: 'Comunicación automática con clientes',
-      icon: MessageSquare,
-      category: 'Comunicación',
-      status: 'connected',
-      lastSync: '2024-01-12 08:45',
-      priority: 'high',
-      features: ['Envío facturas', 'Recordatorios pago', 'Soporte cliente', 'Notificaciones'],
-      bolivianSpecific: false,
-      connectionStrength: 92
+      description: 'Envío de notificaciones y facturas por WhatsApp',
+      type: 'Comunicación',
+      icon: Settings,
+      connected: false,
     },
     {
-      id: 'gmail',
-      name: 'Gmail Business',
-      description: 'Envío automático de documentos',
-      icon: Mail,
-      category: 'Comunicación',
-      status: 'available',
-      lastSync: null,
-      priority: 'medium',
-      features: ['Envío facturas PDF', 'Reportes automáticos', 'Notificaciones'],
-      bolivianSpecific: false,
-      connectionStrength: 0
+      id: 'general',
+      name: 'Servicio Genérico',
+      description: 'Integración con cualquier servicio mediante API',
+      type: 'API',
+      icon: Settings,
+      connected: false,
     },
+  ]);
+  
+  const [selectedConfigIntegration, setSelectedConfigIntegration] = useState<any>(null);
+  const [integrationConfigs, setIntegrationConfigs] = useState<Record<string, any>>({});
 
-    // Contabilidad y Datos
-    {
-      id: 'quickbooks',
-      name: 'QuickBooks',
-      description: 'Sincronización contable internacional',
-      icon: Database,
-      category: 'Contabilidad',
-      status: 'available',
-      lastSync: null,
-      priority: 'low',
-      features: ['Sincronización cuentas', 'Clientes', 'Facturas', 'Reportes'],
-      bolivianSpecific: false,
-      connectionStrength: 0
-    },
-    {
-      id: 'excel',
-      name: 'Microsoft Excel',
-      description: 'Importación/exportación de datos contables',
-      icon: FileSpreadsheet,
-      category: 'Datos',
-      status: 'connected',
-      lastSync: '2024-01-12 08:15',
-      priority: 'high',
-      features: ['Importar datos', 'Exportar reportes', 'Plantillas NIF', 'Libros contables'],
-      bolivianSpecific: false,
-      connectionStrength: 100
+  useEffect(() => {
+    const storedConfigs = localStorage.getItem('integrationConfigs');
+    if (storedConfigs) {
+      setIntegrationConfigs(JSON.parse(storedConfigs));
     }
-  ];
 
-  const bolivianIntegrationStats = {
-    connected: integrations.filter(i => i.status === 'connected' && i.bolivianSpecific).length,
-    total: integrations.filter(i => i.bolivianSpecific).length,
-    avgStrength: Math.round(
-      integrations
-        .filter(i => i.bolivianSpecific && i.status === 'connected')
-        .reduce((sum, i) => sum + i.connectionStrength, 0) / 
-      integrations.filter(i => i.bolivianSpecific && i.status === 'connected').length
-    ) || 0
+    // Cargar estados de conexión desde localStorage
+    const storedConnections = localStorage.getItem('integrationConnections');
+    if (storedConnections) {
+      const connectedIds = JSON.parse(storedConnections);
+      setIntegrations(prevIntegrations =>
+        prevIntegrations.map(integration => ({
+          ...integration,
+          connected: connectedIds.includes(integration.id)
+        }))
+      );
+    }
+  }, []);
+
+  const saveConnectedIntegrations = (connectedIds: string[]) => {
+    localStorage.setItem('integrationConnections', JSON.stringify(connectedIds));
   };
 
-  const handleToggleIntegration = async (integrationId: string) => {
-    const integration = integrations.find(i => i.id === integrationId);
-    if (!integration) return;
+  const handleConfigureIntegration = (integration: any) => {
+    setSelectedConfigIntegration(integration);
+  };
 
-    const isActivating = !activeIntegrations[integrationId as keyof typeof activeIntegrations];
-    setIsConnecting(integrationId);
+  const handleSaveConfig = (config: any) => {
+    const updatedConfigs = {
+      ...integrationConfigs,
+      [selectedConfigIntegration.id]: config
+    };
+    setIntegrationConfigs(updatedConfigs);
+    localStorage.setItem('integrationConfigs', JSON.stringify(updatedConfigs));
+    
+    // Si la integración se configuró como activa, actualizar su estado
+    if (config.activa || config.habilitado) {
+      handleConnect(selectedConfigIntegration.id);
+    }
+  };
 
-    try {
-      if (productionMode) {
-        // MODO PRODUCCIÓN - Conexiones reales
-        await handleProductionConnection(integrationId, isActivating, integration);
-      } else {
-        // MODO DESARROLLO - Simulación
-        await handleDevelopmentConnection(integrationId, isActivating, integration);
-      }
+  const handleConnect = (id: string) => {
+    setIntegrations(prevIntegrations => {
+      const updatedIntegrations = prevIntegrations.map(integration =>
+        integration.id === id ? { ...integration, connected: true } : integration
+      );
       
-      // Actualizar estado y persistir
-      const newIntegrations = {
-        ...activeIntegrations,
-        [integrationId]: isActivating
-      };
-      setActiveIntegrations(newIntegrations);
-      localStorage.setItem('active_integrations', JSON.stringify(newIntegrations));
-
-      // Actualizar métricas
-      if (isActivating) {
-        const connectionStrength = Math.floor(Math.random() * 20) + 80;
-        const metrics = JSON.parse(localStorage.getItem('integration_metrics') || '{}');
-        metrics[integrationId] = {
-          lastSync: new Date().toISOString(),
-          connectionStrength,
-          status: 'connected'
-        };
-        localStorage.setItem('integration_metrics', JSON.stringify(metrics));
-      }
+      // Guardar en localStorage
+      const connectedIds = updatedIntegrations.filter(i => i.connected).map(i => i.id);
+      saveConnectedIntegrations(connectedIds);
       
-      toast({
-        title: isActivating ? "🔗 Integración activada" : "❌ Integración desactivada",
-        description: `${integration?.name} ${isActivating ? 'conectado' : 'desconectado'} en modo ${productionMode ? 'PRODUCCIÓN' : 'desarrollo'}`,
-      });
-      
-    } catch (error) {
-      toast({
-        title: "❌ Error de conexión",
-        description: error instanceof Error ? error.message : "No se pudo establecer la conexión",
-        variant: "destructive"
-      });
-    } finally {
-      setIsConnecting(null);
-    }
+      return updatedIntegrations;
+    });
   };
 
-  const handleProductionConnection = async (integrationId: string, isActivating: boolean, integration: any) => {
-    // Validaciones específicas para producción
-    switch (integrationId) {
-      case 'sin':
-        const sinCredentials = {
-          token: localStorage.getItem('sin_token_delegado'),
-          cuis: localStorage.getItem('sin_cuis'),
-          cufd: localStorage.getItem('sin_cufd'),
-          nit: localStorage.getItem('empresa_nit')
-        };
-        
-        if (!sinCredentials.token || !sinCredentials.nit) {
-          throw new Error('Configure primero las credenciales SIN en Configuración del Sistema → Integración SIN');
-        }
-        
-        if (isActivating) {
-          // Aquí iría la conexión real al SIN
-          await validateSINConnection(sinCredentials);
-        }
-        break;
-        
-      case 'siat':
-        const siatCredentials = {
-          apiKey: localStorage.getItem('siat_api_key'),
-          nit: localStorage.getItem('empresa_nit')
-        };
-        
-        if (!siatCredentials.apiKey || !siatCredentials.nit) {
-          throw new Error('Configure primero las credenciales SIAT en Configuración del Sistema → Integración SIN');
-        }
-        
-        if (isActivating) {
-          await validateSIATConnection(siatCredentials);
-        }
-        break;
-        
-      case 'bcp':
-        const bcpKey = localStorage.getItem('bcp_api_key');
-        if (!bcpKey && isActivating) {
-          throw new Error('Configure primero la API Key de BCP Bolivia en la pestaña API Keys');
-        }
-        
-        if (isActivating) {
-          await validateBCPConnection(bcpKey);
-        }
-        break;
-        
-      case 'whatsapp':
-        const whatsappToken = localStorage.getItem('whatsapp_token');
-        if (!whatsappToken && isActivating) {
-          throw new Error('Configure primero el token de WhatsApp Business en la pestaña API Keys');
-        }
-        
-        if (isActivating) {
-          await validateWhatsAppConnection(whatsappToken);
-        }
-        break;
-        
-      default:
-        if (isActivating) {
-          // Para otras integraciones, verificar configuración básica
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    }
+  const handleDisconnect = (id: string) => {
+    setIntegrations(prevIntegrations => {
+      const updatedIntegrations = prevIntegrations.map(integration =>
+        integration.id === id ? { ...integration, connected: false } : integration
+      );
+
+      // Guardar en localStorage
+      const connectedIds = updatedIntegrations.filter(i => i.connected).map(i => i.id);
+      saveConnectedIntegrations(connectedIds);
+
+      return updatedIntegrations;
+    });
   };
 
-  const handleDevelopmentConnection = async (integrationId: string, isActivating: boolean, integration: any) => {
-    // Simulación para modo desarrollo
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (isActivating && integration.priority === 'critical') {
-      const empresaNit = localStorage.getItem('empresa_nit');
-      if (!empresaNit) {
-        throw new Error('Configure primero los datos tributarios en Configuración');
-      }
-    }
+  const validateConnection = (id: string) => {
+    // Aquí iría la lógica real para validar la conexión
+    console.log(`Validando conexión con ${id}`);
+    return true;
   };
 
-  // Funciones de validación para producción
-  const validateSINConnection = async (credentials: any) => {
-    // Aquí iría la validación real con el SIN
-    // Por ahora simulamos una validación más realista
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Simular posibles errores de conexión real
-    const random = Math.random();
-    if (random < 0.15) { // 15% probabilidad de error
-      const errors = [
-        'Error de conexión con servidor SIN. Verifique su conexión a internet.',
-        'Token SIN expirado. Obtenga un nuevo token desde el portal SIN.',
-        'NIT no autorizado para facturación electrónica.',
-        'CUIS inválido o expirado. Obtenga un nuevo CUIS.',
-        'CUFD vencido. Genere un nuevo CUFD para continuar.'
-      ];
-      throw new Error(errors[Math.floor(Math.random() * errors.length)]);
-    }
-  };
-
-  const validateSIATConnection = async (credentials: any) => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const random = Math.random();
-    if (random < 0.10) { // 10% probabilidad de error
-      const errors = [
-        'Credenciales SIAT inválidas o servidor no disponible',
-        'Límite de consultas SIAT excedido. Intente más tarde.',
-        'Servicio SIAT en mantenimiento.'
-      ];
-      throw new Error(errors[Math.floor(Math.random() * errors.length)]);
-    }
-  };
-
-  const validateBCPConnection = async (apiKey: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const random = Math.random();
-    if (random < 0.12) { // 12% probabilidad de error
-      const errors = [
-        'API Key BCP inválida o límite de requests excedido',
-        'Cuenta bancaria no habilitada para API',
-        'Servicio BCP temporalmente no disponible'
-      ];
-      throw new Error(errors[Math.floor(Math.random() * errors.length)]);
-    }
-  };
-
-  const validateWhatsAppConnection = async (token: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const random = Math.random();
-    if (random < 0.08) { // 8% probabilidad de error
-      const errors = [
-        'Token WhatsApp Business inválido o expirado',
-        'Número de WhatsApp Business no verificado',
-        'Límite de mensajes WhatsApp alcanzado'
-      ];
-      throw new Error(errors[Math.floor(Math.random() * errors.length)]);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'connected': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'error': return <AlertCircle className="w-4 h-4 text-red-600" />;
-      default: return <Globe className="w-4 h-4 text-gray-400" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected': return 'bg-green-50 text-green-700 border-green-200';
-      case 'error': return 'bg-red-50 text-red-700 border-red-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'text-red-600 bg-red-50 border-red-200';
-      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'low': return 'text-gray-600 bg-gray-50 border-gray-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header mejorado con colores bolivianos */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-600 via-yellow-500 to-red-600 p-8 text-white">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight mb-2">
-              Centro de Integraciones Bolivia
-            </h2>
-            <p className="text-green-100 text-lg">
-              Conecta con servicios bancarios, tributarios y gubernamentales de Bolivia
-            </p>
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
-                <Building2 className="w-4 h-4" />
-                <span className="text-sm">SIN & SIAT</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
-                <CreditCard className="w-4 h-4" />
-                <span className="text-sm">Bancos Bolivia</span>
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                productionMode ? 'bg-red-500/90 text-white' : 'bg-yellow-500/90 text-black'
-              }`}>
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-bold">
-                  {productionMode ? 'PRODUCCIÓN' : 'DESARROLLO'}
-                </span>
-              </div>
+  const renderIntegrationCard = (integration: any) => (
+    <Card key={integration.id} className="border-2 transition-all duration-200 hover:shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg ${integration.connected ? 'bg-green-100' : 'bg-gray-100'}`}>
+              <integration.icon className={`w-6 h-6 ${integration.connected ? 'text-green-600' : 'text-gray-600'}`} />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{integration.name}</CardTitle>
+              <CardDescription className="text-sm">{integration.description}</CardDescription>
             </div>
           </div>
-          <div className="text-right">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{bolivianIntegrationStats.connected}</div>
-                <div className="text-xs text-green-100">Integraciones BO</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{bolivianIntegrationStats.avgStrength}%</div>
-                <div className="text-xs text-green-100">Fuerza Promedio</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 justify-end">
-              <span className="text-sm">Modo:</span>
-              <Switch 
-                checked={productionMode}
-                onCheckedChange={(checked) => {
-                  setProductionMode(checked);
-                  localStorage.setItem('production_mode', checked.toString());
-                  toast({
-                    title: checked ? "🏭 Modo Producción Activado" : "🔧 Modo Desarrollo Activado",
-                    description: checked ? 
-                      "Las conexiones ahora son reales y requieren credenciales válidas" :
-                      "Las conexiones están simuladas para pruebas",
-                  });
-                }}
-              />
-              <span className="text-xs">{productionMode ? 'PROD' : 'DEV'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Tabs defaultValue="integrations" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="integrations">Integraciones</TabsTrigger>
-          <TabsTrigger value="bolivian">Servicios BO</TabsTrigger>
-          <TabsTrigger value="config">Configuración</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="api">API Keys</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoreo</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="integrations">
-          <div className="grid gap-6">
-            {['Tributario', 'Bancario', 'Comunicación', 'Pagos', 'Contabilidad', 'Datos'].map(category => {
-              const categoryIntegrations = integrations.filter(integration => integration.category === category);
-              if (categoryIntegrations.length === 0) return null;
-              
-              return (
-                <div key={category}>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    {category}
-                    {category === 'Tributario' && (
-                      <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">CRÍTICO</span>
-                    )}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {categoryIntegrations.map((integration, index) => (
-                      <div key={integration.id} className={`relative group animate-fade-in`} 
-                           style={{ animationDelay: `${index * 100}ms` }}>
-                        {integration.bolivianSpecific && (
-                          <div className="absolute -top-2 -right-2 z-10">
-                            <div className="bg-gradient-to-r from-green-500 to-red-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
-                              🇧🇴 Bolivia
-                            </div>
-                          </div>
-                        )}
-                        
-                        <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${
-                          integration.status === 'connected' ? 'border-green-200 bg-green-50/50' : 'hover:border-primary/50'
-                        }`}>
-                          <CardHeader className="pb-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-xl ${
-                                  integration.status === 'connected' ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'
-                                } relative`}>
-                                  <integration.icon className="w-6 h-6" />
-                                  {integration.status === 'connected' && integration.connectionStrength && (
-                                    <div className="absolute -bottom-1 -right-1">
-                                      <div className={`w-3 h-3 rounded-full ${
-                                        integration.connectionStrength > 90 ? 'bg-green-500' :
-                                        integration.connectionStrength > 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                      } animate-pulse`} />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <CardTitle className="text-lg flex items-center gap-2">
-                                    {integration.name}
-                                    {integration.priority === 'critical' && (
-                                      <span className="text-red-500 text-xs">●</span>
-                                    )}
-                                  </CardTitle>
-                                  <p className="text-sm text-muted-foreground">
-                                    {integration.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isConnecting === integration.id ? (
-                                  <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
-                                ) : (
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     onClick={() => handleToggleIntegration(integration.id)}
-                                     disabled={isConnecting !== null}
-                                   >
-                                     {integration.status === 'connected' ? (
-                                       <Wifi className="w-4 h-4 text-green-600" />
-                                     ) : (
-                                       <WifiOff className="w-4 h-4 text-gray-400" />
-                                     )}
-                                   </Button>
-                                  )}
-                               </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <div className={`px-2 py-1 rounded-full text-xs ${getStatusColor(integration.status)}`}>
-                                  {getStatusIcon(integration.status)}
-                                  <span className="ml-1">
-                                    {integration.status === 'connected' ? 'Conectado' : 'Disponible'}
-                                  </span>
-                                </div>
-                                
-                                <div className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(integration.priority)}`}>
-                                  {integration.priority === 'critical' ? '🔴 Crítico' :
-                                   integration.priority === 'high' ? '🟡 Alto' :
-                                   integration.priority === 'medium' ? '🔵 Medio' : '⚪ Bajo'}
-                                </div>
-                                
-                                {integration.lastSync && (
-                                  <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-1 rounded-full">
-                                    Sync: {integration.lastSync.split(' ')[1]}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {integration.status === 'connected' && integration.connectionStrength && (
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span>Fuerza de conexión:</span>
-                                    <span className="font-medium">{integration.connectionStrength}%</span>
-                                  </div>
-                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                    <div 
-                                      className={`h-1.5 rounded-full transition-all duration-500 ${
-                                        integration.connectionStrength > 90 ? 'bg-green-500' :
-                                        integration.connectionStrength > 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
-                                      style={{ width: `${integration.connectionStrength}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <div>
-                                <p className="text-sm font-medium mb-2">Características:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {integration.features.slice(0, 3).map((feature, index) => (
-                                    <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                      {feature}
-                                    </span>
-                                  ))}
-                                  {integration.features.length > 3 && (
-                                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                      +{integration.features.length - 3} más
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="flex gap-2 pt-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="flex-1 text-xs"
-                                  disabled={integration.status !== 'connected'}
-                                >
-                                  <RefreshCw className="w-3 h-3 mr-1" />
-                                  Sync
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="flex-1 text-xs"
-                                  onClick={() => {
-                                    if (integration.id === 'sin' || integration.id === 'siat') {
-                                      toast({
-                                        title: "🔧 Configuración SIN/SIAT",
-                                        description: "Vaya a Configuración del Sistema → Integración SIN para configurar credenciales completas",
-                                      });
-                                    } else {
-                                      toast({
-                                        title: "⚙️ Configuración disponible",
-                                        description: `Configure ${integration.name} en las pestañas Configuración o API Keys`,
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Settings className="w-3 h-3 mr-1" />
-                                  Config
-                                 </Button>
-                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="bolivian">
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-green-50 to-red-50 p-6 rounded-xl border border-green-200">
-              <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                🇧🇴 Servicios Específicos de Bolivia
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Integraciones diseñadas específicamente para el mercado boliviano y regulaciones locales
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-white rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{bolivianIntegrationStats.connected}</div>
-                  <div className="text-sm text-green-700">Conectadas</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{bolivianIntegrationStats.total}</div>
-                  <div className="text-sm text-blue-700">Disponibles</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{bolivianIntegrationStats.avgStrength}%</div>
-                  <div className="text-sm text-purple-700">Rendimiento</div>
-                </div>
-              </div>
-            </div>
+          
+          <div className="flex items-center space-x-2">
+            <Badge variant={integration.connected ? "default" : "secondary"} className="text-xs">
+              {integration.connected ? "Conectado" : "Desconectado"}
+            </Badge>
             
-            <div className="grid gap-4">
-              {integrations.filter(i => i.bolivianSpecific).map((integration, index) => (
-                <Card key={integration.id} className={`animate-fade-in hover:shadow-lg transition-all duration-300`}
-                      style={{ animationDelay: `${index * 100}ms` }}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-4 rounded-xl ${
-                          integration.status === 'connected' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <integration.icon className="w-8 h-8" />
-                        </div>
-                        <div>
-                          <h4 className="text-xl font-bold flex items-center gap-2">
-                            {integration.name}
-                            {integration.status === 'connected' && (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            )}
-                          </h4>
-                          <p className="text-muted-foreground mb-2">{integration.description}</p>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-sm ${getPriorityColor(integration.priority)}`}>
-                              Prioridad: {integration.priority}
-                            </span>
-                            {integration.status === 'connected' && integration.lastSync && (
-                              <span className="text-sm text-muted-foreground">
-                                Último sync: {integration.lastSync}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {integration.status === 'connected' && integration.connectionStrength && (
-                          <div className="mb-2">
-                            <div className="text-2xl font-bold text-green-600">{integration.connectionStrength}%</div>
-                            <div className="text-sm text-green-700">Conexión</div>
-                          </div>
-                        )}
-                        <Button
-                          onClick={() => handleToggleIntegration(integration.id)}
-                          disabled={isConnecting !== null}
-                          variant={integration.status === 'connected' ? 'destructive' : 'default'}
-                        >
-                          {isConnecting === integration.id ? (
-                            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                          ) : integration.status === 'connected' ? (
-                            <Power className="w-4 h-4 mr-2" />
-                          ) : (
-                            <Zap className="w-4 h-4 mr-2" />
-                          )}
-                          {isConnecting === integration.id ? 'Conectando...' :
-                           integration.status === 'connected' ? 'Desconectar' : 'Conectar'}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="config">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Configuración General del Sistema
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Configuración de Estado de Conexiones */}
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-green-600" />
-                      Estado de Conexiones
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <Label>Auto-reconexión</Label>
-                          <p className="text-sm text-muted-foreground">Reconectar automáticamente en caso de fallo</p>
-                        </div>
-                        <Switch 
-                          defaultChecked={localStorage.getItem('auto_reconnect') !== 'false'}
-                          onCheckedChange={(checked) => {
-                            localStorage.setItem('auto_reconnect', checked.toString());
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <Label>Notificaciones de Estado</Label>
-                          <p className="text-sm text-muted-foreground">Alertas sobre cambios de conexión</p>
-                        </div>
-                        <Switch 
-                          defaultChecked={localStorage.getItem('connection_notifications') !== 'false'}
-                          onCheckedChange={(checked) => {
-                            localStorage.setItem('connection_notifications', checked.toString());
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Configuraciones Avanzadas */}
-                <div className="border-t pt-6">
-                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-purple-600" />
-                    Configuraciones de Integración
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="timeout-integracion">Timeout de Integración (segundos)</Label>
-                      <Input 
-                        id="timeout-integracion"
-                        type="number"
-                        defaultValue={localStorage.getItem('integration_timeout') || '30'}
-                        min="10"
-                        max="120"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="reintentos-integracion">Reintentos de Conexión</Label>
-                      <Input 
-                        id="reintentos-integracion"
-                        type="number"
-                        defaultValue={localStorage.getItem('integration_retries') || '3'}
-                        min="1"
-                        max="10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="intervalo-sync">Intervalo de Sincronización (minutos)</Label>
-                      <Input 
-                        id="intervalo-sync"
-                        type="number"
-                        defaultValue={localStorage.getItem('sync_interval') || '15'}
-                        min="5"
-                        max="60"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button onClick={async () => {
-                    setIsSaving(true);
-                    try {
-                      // Guardar configuraciones de integración
-                      const timeoutIntegracion = (document.getElementById('timeout-integracion') as HTMLInputElement)?.value;
-                      const reintentosIntegracion = (document.getElementById('reintentos-integracion') as HTMLInputElement)?.value;
-                      const intervaloSync = (document.getElementById('intervalo-sync') as HTMLInputElement)?.value;
-                      
-                      if (timeoutIntegracion) localStorage.setItem('integration_timeout', timeoutIntegracion);
-                      if (reintentosIntegracion) localStorage.setItem('integration_retries', reintentosIntegracion);
-                      if (intervaloSync) localStorage.setItem('sync_interval', intervaloSync);
-                      
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-                      
-                      toast({
-                        title: "✅ Configuración de integraciones guardada",
-                        description: "Las configuraciones de conexión han sido actualizadas",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "❌ Error al guardar configuración",
-                        description: "No se pudieron guardar las configuraciones",
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }} disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Guardar Configuración
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    // Resetear configuraciones de integración
-                    const inputs = document.querySelectorAll('#timeout-integracion, #reintentos-integracion, #intervalo-sync');
-                    inputs.forEach(input => (input as HTMLInputElement).value = '');
-                    
-                    toast({
-                      title: "🔄 Configuración restablecida",
-                      description: "Se han restablecido los valores por defecto de integración",
-                    });
-                  }}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Restablecer
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="webhooks">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Webhook className="w-5 h-5" />
-                  Configuración de Webhooks
-                </CardTitle>
-                <CardDescription>
-                  Configure URLs de callback para recibir notificaciones en tiempo real
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {webhooks.map((webhook) => (
-                    <div key={webhook.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-medium">{webhook.name}</h4>
-                          <Badge variant={webhook.status === 'active' ? 'default' : 'secondary'}>
-                            {webhook.status === 'active' ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{webhook.url}</p>
-                        <div className="flex gap-1 mb-2">
-                          {webhook.eventos.map((evento, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {evento}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          {webhook.lastCall && (
-                            <span>Último llamado: {webhook.lastCall}</span>
-                          )}
-                          <span>Intentos: {webhook.attempts}</span>
-                          <span className={webhook.errors > 0 ? 'text-red-600' : 'text-green-600'}>
-                            Errores: {webhook.errors}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => testWebhook(webhook)}
-                        >
-                          <TestTube className="w-4 h-4 mr-1" />
-                          Probar
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleEditWebhook(webhook)}
-                        >
-                          <Settings className="w-4 h-4 mr-1" />
-                          Editar
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleDeleteWebhook(webhook.id)}
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => {
-                      setEditingWebhook(null);
-                      setWebhookForm({ name: '', url: '', eventos: [], status: 'active' });
-                      setShowWebhookDialog(true);
-                    }}
-                  >
-                    <Webhook className="w-4 h-4 mr-2" />
-                    Agregar Nuevo Webhook
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Dialog para crear/editar webhooks */}
-            {showWebhookDialog && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                  <h3 className="text-lg font-semibold mb-4">
-                    {editingWebhook ? 'Editar Webhook' : 'Nuevo Webhook'}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="webhook-name">Nombre</Label>
-                      <Input
-                        id="webhook-name"
-                        value={webhookForm.name}
-                        onChange={(e) => setWebhookForm({...webhookForm, name: e.target.value})}
-                        placeholder="Nombre descriptivo del webhook"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="webhook-url">URL</Label>
-                      <Input
-                        id="webhook-url"
-                        value={webhookForm.url}
-                        onChange={(e) => setWebhookForm({...webhookForm, url: e.target.value})}
-                        placeholder="https://miapp.com/webhook"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Eventos</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {webhookEventOptions.map((evento) => (
-                          <label key={evento} className="flex items-center space-x-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={webhookForm.eventos.includes(evento)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setWebhookForm({
-                                    ...webhookForm, 
-                                    eventos: [...webhookForm.eventos, evento]
-                                  });
-                                } else {
-                                  setWebhookForm({
-                                    ...webhookForm, 
-                                    eventos: webhookForm.eventos.filter(e => e !== evento)
-                                  });
-                                }
-                              }}
-                            />
-                            <span>{evento}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label>Estado</Label>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Switch
-                          checked={webhookForm.status === 'active'}
-                          onCheckedChange={(checked) => 
-                            setWebhookForm({...webhookForm, status: checked ? 'active' : 'inactive'})
-                          }
-                        />
-                        <span className="text-sm">
-                          {webhookForm.status === 'active' ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-6">
-                    <Button onClick={handleSaveWebhook} className="flex-1">
-                      {editingWebhook ? 'Actualizar' : 'Crear'} Webhook
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowWebhookDialog(false)}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleConfigureIntegration(integration)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            
+            {integration.connected ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDisconnect(integration.id)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <WifiOff className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleConnect(integration.id)}
+                className="text-green-600 hover:text-green-700"
+              >
+                <Wifi className="w-4 h-4" />
+              </Button>
             )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="api">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="w-5 h-5" />
-                Gestión de API Keys
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="whatsapp-token">WhatsApp Business Token</Label>
-                    <Input 
-                      id="whatsapp-token"
-                      type="password" 
-                      placeholder="•••••••••••••••••••••••••••"
-                      className="font-mono"
-                      defaultValue={localStorage.getItem('whatsapp_token') || ''}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Token para envío automático de facturas por WhatsApp
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="bcp-api-key">BCP API Key</Label>
-                    <Input 
-                      id="bcp-api-key"
-                      type="password" 
-                      placeholder="•••••••••••••••••••••••••••••••••••••••"
-                      className="font-mono"
-                      defaultValue={localStorage.getItem('bcp_api_key') || ''}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Banco BCP Bolivia - Conciliación automática
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-5 h-5 text-yellow-600" />
-                    <span className="text-sm font-medium">Configuraciones SIN/SIAT</span>
-                  </div>
-                  <p className="text-sm text-yellow-800">
-                    Para configurar credenciales SIN (Token Delegado, CUIS, CUFD), 
-                    visite la sección <strong>"Configuración del Sistema → Integración SIN"</strong>
-                  </p>
-                </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">Seguridad de API Keys</p>
-                    <p>Todas las claves API se almacenan de forma cifrada y segura según estándares ISO 27001.</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium">Cifrado AES-256</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Todas las claves están cifradas</p>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Shield className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium">Rotación Automática</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Renovación periódica de tokens</p>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Key className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium">Acceso Restringido</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Solo personal autorizado</p>
-                  </Card>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={async () => {
-                    setIsSaving(true);
-                    try {
-                      // Obtener valores de API keys (solo las que mantenemos aquí)
-                      const whatsappToken = (document.getElementById('whatsapp-token') as HTMLInputElement)?.value;
-                      const bcpKey = (document.getElementById('bcp-api-key') as HTMLInputElement)?.value;
-                      
-                      // Guardar API keys
-                      if (whatsappToken) localStorage.setItem('whatsapp_token', whatsappToken);
-                      if (bcpKey) localStorage.setItem('bcp_api_key', bcpKey);
-                      
-                      // Simular proceso de guardado
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-                      
-                      toast({
-                        title: "✅ API Keys guardadas exitosamente",
-                        description: "Las claves de WhatsApp y BCP han sido almacenadas de forma segura",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "❌ Error al guardar API Keys",
-                        description: "No se pudieron guardar las claves",
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Key className="w-4 h-4 mr-2" />
-                  )}
-                  {isSaving ? 'Guardando...' : 'Guardar API Keys'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={async () => {
-                    setIsTesting(true);
-                    try {
-                      // Simular prueba de conexiones
-                      await new Promise(resolve => setTimeout(resolve, 2000));
-                      
-                      const connections = [
-                        { name: 'SIN Bolivia', status: 'ok', latency: '245ms' },
-                        { name: 'SIAT', status: 'ok', latency: '312ms' },
-                        { name: 'BCP Bolivia', status: 'warning', latency: '450ms' },
-                        { name: 'WhatsApp Business', status: 'ok', latency: '180ms' }
-                      ];
-                      
-                      const okCount = connections.filter(c => c.status === 'ok').length;
-                      
-                      toast({
-                        title: `🔄 Prueba de conexiones completada`,
-                        description: `${okCount}/${connections.length} servicios funcionando correctamente`,
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "❌ Error en las pruebas",
-                        description: "No se pudieron probar todas las conexiones",
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsTesting(false);
-                    }
-                  }}
-                  disabled={isTesting}
-                >
-                  {isTesting ? (
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
-                  {isTesting ? 'Probando...' : 'Probar Conexiones'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="monitoring">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Uptime SIN</p>
-                    <p className="text-2xl font-bold text-green-600">99.8%</p>
-                  </div>
-                  <Activity className="w-8 h-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Latencia Promedio</p>
-                    <p className="text-2xl font-bold text-blue-600">245ms</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Errores Hoy</p>
-                    <p className="text-2xl font-bold text-yellow-600">2</p>
-                  </div>
-                  <AlertCircle className="w-8 h-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Transacciones</p>
-                    <p className="text-2xl font-bold text-purple-600">1,247</p>
-                  </div>
-                  <Database className="w-8 h-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Tipo:</span>
+            <Badge variant="outline">{integration.type}</Badge>
           </div>
+          
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Estado:</span>
+            <div className="flex items-center space-x-2">
+              {integration.connected ? (
+                <div className="flex items-center text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  Activo
+                </div>
+              ) : (
+                <div className="flex items-center text-gray-500">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
+                  Inactivo
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {integration.connected && (
+            <div className="pt-2 border-t">
+              <div className="flex justify-between items-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleConfigureIntegration(integration)}
+                  className="text-xs"
+                >
+                  <Settings className="w-3 h-3 mr-1" />
+                  Config
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">
+            Hub de Integraciones
+          </h2>
+          <p className="text-muted-foreground">
+            Gestiona las conexiones con otros servicios y plataformas
+          </p>
+        </div>
+        {/* <Button>Agregar Integración</Button> */}
+      </div>
+
+      <Tabs defaultValue="integraciones" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="integraciones">Integraciones</TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          <TabsTrigger value="configuracion">Configuración</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="integraciones" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {integrations.map(renderIntegrationCard)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="webhooks" className="space-y-6">
+          <WebhookManager integrationId="general" />
+        </TabsContent>
+
+        <TabsContent value="metricas" className="space-y-6">
+          {integrations.filter(i => i.connected).length > 0 ? (
+            <div className="space-y-6">
+              {integrations.filter(i => i.connected).map(integration => (
+                <IntegrationMetrics
+                  key={integration.id}
+                  integrationId={integration.id}
+                  integrationName={integration.name}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Sin integraciones activas</h3>
+                <p className="text-muted-foreground">
+                  Conecte al menos una integración para ver las métricas de rendimiento
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="configuracion" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Estado de Servicios en Tiempo Real</CardTitle>
+              <CardTitle>Configuración del Sistema</CardTitle>
+              <CardDescription>
+                Ajustes generales para el funcionamiento del sistema
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {integrations.filter(i => i.status === 'connected').map(integration => (
-                  <div key={integration.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                      <span className="font-medium">{integration.name}</span>
-                      <Badge variant="outline">{integration.connectionStrength}%</Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Último ping: hace 30s</span>
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Aquí irían los componentes de configuración general */}
+              <p>No hay opciones de configuración disponibles.</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Configuration Dialog */}
+      {selectedConfigIntegration && (
+        <ConfigurationDialog
+          open={!!selectedConfigIntegration}
+          onOpenChange={(open) => !open && setSelectedConfigIntegration(null)}
+          integration={selectedConfigIntegration}
+          config={integrationConfigs[selectedConfigIntegration.id] || {}}
+          onSave={handleSaveConfig}
+        />
+      )}
     </div>
   );
 };
