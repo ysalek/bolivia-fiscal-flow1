@@ -237,6 +237,16 @@ const BackupModule = () => {
           'estadosFinancieros': [],
           'sectoresEspeciales': [],
           'declaracionIVADigital': [],
+          'obligacionesTributarias': [],
+          'calendarioTributario': [],
+          'cumplimiento_score': 0,
+          'pendientes_criticas': [],
+          'monto_total_obligaciones': 0,
+          'proximos_vencimientos': [],
+          'historial_cumplimiento': [],
+          'configuracion_sin': {},
+          'normativa_vigente': [],
+          'alertas_normativas': [],
           
           // USUARIOS DEL SISTEMA (MANTENER SOLO ADMIN)
           'usuarios_sistema': [
@@ -262,6 +272,21 @@ const BackupModule = () => {
           'estadisticasVentas': [],
           'reportesGenerados': [],
           'historiaReportes': [],
+          'ratios_liquidez': [],
+          'ratios_endeudamiento': [],
+          'ratios_rentabilidad': [],
+          'ratios_actividad': [],
+          'analisis_horizontal': [],
+          'analisis_vertical': [],
+          'tendencias_financieras': [],
+          'proyecciones': [],
+          'indicadores_clave': [],
+          'metricas_rendimiento': [],
+          'dashboard_financiero': {},
+          'score_financiero': 0,
+          'auditoria_datos': [],
+          'verificaciones_contables': [],
+          'alertas_auditoria': [],
           
           // NÓMINA Y RECURSOS HUMANOS - TODO VACÍO
           'nomina': [],
@@ -300,7 +325,35 @@ const BackupModule = () => {
           'pagosRegistrados': [],
           'cobranzasRealizadas': [],
           'flujoCaja': [],
-          'proyecciones': []
+          
+          // CONFIGURACIONES Y CACHE - TODO VACÍO
+          'configuracion_cache': {},
+          'datos_temporales': [],
+          'session_data': {},
+          'user_preferences': {},
+          'modulos_activos': [],
+          'permisos_temporales': [],
+          'configuracion_reportes': {},
+          'filtros_guardados': [],
+          'vistas_personalizadas': [],
+          'dashboards_personalizados': [],
+          
+          // INTEGRACIÓN Y WEBHOOKS - TODO VACÍO
+          'datos_integracion': [],
+          'logs_integracion': [],
+          'estado_sincronizacion': {},
+          'webhooks_configurados': [],
+          'apis_conectadas': [],
+          'tokens_acceso': {},
+          
+          // OTROS CACHÉS Y DATOS TEMPORALES
+          'cache_reportes': {},
+          'cache_calculos': {},
+          'cache_dashboard': {},
+          'datos_graficos': [],
+          'estadisticas_uso': [],
+          'logs_usuario': [],
+          'historial_navegacion': [],
         };
 
         Object.entries(datosVaciosCompletos).forEach(([key, value]) => {
