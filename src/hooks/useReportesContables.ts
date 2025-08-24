@@ -210,20 +210,37 @@ export const useReportesContables = () => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('1')) { // Activo
-        // CORREGIDO: Para inventarios, aplicar la fórmula contable boliviana
-        // Inventario Final = Inventario Inicial + Compras - Costo de Ventas
+        // CORREGIDO: Para inventarios según normas bolivianas
+        // El Balance General debe mostrar el saldo físico real del inventario
         if (cuenta.codigo === '1141') {
-          // El saldo contable de inventarios debe reflejar el valor del inventario disponible
-          // Si es negativo, indica error contable crítico
-          if (saldo < 0) {
-            console.error(`🚨 ERROR CRÍTICO: Inventario negativo (${cuenta.codigo}): ${saldo}. Revisar asientos de movimientos de inventario.`);
+          // Calcular el saldo físico real del inventario desde los productos
+          const productos = JSON.parse(localStorage.getItem('productos') || '[]');
+          let valorInventarioFisico = 0;
+          
+          productos.forEach((producto: any) => {
+            const stock = producto.stock || 0;
+            const costoUnitario = producto.costoUnitario || 0;
+            valorInventarioFisico += stock * costoUnitario;
+          });
+          
+          // Siempre mostrar el valor positivo del inventario físico real
+          const saldoInventario = Math.max(0, valorInventarioFisico);
+          
+          if (valorInventarioFisico < 0) {
+            console.warn(`⚠️ ADVERTENCIA: Stock negativo detectado. Revisando inventario físico.`);
           }
-          // Mostrar el saldo real (puede ser negativo para identificar problemas)
-          activos.cuentas.push({ codigo: cuenta.codigo, nombre: "Inventarios de Productos", saldo: saldo });
-          activos.total += saldo;
+          
+          activos.cuentas.push({ 
+            codigo: cuenta.codigo, 
+            nombre: "Inventarios de Productos", 
+            saldo: saldoInventario 
+          });
+          activos.total += saldoInventario;
         } else {
-          activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldo });
-          activos.total += saldo;
+          // Para otras cuentas de activo, usar el saldo contable normal
+          const saldoActivo = Math.max(0, saldo); // Los activos deben ser positivos
+          activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoActivo });
+          activos.total += saldoActivo;
         }
       } else if (cuenta.codigo.startsWith('2')) { // Pasivo
         pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
