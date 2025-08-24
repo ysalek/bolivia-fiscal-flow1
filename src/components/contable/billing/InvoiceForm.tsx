@@ -56,6 +56,18 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
     if (items.some(item => item.cantidad <= 0 || item.precioUnitario <= 0)) {
         newErrors.items = "Cantidad y Precio Unitario deben ser mayores a 0.";
     }
+    
+    // CRITICAL: Validar stock disponible para evitar ventas sin inventario
+    for (const item of items) {
+      if (item.productoId) {
+        const producto = productos.find(p => p.id === item.productoId);
+        if (producto && producto.stockActual < item.cantidad) {
+          newErrors.stock = `Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockActual}, Solicitado: ${item.cantidad}`;
+          break;
+        }
+      }
+    }
+    
     if (calculateSubtotal() <= 0) {
       newErrors.total = "El total debe ser mayor a 0";
     }
@@ -282,7 +294,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
           <InvoiceTotals
             subtotal={calculateSubtotal()}
             discountTotal={calculateDiscountTotal()}
-            error={errors.total}
+            error={errors.total || errors.stock}
           />
 
           <InvoiceActions
