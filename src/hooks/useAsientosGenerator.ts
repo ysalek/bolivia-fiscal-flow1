@@ -17,7 +17,7 @@ export const useAsientosGenerator = () => {
       console.log("Generando asiento para movimiento:", movimiento);
       
       if (movimiento.tipo === 'entrada') {
-        // Entrada de inventario
+        // Entrada de inventario - SIEMPRE aumenta el inventario
         cuentas.push({
           codigo: "1141",
           nombre: "Inventarios",
@@ -28,6 +28,7 @@ export const useAsientosGenerator = () => {
         // Determinar la cuenta de contrapartida según el motivo
         if (movimiento.motivo?.toLowerCase().includes('anulación') || 
             movimiento.motivo?.toLowerCase().includes('devolucion')) {
+          // Al devolver mercadería, se reduce el costo de ventas (reversión)
           cuentas.push({
             codigo: "5111",
             nombre: "Costo de Productos Vendidos",
@@ -44,14 +45,27 @@ export const useAsientosGenerator = () => {
           });
         }
       } else if (movimiento.tipo === 'salida') {
-        // Salida de inventario
-        cuentas.push({
-          codigo: "5111",
-          nombre: "Costo de Productos Vendidos",
-          debe: movimiento.valorMovimiento,
-          haber: 0
-        });
+        // Salida de inventario - SOLO registrar costo si es por VENTA
+        if (movimiento.motivo?.toLowerCase().includes('venta') || 
+            movimiento.motivo?.toLowerCase().includes('factura')) {
+          // Es una venta - registrar costo de ventas
+          cuentas.push({
+            codigo: "5111",
+            nombre: "Costo de Productos Vendidos",
+            debe: movimiento.valorMovimiento,
+            haber: 0
+          });
+        } else {
+          // Es otro tipo de salida (ajuste, pérdida, etc.) - usar cuenta de pérdidas
+          cuentas.push({
+            codigo: "5322",
+            nombre: "Pérdidas y Faltantes de Inventario",
+            debe: movimiento.valorMovimiento,
+            haber: 0
+          });
+        }
         
+        // Siempre se reduce el inventario en salidas
         cuentas.push({
           codigo: "1141",
           nombre: "Inventarios",
