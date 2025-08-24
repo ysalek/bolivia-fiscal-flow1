@@ -210,14 +210,21 @@ export const useReportesContables = () => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('1')) { // Activo
-        // Para cuenta de inventarios (1141), el saldo debe ser SIEMPRE positivo
-        let saldoFinal = saldo;
-        if (cuenta.codigo === '1141' && saldo < 0) {
-          console.warn(`⚠️ ADVERTENCIA: Saldo negativo en Inventarios (${cuenta.codigo}): ${saldo}. Esto indica un error en los asientos contables.`);
-          saldoFinal = 0; // No mostrar saldos negativos en inventarios
+        // CORREGIDO: Para inventarios, aplicar la fórmula contable boliviana
+        // Inventario Final = Inventario Inicial + Compras - Costo de Ventas
+        if (cuenta.codigo === '1141') {
+          // El saldo contable de inventarios debe reflejar el valor del inventario disponible
+          // Si es negativo, indica error contable crítico
+          if (saldo < 0) {
+            console.error(`🚨 ERROR CRÍTICO: Inventario negativo (${cuenta.codigo}): ${saldo}. Revisar asientos de movimientos de inventario.`);
+          }
+          // Mostrar el saldo real (puede ser negativo para identificar problemas)
+          activos.cuentas.push({ codigo: cuenta.codigo, nombre: "Inventarios de Productos", saldo: saldo });
+          activos.total += saldo;
+        } else {
+          activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldo });
+          activos.total += saldo;
         }
-        activos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoFinal });
-        activos.total += saldoFinal;
       } else if (cuenta.codigo.startsWith('2')) { // Pasivo
         pasivos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: -saldo });
         pasivos.total -= saldo;
@@ -277,9 +284,14 @@ export const useReportesContables = () => {
       } else if (cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) { // Gastos
         const saldoDeudor = saldo;
         if (saldoDeudor > 0.01) { // Solo mostrar cuentas con saldo significativo
-          // CRÍTICO: Separar Costo de Ventas de otros gastos para claridad
+          // CORREGIDO: Validación específica para Costo de Ventas
           if (cuenta.codigo === '5111') {
-            cuenta.nombre = "Costo de Productos Vendidos (SOLO Ventas)";
+            cuenta.nombre = "Costo de Ventas (Solo productos vendidos)";
+            // El costo de ventas debe reflejar ÚNICAMENTE el costo de productos vendidos
+            // No debe incluir compras que aún están en inventario
+          } else if (cuenta.codigo === '5121') {
+            cuenta.nombre = "Compras (Se capitalizan en Inventario)";
+            // Las compras NO van directo a resultados, van a inventario
           }
           gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
           gastos.total += saldoDeudor;

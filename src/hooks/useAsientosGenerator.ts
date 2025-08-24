@@ -152,18 +152,19 @@ export const useAsientosGenerator = () => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     
-    // El total de la compra es lo que realmente se debe pagar
+    // CORREGIDO: Las compras se capitalizan en INVENTARIO, no van directo a gastos
     const totalCompra = compra.total;
     
-    // Compras (87% del total) 
-    const comprasValor = totalCompra / 1.13; // Dividir entre 1.13 para obtener la base sin IVA
+    // Base sin IVA (87% del total) 
+    const comprasValor = totalCompra / 1.13;
     
     // IVA Crédito Fiscal (13% del total)
     const ivaCreditoFiscal = totalCompra - comprasValor;
 
+    // CAMBIO CRÍTICO: Las compras van a INVENTARIO (1141), no a gastos (5121)
     cuentas.push({
-      codigo: "5121", 
-      nombre: "Compras",
+      codigo: "1141", 
+      nombre: "Inventarios",
       debe: comprasValor,
       haber: 0
     });
@@ -186,7 +187,7 @@ export const useAsientosGenerator = () => {
       id: Date.now().toString(),
       numero: `CMP-${Date.now().toString().slice(-6)}`,
       fecha,
-      concepto: `Compra según factura ${compra.numero}`,
+      concepto: `Compra de mercadería según factura ${compra.numero}`,
       referencia: compra.numero,
       debe: totalCompra,
       haber: totalCompra,
