@@ -206,36 +206,33 @@ export const useReportesContables = () => {
     const ingresos = { total: 0 };
     const gastos = { total: 0 };
 
+    // PRIMERO: Calcular siempre el inventario físico real
+    const productos = JSON.parse(localStorage.getItem('productos') || '[]');
+    let valorInventarioFisico = 0;
+    
+    productos.forEach((producto: any) => {
+      const stock = producto.stock || 0;
+      const costoUnitario = producto.costoUnitario || 0;
+      valorInventarioFisico += stock * costoUnitario;
+    });
+    
+    // Asegurar que siempre aparezca la cuenta de inventario con el valor real
+    const saldoInventario = Math.max(0, valorInventarioFisico);
+    let inventarioAgregado = false;
+
     details.forEach(cuenta => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('1')) { // Activo
-        // CORREGIDO: Para inventarios según normas bolivianas
-        // El Balance General debe mostrar el saldo físico real del inventario
         if (cuenta.codigo === '1141') {
-          // Calcular el saldo físico real del inventario desde los productos
-          const productos = JSON.parse(localStorage.getItem('productos') || '[]');
-          let valorInventarioFisico = 0;
-          
-          productos.forEach((producto: any) => {
-            const stock = producto.stock || 0;
-            const costoUnitario = producto.costoUnitario || 0;
-            valorInventarioFisico += stock * costoUnitario;
-          });
-          
-          // Siempre mostrar el valor positivo del inventario físico real
-          const saldoInventario = Math.max(0, valorInventarioFisico);
-          
-          if (valorInventarioFisico < 0) {
-            console.warn(`⚠️ ADVERTENCIA: Stock negativo detectado. Revisando inventario físico.`);
-          }
-          
+          // Usar el valor físico real calculado arriba
           activos.cuentas.push({ 
             codigo: cuenta.codigo, 
             nombre: "Inventarios de Productos", 
             saldo: saldoInventario 
           });
           activos.total += saldoInventario;
+          inventarioAgregado = true;
         } else {
           // Para otras cuentas de activo, usar el saldo contable normal
           const saldoActivo = Math.max(0, saldo); // Los activos deben ser positivos
@@ -254,6 +251,16 @@ export const useReportesContables = () => {
         gastos.total += saldo; // Gastos son deudores
       }
     });
+
+    // Si no se encontró la cuenta 1141 en el balance de comprobación, agregarla
+    if (!inventarioAgregado && saldoInventario > 0) {
+      activos.cuentas.push({
+        codigo: '1141',
+        nombre: "Inventarios de Productos",
+        saldo: saldoInventario
+      });
+      activos.total += saldoInventario;
+    }
 
     const utilidadPeriodo = ingresos.total - gastos.total;
     if (Math.abs(utilidadPeriodo) > 0.01) {
