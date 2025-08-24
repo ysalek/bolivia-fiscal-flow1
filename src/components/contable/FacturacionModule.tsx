@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart } from "lucide-react";
+import { Plus, BarChart, FileText, DollarSign, Users, Package, TrendingUp, Activity, CheckCircle, AlertCircle } from "lucide-react";
+import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidacionSIN } from "./billing/BillingData";
 import { Producto, productosIniciales } from "./products/ProductsData";
@@ -239,38 +240,107 @@ const FacturacionModule = () => {
     return <DeclaracionIVA onBack={() => setShowDeclaracionIVA(false)} />;
   }
 
+  const facturasPagadas = facturas.filter(f => f.estado === 'pagada').length;
+  const facturasEnviadas = facturas.filter(f => f.estado === 'enviada').length;
+  const facturasRechazadas = facturas.filter(f => f.estadoSIN === 'rechazado').length;
+  const ingresosMes = facturas.filter(f => f.estado === 'pagada').reduce((sum, f) => sum + f.total, 0);
+  const facturasHoy = facturas.filter(f => f.fecha === new Date().toISOString().slice(0, 10)).length;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Facturación Electrónica</h2>
-          <p className="text-slate-600">Gestión de facturas con integración contable e inventario automática</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => setShowAccountingHistory(true)}>
-            Historial Contable
-          </Button>
-          <Button variant="outline" onClick={() => setShowDeclaracionIVA(true)}>
-            <BarChart className="w-4 h-4 mr-2" />
-            Declaración IVA
-          </Button>
-          <Button onClick={() => setShowNewInvoice(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Factura
-          </Button>
-        </div>
-      </div>
-
-      {/* Resumen */}
-      <InvoiceSummary facturas={facturas} />
-
-      {/* Lista de facturas */}
-      <InvoiceList 
-        facturas={facturas} 
-        onShowDetails={handleShowDetails}
-        onUpdateStatus={handleUpdateInvoiceStatus}
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <EnhancedHeader
+        title="Facturación Electrónica Integrada"
+        subtitle="Sistema completo de facturación con integración SIN, control contable e inventario automático"
+        badge={{
+          text: `${facturas.length} Facturas Registradas`,
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setShowAccountingHistory(true)}>
+              <FileText className="w-4 h-4 mr-2" />
+              Historial Contable
+            </Button>
+            <Button variant="outline" onClick={() => setShowDeclaracionIVA(true)}>
+              <BarChart className="w-4 h-4 mr-2" />
+              Declaración IVA
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
+              onClick={() => setShowNewInvoice(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Factura
+            </Button>
+          </div>
+        }
       />
+
+      {/* Enhanced Metrics Section */}
+      <Section 
+        title="Métricas de Facturación" 
+        subtitle="Indicadores clave del rendimiento comercial y financiero"
+      >
+        <MetricGrid columns={4}>
+          <EnhancedMetricCard
+            title="Total Facturas"
+            value={facturas.length}
+            subtitle="Facturas registradas"
+            icon={FileText}
+            variant="default"
+            trend="up"
+            trendValue={`${facturasHoy} hoy`}
+          />
+          <EnhancedMetricCard
+            title="Ingresos del Mes"
+            value={`Bs. ${ingresosMes.toLocaleString()}`}
+            subtitle="Facturas pagadas"
+            icon={DollarSign}
+            variant="success"
+            trend="up"
+            trendValue={`${facturasPagadas} pagadas`}
+          />
+          <EnhancedMetricCard
+            title="Facturas Pendientes"
+            value={facturasEnviadas}
+            subtitle="Esperando pago"
+            icon={AlertCircle}
+            variant={facturasEnviadas > 0 ? "warning" : "success"}
+            trend={facturasEnviadas > 0 ? "down" : "up"}
+            trendValue="Por cobrar"
+          />
+          <EnhancedMetricCard
+            title="Tasa de Éxito SIN"
+            value={`${facturas.length > 0 ? (((facturas.length - facturasRechazadas) / facturas.length) * 100).toFixed(1) : 0}%`}
+            subtitle={`${facturasRechazadas} rechazadas`}
+            icon={CheckCircle}
+            variant={facturasRechazadas === 0 ? "success" : "warning"}
+            trend={facturasRechazadas === 0 ? "up" : "down"}
+            trendValue="Integración SIN"
+          />
+        </MetricGrid>
+      </Section>
+
+      {/* Enhanced Invoice Summary */}
+      <Section 
+        title="Resumen Ejecutivo de Facturación"
+        subtitle="Vista consolidada del estado actual de todas las facturas"
+      >
+        <InvoiceSummary facturas={facturas} />
+      </Section>
+
+      {/* Enhanced Invoice List */}
+      <Section 
+        title="Gestión de Facturas"
+        subtitle="Lista completa con controles de estado y acciones rápidas"
+      >
+        <InvoiceList 
+          facturas={facturas} 
+          onShowDetails={handleShowDetails}
+          onUpdateStatus={handleUpdateInvoiceStatus}
+        />
+      </Section>
       
       {selectedInvoice && (
         <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>

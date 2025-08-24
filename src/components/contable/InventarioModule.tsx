@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { 
   ProductoInventario, 
   MovimientoInventario, 
@@ -10,14 +11,14 @@ import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
-import InventoryHeader from "./inventory/InventoryHeader";
-import InventoryMetrics from "./inventory/InventoryMetrics";
+import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section, ChartContainer } from "./dashboard/EnhancedLayout";
 import ProductListTab from "./inventory/ProductListTab";
 import MovementListTab from "./inventory/MovementListTab";
 import AlertsTab from "./inventory/AlertsTab";
 import MethodologyTab from "./inventory/MethodologyTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
 import { Producto } from "./products/ProductsData";
+import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap } from "lucide-react";
 
 const InventarioModule = () => {
   const [productos, setProductos] = useState<ProductoInventario[]>([]);
@@ -295,11 +296,41 @@ const InventarioModule = () => {
   const movimientosHoy = movimientos.filter(m => m.fecha === new Date().toISOString().slice(0, 10)).length;
 
   return (
-    <div className="space-y-6">
-      <InventoryHeader 
-        onDownloadFormat={handleDownloadFormat}
-        onImportClick={handleImportClick}
-        onShowMovementDialog={(tipo) => setShowMovementDialog({ open: true, tipo })}
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <EnhancedHeader
+        title="Control de Inventario Avanzado"
+        subtitle="Sistema integrado de gestión de inventario con valuación por promedio ponderado e integración contable automática"
+        badge={{
+          text: `${productos.length} Productos Activos`,
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleDownloadFormat}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Formato Excel
+            </Button>
+            <Button variant="outline" onClick={handleImportClick}>
+              <FileUp className="w-4 h-4 mr-2" />
+              Importar Datos
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
+              onClick={() => setShowMovementDialog({ open: true, tipo: 'entrada' })}
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Entrada Stock
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-lg"
+              onClick={() => setShowMovementDialog({ open: true, tipo: 'salida' })}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Salida Stock
+            </Button>
+          </div>
+        }
       />
 
       <input
@@ -310,20 +341,79 @@ const InventarioModule = () => {
         style={{ display: 'none' }}
       />
 
-      <InventoryMetrics 
-        productCount={productos.length}
-        totalInventoryValue={valorTotalInventario}
-        alertCount={productosConAlertas}
-        movementsTodayCount={movimientosHoy}
-      />
+      {/* Enhanced Metrics Grid */}
+      <Section 
+        title="Métricas de Inventario" 
+        subtitle="Indicadores clave del estado actual del inventario"
+      >
+        <MetricGrid columns={4}>
+          <EnhancedMetricCard
+            title="Productos en Stock"
+            value={productos.length}
+            subtitle="Total productos activos"
+            icon={Package}
+            variant="default"
+            trend="up"
+            trendValue="Inventario completo"
+          />
+          <EnhancedMetricCard
+            title="Valor Total Inventario"
+            value={`Bs. ${valorTotalInventario.toLocaleString()}`}
+            subtitle="Valor contable total"
+            icon={BarChart3}
+            variant={valorTotalInventario > 50000 ? "success" : "warning"}
+            trend={valorTotalInventario > 50000 ? "up" : "neutral"}
+            trendValue={`${productos.filter(p => p.stockActual > 0).length} con stock`}
+          />
+          <EnhancedMetricCard
+            title="Alertas de Stock"
+            value={productosConAlertas}
+            subtitle="Productos stock bajo"
+            icon={AlertTriangle}
+            variant={productosConAlertas > 0 ? "warning" : "success"}
+            trend={productosConAlertas > 0 ? "down" : "up"}
+            trendValue={productosConAlertas > 0 ? "Requieren reposición" : "Stock óptimo"}
+          />
+          <EnhancedMetricCard
+            title="Movimientos Hoy"
+            value={movimientosHoy}
+            subtitle="Transacciones del día"
+            icon={Activity}
+            variant="default"
+            trend={movimientosHoy > 0 ? "up" : "neutral"}
+            trendValue={movimientosHoy > 0 ? "Sistema activo" : "Sin actividad"}
+          />
+        </MetricGrid>
+      </Section>
 
-      <Tabs defaultValue="productos" className="w-full">
-        <TabsList>
-          <TabsTrigger value="productos">Productos</TabsTrigger>
-          <TabsTrigger value="movimientos">Movimientos</TabsTrigger>
-          <TabsTrigger value="alertas">Alertas</TabsTrigger>
-          <TabsTrigger value="metodologia">Metodología</TabsTrigger>
-        </TabsList>
+      {/* Enhanced Tabs Section */}
+      <Section 
+        title="Gestión Detallada de Inventario"
+        subtitle="Control completo de productos, movimientos y análisis de stock"
+      >
+        <ChartContainer
+          title="Panel de Control de Inventario"
+          subtitle="Administración integral con análisis y alertas automáticas"
+        >
+          <Tabs defaultValue="productos" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="productos" className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Productos
+              </TabsTrigger>
+              <TabsTrigger value="movimientos" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Movimientos
+              </TabsTrigger>
+              <TabsTrigger value="alertas" className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Alertas ({productosConAlertas})
+              </TabsTrigger>
+              <TabsTrigger value="metodologia" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Metodología
+              </TabsTrigger>
+            </TabsList>
 
         <TabsContent value="productos" className="space-y-4">
           <ProductListTab 
@@ -346,10 +436,12 @@ const InventarioModule = () => {
           />
         </TabsContent>
 
-        <TabsContent value="metodologia" className="space-y-4">
-          <MethodologyTab />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="metodologia" className="space-y-4">
+              <MethodologyTab />
+            </TabsContent>
+          </Tabs>
+        </ChartContainer>
+      </Section>
 
       <InventoryMovementDialog
         open={showMovementDialog.open}

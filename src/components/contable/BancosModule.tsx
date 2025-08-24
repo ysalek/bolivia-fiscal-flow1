@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { Building2, Plus, Upload, Download, ArrowUpDown, CheckCircle, AlertCircle } from "lucide-react";
+import { Building2, Plus, Upload, Download, ArrowUpDown, CheckCircle, AlertCircle, CreditCard, Banknote, TrendingUp, Activity } from "lucide-react";
+import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 interface CuentaBancaria {
   id: string;
@@ -183,20 +184,24 @@ const BancosModule = () => {
   const cuentaSeleccionada = cuentas.find(c => c.id === selectedCuenta);
   const movimientosCuenta = movimientos.filter(m => m.cuentaId === selectedCuenta);
   const movimientosPendientes = movimientosCuenta.filter(m => !m.conciliado);
+  
+  const totalSaldoLibros = cuentas.reduce((sum, c) => sum + c.saldoLibros, 0);
+  const totalSaldoEstados = cuentas.reduce((sum, c) => sum + c.saldoEstado, 0);
+  const diferenciasTotal = Math.abs(totalSaldoLibros - totalSaldoEstados);
+  const cuentasActivas = cuentas.filter(c => c.estado === 'activa').length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Building2 className="w-6 h-6 text-primary" />
-          <div>
-            <h2 className="text-2xl font-bold">Gestión Bancaria</h2>
-            <p className="text-slate-600">
-              Conciliación bancaria y control de cuentas
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <EnhancedHeader
+        title="Control Bancario Avanzado"
+        subtitle="Conciliación bancaria automática y gestión integral de cuentas financieras"
+        badge={{
+          text: `${cuentas.length} Cuentas Registradas`,
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2">
           <Dialog open={showNewAccount} onOpenChange={setShowNewAccount}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -238,50 +243,162 @@ const BancosModule = () => {
               )}
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {cuentas.map(cuenta => (
-          <Card 
-            key={cuenta.id} 
-            className={`cursor-pointer transition-all ${selectedCuenta === cuenta.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setSelectedCuenta(cuenta.id)}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{cuenta.banco}</CardTitle>
-              <CardDescription>{cuenta.numeroCuenta}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Saldo Libros:</span>
-                  <span className="font-medium">Bs. {cuenta.saldoLibros.toFixed(2)}</span>
+      {/* Enhanced Metrics Section */}
+      <Section 
+        title="Métricas Bancarias" 
+        subtitle="Indicadores financieros y estado de conciliación"
+      >
+        <MetricGrid columns={4}>
+          <EnhancedMetricCard
+            title="Cuentas Activas"
+            value={cuentasActivas}
+            subtitle={`${cuentas.length} total registradas`}
+            icon={Building2}
+            variant="default"
+            trend="up"
+            trendValue="Sistema bancario"
+          />
+          <EnhancedMetricCard
+            title="Saldo Total Libros"
+            value={`Bs. ${totalSaldoLibros.toLocaleString()}`}
+            subtitle="Balance contable"
+            icon={Banknote}
+            variant="success"
+            trend="up"
+            trendValue="Posición financiera"
+          />
+          <EnhancedMetricCard
+            title="Diferencias Pendientes"
+            value={`Bs. ${diferenciasTotal.toFixed(2)}`}
+            subtitle="Por conciliar"
+            icon={AlertCircle}
+            variant={diferenciasTotal > 0 ? "warning" : "success"}
+            trend={diferenciasTotal > 0 ? "down" : "up"}
+            trendValue={movimientosPendientes.length > 0 ? `${movimientosPendientes.length} mov.` : "Conciliado"}
+          />
+          <EnhancedMetricCard
+            title="Movimientos Pendientes"
+            value={movimientos.filter(m => !m.conciliado).length}
+            subtitle="Requieren conciliación"
+            icon={Activity}
+            variant={movimientos.filter(m => !m.conciliado).length > 0 ? "warning" : "success"}
+            trend={movimientos.filter(m => !m.conciliado).length > 0 ? "down" : "up"}
+            trendValue="Control automático"
+          />
+        </MetricGrid>
+      </Section>
+
+      {/* Enhanced Bank Accounts Grid */}
+      <Section 
+        title="Cuentas Bancarias"
+        subtitle="Selecciona una cuenta para ver sus movimientos y realizar conciliaciones"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {cuentas.map(cuenta => (
+            <Card 
+              key={cuenta.id} 
+              className={`cursor-pointer transition-all hover:shadow-lg glass-effect ${
+                selectedCuenta === cuenta.id 
+                  ? 'ring-2 ring-primary shadow-lg nav-gradient text-white' 
+                  : 'hover:scale-105 hover:shadow-md'
+              }`}
+              onClick={() => setSelectedCuenta(cuenta.id)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className={`text-lg ${selectedCuenta === cuenta.id ? 'text-white' : ''}`}>
+                      {cuenta.banco}
+                    </CardTitle>
+                    <CardDescription className={selectedCuenta === cuenta.id ? 'text-white/80' : ''}>
+                      {cuenta.numeroCuenta}
+                    </CardDescription>
+                  </div>
+                  <div className={`p-2 rounded-full ${selectedCuenta === cuenta.id ? 'bg-white/20' : 'bg-primary/10'}`}>
+                    <CreditCard className={`w-5 h-5 ${selectedCuenta === cuenta.id ? 'text-white' : 'text-primary'}`} />
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Saldo Estado:</span>
-                  <span className="font-medium">Bs. {cuenta.saldoEstado.toFixed(2)}</span>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className={`text-sm ${selectedCuenta === cuenta.id ? 'text-white/90' : 'text-muted-foreground'}`}>
+                      Saldo Libros:
+                    </span>
+                    <span className={`font-bold ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
+                      Bs. {cuenta.saldoLibros.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-sm ${selectedCuenta === cuenta.id ? 'text-white/90' : 'text-muted-foreground'}`}>
+                      Saldo Estado:
+                    </span>
+                    <span className={`font-bold ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
+                      Bs. {cuenta.saldoEstado.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-opacity-20">
+                    <span className={`text-sm font-medium ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
+                      Diferencia:
+                    </span>
+                    <Badge 
+                      variant={Math.abs(cuenta.saldoLibros - cuenta.saldoEstado) < 0.01 ? "default" : "destructive"}
+                      className="font-bold"
+                    >
+                      Bs. {Math.abs(cuenta.saldoLibros - cuenta.saldoEstado).toLocaleString()}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-center pt-2">
+                    <Badge variant="outline" className={selectedCuenta === cuenta.id ? 'border-white/50 text-white' : ''}>
+                      {cuenta.tipoCuenta.toUpperCase()} • {cuenta.moneda}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Diferencia:</span>
-                  <Badge variant={Math.abs(cuenta.saldoLibros - cuenta.saldoEstado) < 0.01 ? "default" : "destructive"}>
-                    Bs. {Math.abs(cuenta.saldoLibros - cuenta.saldoEstado).toFixed(2)}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </Section>
 
       {cuentaSeleccionada && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Movimientos - {cuentaSeleccionada.banco}</CardTitle>
-            <CardDescription>
-              {movimientosPendientes.length} movimientos pendientes de conciliación
-            </CardDescription>
-          </CardHeader>
+        <Section 
+          title={`Movimientos Bancarios - ${cuentaSeleccionada.banco}`}
+          subtitle={`${movimientosCuenta.length} movimientos registrados • ${movimientosPendientes.length} pendientes de conciliación`}
+        >
+          <Card className="card-gradient">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Control de Movimientos
+                  </CardTitle>
+                  <CardDescription>
+                    Cuenta: {cuentaSeleccionada.numeroCuenta} • Saldo actual: Bs. {cuentaSeleccionada.saldoLibros.toLocaleString()}
+                  </CardDescription>
+                </div>
+                <Badge 
+                  variant={movimientosPendientes.length === 0 ? "default" : "destructive"}
+                  className="px-3 py-1"
+                >
+                  {movimientosPendientes.length === 0 ? (
+                    <>
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Conciliado
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {movimientosPendientes.length} Pendientes
+                    </>
+                  )}
+                </Badge>
+              </div>
+            </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
@@ -341,8 +458,9 @@ const BancosModule = () => {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Section>
       )}
     </div>
   );
