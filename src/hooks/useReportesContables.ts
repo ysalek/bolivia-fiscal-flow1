@@ -301,17 +301,38 @@ export const useReportesContables = () => {
       } else if (cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) { // Gastos
         const saldoDeudor = saldo;
         if (saldoDeudor > 0.01) { // Solo mostrar cuentas con saldo significativo
-          // CORREGIDO: Validación específica para Costo de Ventas
+          // CORREGIDO: Calcular Costo de Ventas real basado en ventas efectivas
           if (cuenta.codigo === '5111') {
+            // Calcular el costo real de productos vendidos desde facturas/ventas
+            const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+            const productos = JSON.parse(localStorage.getItem('productos') || '[]');
+            
+            let costoVentasReal = 0;
+            facturas.forEach((factura: any) => {
+              if (factura.estado === 'pagada' || factura.estado === 'pendiente') {
+                factura.items?.forEach((item: any) => {
+                  const producto = productos.find((p: any) => p.id === item.productoId);
+                  const costoUnitario = producto?.costoUnitario || 0;
+                  const cantidadVendida = item.cantidad || 0;
+                  costoVentasReal += cantidadVendida * costoUnitario;
+                });
+              }
+            });
+            
             cuenta.nombre = "Costo de Ventas (Solo productos vendidos)";
-            // El costo de ventas debe reflejar ÚNICAMENTE el costo de productos vendidos
-            // No debe incluir compras que aún están en inventario
+            gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: costoVentasReal });
+            gastos.total += costoVentasReal;
           } else if (cuenta.codigo === '5121') {
-            cuenta.nombre = "Compras (Se capitalizan en Inventario)";
-            // Las compras NO van directo a resultados, van a inventario
+            // Las compras NO van al Estado de Resultados, van a inventario
+            // Solo incluir si hay una diferencia contable específica
+            cuenta.nombre = "Compras (Capitalizadas en Inventario)";
+            // No agregar al estado de resultados normal
+            console.log(`⚠️ Cuenta 5121 (Compras) no debe aparecer en Estado de Resultados. Revisar asientos.`);
+          } else {
+            // Otros gastos operativos normales
+            gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
+            gastos.total += saldoDeudor;
           }
-          gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
-          gastos.total += saldoDeudor;
         }
       }
     });
