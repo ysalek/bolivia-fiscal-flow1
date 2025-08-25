@@ -1,19 +1,18 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Edit, Trash2, Eye, Calendar, DollarSign, Users, UserPlus } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Search, Plus, Edit, Trash2, Calendar, DollarSign, Users, UserPlus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseEmpleados, EmpleadoSupabase } from "@/hooks/useSupabaseEmpleados";
 import { 
   cargosPorDepartamento, 
-  beneficiosDisponibles,
   validarCI,
   validarEmail
 } from "./EmpleadosData";
@@ -175,9 +174,9 @@ const EmpleadosModule: React.FC = () => {
             <Users className="h-5 w-5" />
             Gestión de Empleados
           </CardTitle>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             Administre la información del personal de la empresa
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -249,9 +248,9 @@ const EmpleadosModule: React.FC = () => {
                       <DialogTitle>
                         {editingId ? 'Editar Empleado' : 'Nuevo Empleado'}
                       </DialogTitle>
-                      <DialogDescription>
+                      <p className="text-sm text-muted-foreground">
                         Complete la información del empleado
-                      </DialogDescription>
+                      </p>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
