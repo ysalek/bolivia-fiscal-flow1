@@ -78,6 +78,37 @@ const EmpleadosModule: React.FC = () => {
       return;
     }
 
+    // Validar CI
+    if (!validarCI(empleadoForm.ci)) {
+      toast({
+        title: "Error",
+        description: "La cédula de identidad debe tener 7 u 8 dígitos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar email si se proporciona
+    if (empleadoForm.email && !validarEmail(empleadoForm.email)) {
+      toast({
+        title: "Error",
+        description: "El formato del email no es válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar CI duplicado
+    const ciExiste = empleados.some(emp => emp.ci === empleadoForm.ci && emp.id !== editingId);
+    if (ciExiste) {
+      toast({
+        title: "Error",
+        description: "Ya existe un empleado con esta cédula de identidad",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const now = new Date().toISOString();
     
     if (editingId) {
@@ -345,43 +376,50 @@ const EmpleadosModule: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="cargo">Cargo *</Label>
-                          <Select
-                            value={empleadoForm.cargo || ''}
-                            onValueChange={(value) => setEmpleadoForm({...empleadoForm, cargo: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar cargo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {empleadoForm.departamento && cargosPorDepartamento[empleadoForm.departamento] ? 
-                                cargosPorDepartamento[empleadoForm.departamento].map(cargo => (
-                                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
-                                )) :
-                                Object.values(cargosPorDepartamento).flat().map(cargo => (
-                                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="departamento">Departamento</Label>
-                          <Select
-                            value={empleadoForm.departamento || ''}
-                            onValueChange={(value) => setEmpleadoForm({...empleadoForm, departamento: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar departamento" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(cargosPorDepartamento).map(dept => (
-                                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+        <div className="space-y-2">
+          <Label htmlFor="cargo">Cargo *</Label>
+          <Select
+            value={empleadoForm.cargo || ''}
+            onValueChange={(value) => setEmpleadoForm({...empleadoForm, cargo: value})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              {empleadoForm.departamento && cargosPorDepartamento[empleadoForm.departamento] ? 
+                cargosPorDepartamento[empleadoForm.departamento].map(cargo => (
+                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
+                )) :
+                [...new Set(Object.values(cargosPorDepartamento).flat())].map(cargo => (
+                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
+                ))
+              }
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="departamento">Departamento</Label>
+          <Select
+            value={empleadoForm.departamento || ''}
+            onValueChange={(value) => {
+              // Reset cargo when department changes
+              const newForm = { ...empleadoForm, departamento: value };
+              if (empleadoForm.cargo && !cargosPorDepartamento[value]?.includes(empleadoForm.cargo)) {
+                newForm.cargo = '';
+              }
+              setEmpleadoForm(newForm);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar departamento" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(cargosPorDepartamento).map(dept => (
+                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
                         <div className="space-y-2">
                           <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
                           <Input
@@ -404,10 +442,10 @@ const EmpleadosModule: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="estado">Estado</Label>
-                          <Select
-                            value={empleadoForm.estado || 'activo'}
-                            onValueChange={(value: any) => setEmpleadoForm({...empleadoForm, estado: value})}
-                          >
+          <Select
+            value={empleadoForm.estado || 'activo'}
+            onValueChange={(value) => setEmpleadoForm({...empleadoForm, estado: value as 'activo' | 'inactivo' | 'vacaciones' | 'licencia'})}
+          >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -421,10 +459,10 @@ const EmpleadosModule: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="tipoContrato">Tipo de Contrato</Label>
-                          <Select
-                            value={empleadoForm.tipoContrato || 'indefinido'}
-                            onValueChange={(value: any) => setEmpleadoForm({...empleadoForm, tipoContrato: value})}
-                          >
+          <Select
+            value={empleadoForm.tipoContrato || 'indefinido'}
+            onValueChange={(value) => setEmpleadoForm({...empleadoForm, tipoContrato: value as 'indefinido' | 'temporal' | 'consultor' | 'practicante'})}
+          >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -737,7 +775,7 @@ const EmpleadosModule: React.FC = () => {
               <CardContent>
                 <div className="space-y-3">
                   {empleados.map(emp => {
-                    const antiguedad = Math.floor((Date.now() - new Date(emp.fechaIngreso).getTime()) / (1000 * 60 * 60 * 24 * 365));
+                    const antiguedad = calcularAntiguedad(emp.fechaIngreso);
                     return (
                       <div key={emp.id} className="flex justify-between items-center">
                         <span className="text-sm">{emp.nombres} {emp.apellidos}</span>
@@ -758,7 +796,7 @@ const EmpleadosModule: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Salario Promedio:</span>
                     <span className="font-semibold">
-                      Bs. {Math.round(estadisticas.totalNomina / estadisticas.total).toLocaleString()}
+                      Bs. {estadisticas.total > 0 ? Math.round(estadisticas.totalNomina / estadisticas.total).toLocaleString() : '0'}
                     </span>
                   </div>
                   <div className="flex justify-between">
