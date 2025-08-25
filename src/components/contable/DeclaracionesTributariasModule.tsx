@@ -40,13 +40,15 @@ const tiposDeclaracion = [
   { value: 'it', label: 'IT Mensual', formulario: 'Formulario 401', vencimiento: 20 },
   { value: 'iue', label: 'IUE Trimestral', formulario: 'Formulario 600', vencimiento: 120 },
   { value: 'rc_iva', label: 'RC-IVA Mensual', formulario: 'Formulario 110', vencimiento: 20 },
-  { value: 'formulario_110', label: 'Formulario 110', formulario: 'Declaración Jurada', vencimiento: 31 },
-  { value: 'formulario_500', label: 'Formulario 500', formulario: 'Declaración Anual', vencimiento: 31 },
-  // Nuevos formularios según normativas 2024-2025
+  { value: 'rc_iva_profesionales', label: 'RC-IVA Profesionales', formulario: 'Formulario 110 Especializado', vencimiento: 20 },
+  { value: 'formulario_500', label: 'Formulario 500', formulario: 'IUE Anual', vencimiento: 31 },
   { value: 'formulario_750', label: 'Formulario 750', formulario: 'Régimen Simplificado', vencimiento: 20 },
   { value: 'declaracion_iva_digital', label: 'Declaración IVA Digital', formulario: 'Sistema Digital SIN', vencimiento: 20 },
   { value: 'sectores_especiales', label: 'Sectores Especiales', formulario: 'Biocombustibles/Energía', vencimiento: 25 },
-  { value: 'estados_financieros', label: 'Estados Financieros', formulario: 'Presentación Anual', vencimiento: 21 } // Actualizado 2025
+  { value: 'estados_financieros', label: 'Estados Financieros', formulario: 'Presentación Anual prórroga', vencimiento: 21 },
+  { value: 'bancarizacion', label: 'Control Bancarización', formulario: 'RND-102400000021', vencimiento: 31 },
+  { value: 'facilidades_pago', label: 'Facilidades de Pago', formulario: 'Solicitud 2025', vencimiento: 60 },
+  { value: 'arrepentimiento_eficaz', label: 'Arrepentimiento Eficaz', formulario: 'Regularización Voluntaria', vencimiento: 30 }
 ];
 
 const DeclaracionesTributariasModule = () => {
@@ -147,29 +149,44 @@ const DeclaracionesTributariasModule = () => {
     let interes = 0;
     
     if (diasRetraso > 0) {
-      // Multas actualizadas según normativa 2024-2025
+      // Multas actualizadas según normativa 2025 - Ley 1448
+      const ufv = 2.61; // UFV actualizado 2025
+      
       switch (tipoDeclaracion) {
         case 'iva':
         case 'it':
-          // Multa variable: 100 UFV por día hasta 30 días, luego 200 UFV por día
-          const ufv = 2.55; // UFV aproximado 2025
-          if (diasRetraso <= 30) {
-            multa = diasRetraso * 100 * ufv;
+          // Multa escalonada RND-102500000031
+          if (diasRetraso <= 15) {
+            multa = diasRetraso * 50 * ufv; // Reducción por cumplimiento temprano
+          } else if (diasRetraso <= 30) {
+            multa = (15 * 50 * ufv) + ((diasRetraso - 15) * 100 * ufv);
           } else {
-            multa = (30 * 100 * ufv) + ((diasRetraso - 30) * 200 * ufv);
+            multa = (15 * 50 * ufv) + (15 * 100 * ufv) + ((diasRetraso - 30) * 250 * ufv);
           }
           break;
         case 'iue':
-          // Para IUE: 5% del impuesto + 500 UFV fijo
-          multa = (montoImpuesto * 0.05) + (500 * 2.55);
+          // IUE: Multa progresiva según Ley 1448
+          multa = Math.max((montoImpuesto * 0.08), (300 * ufv)) + (diasRetraso * 25 * ufv);
+          break;
+        case 'rc_iva_profesionales':
+          // RC-IVA Profesionales: Tratamiento especial 2025
+          multa = (montoImpuesto * 0.12) + (diasRetraso * 75 * ufv);
+          break;
+        case 'estados_financieros':
+          // Estados Financieros: Con prórroga hasta 21 julio 2025
+          if (diasRetraso <= 15) {
+            multa = 200 * ufv; // Multa fija reducida con prórroga
+          } else {
+            multa = (200 * ufv) + ((diasRetraso - 15) * 150 * ufv);
+          }
           break;
         default:
-          // Multa estándar: 3% del impuesto
-          multa = montoImpuesto * 0.03;
+          // Multa estándar actualizada
+          multa = (montoImpuesto * 0.05) + (diasRetraso * 30 * ufv);
       }
       
-      // Interés actualizado: Tasa de interés anual 6% (0.0164% diario)
-      interes = montoImpuesto * 0.000164 * diasRetraso;
+      // Interés actualizado: Tasa preferencial 2025 - 4.8% anual (0.0132% diario)
+      interes = montoImpuesto * 0.000132 * diasRetraso;
     }
     
     return { multa, interes };
