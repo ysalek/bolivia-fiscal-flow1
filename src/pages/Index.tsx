@@ -50,6 +50,7 @@ const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPo
 const FacturacionElectronicaModule = lazy(() => import('@/components/contable/facturacion/FacturacionElectronicaModule'));
 const RetencionesModule = lazy(() => import('@/components/contable/retenciones/RetencionesModule'));
 const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
+const EmpleadosModule = lazy(() => import('@/components/contable/empleados/EmpleadosModule'));
 
 const Index = () => {
   const { hasPermission } = useAuth();
@@ -142,7 +143,7 @@ const Index = () => {
       case 'nomina':
         return <NominaModule />;
       case 'empleados':
-        return <div className="p-6"><h2 className="text-2xl font-bold">Empleados - En desarrollo</h2></div>;
+        return <EmpleadosModule />;
       case 'reportes':
         return <ReportesModule />;
       case 'analisis-financiero':
@@ -231,6 +232,7 @@ const Index = () => {
       'facturacion': 'Facturación y control fiscal conforme normativa boliviana.',
       'inventario': 'Control de inventario y kardex.',
       'compras': 'Gestión de compras y proveedores.',
+      'empleados': 'Gestión completa de empleados: datos personales, cargos, salarios y beneficios.',
     };
     const description = descriptions[currentView] || 'Sistema contable integral para Bolivia: POS, compras, ventas e informes.';
 
