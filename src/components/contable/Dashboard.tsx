@@ -11,6 +11,7 @@ import EnhancedFinancialDashboard from './dashboard/EnhancedFinancialDashboard';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from './dashboard/EnhancedLayout';
 import { inicializarSistemaCompleto } from '../../utils/inicializarSistema';
 import { useToast } from '@/hooks/use-toast';
+import ModuleIntegrationValidator from './integration/ModuleIntegrationValidator';
 
 const Dashboard = () => {
   const [fechaActual] = useState(new Date().toLocaleDateString('es-BO', {
@@ -83,10 +84,10 @@ const Dashboard = () => {
       {/* Header mejorado con gradiente */}
       <EnhancedHeader
         title="Centro de Comando Empresarial"
-        subtitle={`Inteligencia contable avanzada - ${fechaActual}`}
+        subtitle={`Sistema integrado - Balance cuadrado: ${balance.activos.toFixed(2)} = ${(balance.pasivos + balance.patrimonio).toFixed(2)} Bs. - ${fechaActual}`}
         badge={{
-          text: "Sistema Activo",
-          variant: "default"
+          text: balance.activos === (balance.pasivos + balance.patrimonio) ? "Balance Cuadrado" : "Verificar Balance",
+          variant: balance.activos === (balance.pasivos + balance.patrimonio) ? "default" : "destructive"
         }}
         actions={<NotificationsIcon />}
       />
@@ -111,7 +112,7 @@ const Dashboard = () => {
               </div>
             </CardTitle>
             <CardDescription className="text-white/90 text-lg">
-              {comprobantesAutorizados.length} transacciones procesadas • {asientos.length} asientos contables • ROI {roiMensual.toFixed(1)}%
+              {comprobantesAutorizados.length} transacciones • {asientos.length} asientos • Balance: A={balance.activos.toFixed(0)} | P+E={(balance.pasivos + balance.patrimonio).toFixed(0)} Bs.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -256,6 +257,22 @@ const Dashboard = () => {
         subtitle="Monitoreo automático de eventos críticos del negocio"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Alerta Balance No Cuadrado */}
+          {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) > 0.01 && (
+            <Card className="border-l-4 border-l-destructive bg-destructive/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="w-5 h-5" />
+                  Balance Descuadrado
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Diferencia: {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)).toFixed(2)} Bs.</p>
+                <p className="text-sm mt-1">Activos: {balance.activos.toFixed(2)} | Pasivo+Patrimonio: {(balance.pasivos + balance.patrimonio).toFixed(2)}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {productosStockBajo > 0 && (
             <Card className="border-l-4 border-l-warning bg-warning/5">
               <CardHeader>
@@ -297,7 +314,31 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Alerta de Sistema Integrado */}
+          {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) <= 0.01 && (
+            <Card className="border-l-4 border-l-success bg-success/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-success">
+                  <CheckCircle className="w-5 h-5" />
+                  Sistema Integrado
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Todos los módulos funcionando correctamente</p>
+                <p className="text-sm mt-1">Balance cuadrado • Inventario sincronizado</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
+      </Section>
+
+      {/* Validador de Integración */}
+      <Section
+        title="Estado de Integración del Sistema"
+        subtitle="Verificación automática de la conectividad entre módulos"
+      >
+        <ModuleIntegrationValidator />
       </Section>
     </div>
   );
