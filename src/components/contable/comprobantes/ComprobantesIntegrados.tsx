@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { Plus, FileText, ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, DollarSign, Eye, CheckCircle, AlertTriangle } from "lucide-react";
+import { Plus, FileText, ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, DollarSign, Eye, CheckCircle, AlertTriangle, Download, BarChart3, TrendingUp, AlertCircle, RefreshCw, Search, Filter } from "lucide-react";
 import ComprobanteForm from "./ComprobanteForm";
 import ComprobantePreview from "./ComprobantePreview";
 import { inicializarPlanCuentas } from "@/utils/planCuentasInicial";
@@ -52,6 +53,14 @@ const ComprobantesIntegrados = () => {
     impactoBalance: 0,
     impactoResultados: 0
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [validacionPendiente, setValidacionPendiente] = useState(false);
+  const [analisisFinanciero, setAnalisisFinanciero] = useState({
+    tendenciaMensual: 0,
+    mayorMovimiento: 0,
+    promedioTransacciones: 0,
+    eficienciaIntegracion: 0
+  });
 
   const { toast } = useToast();
   const { guardarAsiento, getBalanceSheetData, getIncomeStatementData } = useContabilidadIntegration();
@@ -59,9 +68,19 @@ const ComprobantesIntegrados = () => {
   useEffect(() => {
     cargarComprobantes();
     calcularEstadisticasIntegracion();
+    calcularAnalisisFinanciero();
     // Inicializar el plan de cuentas si no existe
     inicializarPlanCuentasLocal();
+    // Validar integridad del sistema
+    validarIntegridadSistema();
   }, []);
+
+  useEffect(() => {
+    if (comprobantes.length > 0) {
+      calcularEstadisticasIntegracion();
+      calcularAnalisisFinanciero();
+    }
+  }, [comprobantes]);
 
   const cargarComprobantes = () => {
     const comprobantesGuardados = localStorage.getItem('comprobantes_integrados');
@@ -91,6 +110,134 @@ const ComprobantesIntegrados = () => {
       comprobantesIntegrados: integrados.length,
       impactoBalance,
       impactoResultados
+    });
+  };
+
+  const calcularAnalisisFinanciero = () => {
+    const comprobantesData = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
+    const autorizados = comprobantesData.filter((c: Comprobante) => c.estado === 'autorizado');
+    
+    // Tendencia mensual (comparación con mes anterior)
+    const fechaActual = new Date();
+    const mesActual = fechaActual.getMonth();
+    const yearActual = fechaActual.getFullYear();
+    
+    const movimientosMesActual = autorizados.filter((c: Comprobante) => {
+      const fechaComp = new Date(c.fecha);
+      return fechaComp.getMonth() === mesActual && fechaComp.getFullYear() === yearActual;
+    });
+    
+    const movimientosMesAnterior = autorizados.filter((c: Comprobante) => {
+      const fechaComp = new Date(c.fecha);
+      const mesAnterior = mesActual === 0 ? 11 : mesActual - 1;
+      const yearAnterior = mesActual === 0 ? yearActual - 1 : yearActual;
+      return fechaComp.getMonth() === mesAnterior && fechaComp.getFullYear() === yearAnterior;
+    });
+    
+    const totalMesActual = movimientosMesActual.reduce((sum: number, c: Comprobante) => sum + Math.abs(c.monto), 0);
+    const totalMesAnterior = movimientosMesAnterior.reduce((sum: number, c: Comprobante) => sum + Math.abs(c.monto), 0);
+    const tendenciaMensual = totalMesAnterior > 0 ? ((totalMesActual - totalMesAnterior) / totalMesAnterior) * 100 : 0;
+    
+    // Mayor movimiento
+    const mayorMovimiento = Math.max(...autorizados.map((c: Comprobante) => c.monto), 0);
+    
+    // Promedio de transacciones
+    const promedioTransacciones = autorizados.length > 0 ? 
+      autorizados.reduce((sum: number, c: Comprobante) => sum + c.monto, 0) / autorizados.length : 0;
+    
+    // Eficiencia de integración
+    const totalComprobantes = comprobantesData.length;
+    const integrados = comprobantesData.filter((c: Comprobante) => c.asientoGenerado).length;
+    const eficienciaIntegracion = totalComprobantes > 0 ? (integrados / totalComprobantes) * 100 : 0;
+    
+    setAnalisisFinanciero({
+      tendenciaMensual,
+      mayorMovimiento,
+      promedioTransacciones,
+      eficienciaIntegracion
+    });
+  };
+
+  const validarIntegridadSistema = () => {
+    const comprobantesData = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
+    const asientosData = JSON.parse(localStorage.getItem('asientosContables') || '[]');
+    
+    // Verificar que cada comprobante autorizado tenga su asiento
+    const comprobantesAutorizados = comprobantesData.filter((c: Comprobante) => c.estado === 'autorizado');
+    const comprobantesHuerfanos = comprobantesAutorizados.filter((c: Comprobante) => 
+      !c.asientoGenerado || !asientosData.find((a: any) => a.comprobanteId === c.id)
+    );
+    
+    if (comprobantesHuerfanos.length > 0) {
+      setValidacionPendiente(true);
+      toast({
+        title: "Validación del Sistema",
+        description: `Se encontraron ${comprobantesHuerfanos.length} comprobantes sin integración contable`,
+        variant: "destructive"
+      });
+    } else {
+      setValidacionPendiente(false);
+    }
+  };
+
+  const exportarComprobantes = () => {
+    try {
+      const dataExport = {
+        fecha_exportacion: new Date().toISOString(),
+        total_comprobantes: comprobantes.length,
+        estadisticas: estadisticasIntegracion,
+        analisis_financiero: analisisFinanciero,
+        comprobantes: comprobantesFiltrados.map(c => ({
+          ...c,
+          asiento_contable: c.cuentas
+        }))
+      };
+      
+      const dataStr = JSON.stringify(dataExport, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `comprobantes_integrados_${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      toast({
+        title: "Exportación Exitosa",
+        description: "Los comprobantes han sido exportados correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error de Exportación",
+        description: "No se pudo exportar los comprobantes",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const regenerarIntegracion = () => {
+    const comprobantesData = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
+    let regenerados = 0;
+    
+    const comprobantesActualizados = comprobantesData.map((c: Comprobante) => {
+      if (c.estado === 'autorizado' && !c.asientoGenerado) {
+        const asientoGenerado = generarAsientoContableIntegrado(c);
+        if (asientoGenerado) {
+          regenerados++;
+          return { ...c, asientoGenerado: true, asientoId: asientoGenerado.id };
+        }
+      }
+      return c;
+    });
+    
+    setComprobantes(comprobantesActualizados);
+    localStorage.setItem('comprobantes_integrados', JSON.stringify(comprobantesActualizados));
+    calcularEstadisticasIntegracion();
+    
+    toast({
+      title: "Integración Regenerada",
+      description: `Se regeneraron ${regenerados} asientos contables`,
     });
   };
 
@@ -402,7 +549,12 @@ const ComprobantesIntegrados = () => {
   const comprobantesFiltrados = comprobantes.filter(c => {
     const cumpleTipo = filtroTipo === 'todos' || c.tipo === filtroTipo;
     const cumpleEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
-    return cumpleTipo && cumpleEstado;
+    const cumpleBusqueda = searchTerm === '' || 
+      c.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.beneficiario.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return cumpleTipo && cumpleEstado && cumpleBusqueda;
   });
 
   const getTipoIcon = (tipo: string) => {
@@ -459,7 +611,84 @@ const ComprobantesIntegrados = () => {
             <ArrowRightLeft className="w-4 h-4 mr-2" />
             Traspaso
           </Button>
+          <Button
+            onClick={exportarComprobantes}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
+          </Button>
+          {validacionPendiente && (
+            <Button
+              onClick={regenerarIntegracion}
+              variant="outline"
+              className="border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Regenerar
+            </Button>
+          )}
         </div>
+      </div>
+
+      {/* Análisis Financiero Avanzado */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tendencia Mensual</CardTitle>
+            <TrendingUp className={`h-4 w-4 ${analisisFinanciero.tendenciaMensual >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${analisisFinanciero.tendenciaMensual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {analisisFinanciero.tendenciaMensual >= 0 ? '+' : ''}{analisisFinanciero.tendenciaMensual.toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Comparado con mes anterior
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Mayor Movimiento</CardTitle>
+            <BarChart3 className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">Bs. {analisisFinanciero.mayorMovimiento.toFixed(0)}</div>
+            <p className="text-xs text-muted-foreground">
+              Transacción más alta registrada
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Promedio</CardTitle>
+            <DollarSign className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">Bs. {analisisFinanciero.promedioTransacciones.toFixed(0)}</div>
+            <p className="text-xs text-muted-foreground">
+              Por transacción autorizada
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Eficiencia</CardTitle>
+            <CheckCircle className={`h-4 w-4 ${analisisFinanciero.eficienciaIntegracion >= 95 ? 'text-green-600' : analisisFinanciero.eficienciaIntegracion >= 80 ? 'text-yellow-600' : 'text-red-600'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${analisisFinanciero.eficienciaIntegracion >= 95 ? 'text-green-600' : analisisFinanciero.eficienciaIntegracion >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
+              {analisisFinanciero.eficienciaIntegracion.toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Integración automática
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Métricas de Integración */}
@@ -551,8 +780,42 @@ const ComprobantesIntegrados = () => {
         </CardContent>
       </Card>
 
-      {/* Filtros */}
-      <div className="flex gap-4">
+      {/* Alertas del Sistema */}
+      {validacionPendiente && (
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <div>
+                <h3 className="font-semibold text-orange-800">Validación Pendiente</h3>
+                <p className="text-sm text-orange-700">
+                  Se detectaron comprobantes autorizados sin integración contable. 
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-orange-600 underline ml-1"
+                    onClick={regenerarIntegracion}
+                  >
+                    Regenerar integración
+                  </Button>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filtros y Búsqueda */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar por número, concepto o beneficiario..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
         <Select value={filtroTipo} onValueChange={setFiltroTipo}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filtrar por tipo" />
