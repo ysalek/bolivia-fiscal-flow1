@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { calculateMetricAlert, getAlertColor, generateSystemAlerts } from '@/utils/metricsUtils';
 import { 
   Activity, 
   Database, 
@@ -10,7 +11,8 @@ import {
   TrendingUp, 
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 interface HealthMetric {
@@ -33,11 +35,14 @@ export const SystemHealth: React.FC = () => {
     try {
       const dbData = localStorage.getItem('asientosContables');
       const entries = dbData ? JSON.parse(dbData).length : 0;
+      const dbUsage = entries > 0 ? Math.min(100, (entries / 1000) * 100) : 10; // Asumiendo 1000 como máximo
+      const dbAlert = calculateMetricAlert(dbUsage);
+      
       metrics.push({
         name: 'Base de Datos',
-        value: entries > 0 ? 100 : 50,
-        status: entries > 0 ? 'good' : 'warning',
-        description: `${entries} asientos contables registrados`,
+        value: dbUsage,
+        status: dbAlert.level === 'normal' ? 'good' : dbAlert.level === 'warning' ? 'warning' : 'critical',
+        description: `${entries} asientos contables (${dbUsage.toFixed(1)}% capacidad)`,
         lastCheck: new Date()
       });
     } catch {
@@ -66,21 +71,25 @@ export const SystemHealth: React.FC = () => {
       console.log('Métricas de memoria no disponibles en este navegador');
     }
     
+    const memoryAlert = calculateMetricAlert(memoryUsage);
     metrics.push({
       name: 'Memoria',
-      value: Math.max(0, 100 - memoryUsage),
-      status: memoryUsage < 70 ? 'good' : memoryUsage < 85 ? 'warning' : 'critical',
+      value: memoryUsage,
+      status: memoryAlert.level === 'normal' ? 'good' : memoryAlert.level === 'warning' ? 'warning' : 'critical',
       description: memoryDescription,
       lastCheck: new Date()
     });
 
-    // Security Status
+    // Security Status - Simulando un porcentaje de configuración de seguridad
     const hasSecureConfig = localStorage.getItem('configuracionTributaria') !== null;
+    const securityScore = hasSecureConfig ? 85 : 70;
+    const securityAlert = calculateMetricAlert(securityScore);
+    
     metrics.push({
       name: 'Seguridad',
-      value: hasSecureConfig ? 85 : 70,
-      status: hasSecureConfig ? 'good' : 'warning',
-      description: hasSecureConfig ? 'Configuración segura' : 'Revisar configuración de seguridad',
+      value: securityScore,
+      status: securityAlert.level === 'normal' ? 'good' : securityAlert.level === 'warning' ? 'warning' : 'critical',
+      description: hasSecureConfig ? `Configuración segura (${securityScore}%)` : `Revisar configuración (${securityScore}%)`,
       lastCheck: new Date()
     });
 
@@ -93,16 +102,17 @@ export const SystemHealth: React.FC = () => {
         // Usar tiempo de carga de la página como métrica base
         const loadTime = Date.now() - performance.timeOrigin;
         performanceScore = Math.max(0, Math.min(100, 100 - Math.floor(loadTime / 1000)));
-        performanceDescription = `Carga de página: ${Math.round(loadTime)}ms`;
+        performanceDescription = `Tiempo de respuesta: ${Math.round(loadTime)}ms`;
       }
     } catch (error) {
       console.log('Métricas de rendimiento no disponibles');
     }
     
+    const performanceAlert = calculateMetricAlert(performanceScore);
     metrics.push({
       name: 'Rendimiento',
       value: performanceScore,
-      status: performanceScore > 80 ? 'good' : performanceScore > 60 ? 'warning' : 'critical',
+      status: performanceAlert.level === 'normal' ? 'good' : performanceAlert.level === 'warning' ? 'warning' : 'critical',
       description: performanceDescription,
       lastCheck: new Date()
     });
@@ -122,10 +132,11 @@ export const SystemHealth: React.FC = () => {
       integrityScore = 0;
     }
 
+    const integrityAlert = calculateMetricAlert(integrityScore);
     metrics.push({
       name: 'Integridad de Datos',
       value: integrityScore,
-      status: integrityScore > 95 ? 'good' : integrityScore > 80 ? 'warning' : 'critical',
+      status: integrityAlert.level === 'normal' ? 'good' : integrityAlert.level === 'warning' ? 'warning' : 'critical',
       description: `${Math.round(integrityScore)}% de datos íntegros`,
       lastCheck: new Date()
     });
@@ -136,13 +147,24 @@ export const SystemHealth: React.FC = () => {
     const avgHealth = metrics.reduce((sum, metric) => sum + metric.value, 0) / metrics.length;
     setOverallHealth(Math.round(avgHealth));
 
-    // Show toast if there are critical issues
+    // Generar alertas del sistema usando la nueva utilidad
+    const systemAlerts = generateSystemAlerts(metrics.map(m => ({ name: m.name, value: m.value })));
+    
+    // Show toast for warnings (80%+) and critical issues (95%+)
+    const warningIssues = metrics.filter(m => m.status === 'warning').length;
     const criticalIssues = metrics.filter(m => m.status === 'critical').length;
+    
     if (criticalIssues > 0) {
       toast({
-        title: "Problemas Críticos Detectados",
-        description: `${criticalIssues} métricas en estado crítico`,
+        title: "⚠️ Problemas Críticos Detectados",
+        description: `${criticalIssues} métricas en estado crítico (≥95%)`,
         variant: "destructive"
+      });
+    } else if (warningIssues > 0) {
+      toast({
+        title: "⚡ Alertas Leves Detectadas",
+        description: `${warningIssues} métricas requieren atención (≥80%)`,
+        variant: "default"
       });
     }
   };
@@ -229,10 +251,29 @@ export const SystemHealth: React.FC = () => {
                     {Math.round(metric.value)}%
                   </span>
                 </div>
-                <Progress value={metric.value} className="h-1" />
+                <Progress 
+                  value={metric.value} 
+                  className={`h-2 ${metric.status === 'warning' ? 'bg-warning/20' : metric.status === 'critical' ? 'bg-destructive/20' : ''}`}
+                />
                 <p className="text-xs text-muted-foreground">
                   {metric.description}
                 </p>
+                
+                {/* Mostrar alerta si está por encima del 80% */}
+                {metric.status === 'warning' && (
+                  <div className="flex items-center gap-1 text-xs text-warning bg-warning/10 p-2 rounded border border-warning/20">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>Alerta leve: Revisar este recurso</span>
+                  </div>
+                )}
+                
+                {metric.status === 'critical' && (
+                  <div className="flex items-center gap-1 text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Estado crítico: Acción inmediata requerida</span>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>

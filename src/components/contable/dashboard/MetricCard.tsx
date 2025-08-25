@@ -1,6 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LucideIcon, TrendingUp, TrendingDown, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { calculateMetricAlert, getAlertColor } from "@/utils/metricsUtils";
 
 interface MetricCardProps {
   title: string;
@@ -9,34 +11,77 @@ interface MetricCardProps {
   icon: LucideIcon;
   trend: "up" | "down" | "neutral";
   color: string;
+  percentage?: number; // Para calcular alertas automáticamente
+  showAlert?: boolean; // Para mostrar alertas
 }
 
 const getTrendIcon = (trend: string) => {
     switch (trend) {
       case "up":
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
+        return <TrendingUp className="w-4 h-4 text-success" />;
       case "down":
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
+        return <TrendingDown className="w-4 h-4 text-destructive" />;
       default:
         return null;
     }
 };
 
-const MetricCard = ({ title, value, description, icon: Icon, trend, color }: MetricCardProps) => {
+const MetricCard = ({ 
+  title, 
+  value, 
+  description, 
+  icon: Icon, 
+  trend, 
+  color,
+  percentage,
+  showAlert = true 
+}: MetricCardProps) => {
+  
+  // Calcular alerta si se proporciona porcentaje
+  const alert = percentage !== undefined ? calculateMetricAlert(percentage) : null;
+  const shouldShowAlert = showAlert && alert && alert.level !== 'normal';
+  
+  const getAlertIcon = () => {
+    if (!alert) return null;
+    switch (alert.level) {
+      case 'critical': return <AlertTriangle className="w-4 h-4" />;
+      case 'warning': return <AlertCircle className="w-4 h-4" />;
+      default: return <CheckCircle className="w-4 h-4" />;
+    }
+  };
+
   return (
-    <Card>
+    <Card className={shouldShowAlert ? getAlertColor(alert!.level) : ''}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className={`w-5 h-5 ${color}`} />
+        <div className="flex items-center gap-2">
+          <Icon className={`w-5 h-5 ${color}`} />
+          {shouldShowAlert && (
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${getAlertColor(alert!.level)} border-current`}
+            >
+              {getAlertIcon()}
+              <span className="ml-1">
+                {alert!.level === 'warning' ? 'Leve' : 'Crítico'}
+              </span>
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold mb-1">{value}</div>
         <div className="flex items-center gap-2">
           {getTrendIcon(trend)}
-          <p className="text-xs text-gray-600">{description}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
+        {shouldShowAlert && (
+          <div className={`text-xs mt-2 font-medium ${getAlertColor(alert!.level)}`}>
+            ⚠️ {alert!.message} ({percentage}%)
+          </div>
+        )}
       </CardContent>
     </Card>
   );

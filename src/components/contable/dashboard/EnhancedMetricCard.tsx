@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LucideIcon, TrendingUp, TrendingDown, Minus, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { calculateMetricAlert, getAlertColor } from "@/utils/metricsUtils";
 
 interface EnhancedMetricCardProps {
   title: string;
@@ -11,6 +13,8 @@ interface EnhancedMetricCardProps {
   isDragging?: boolean;
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  percentage?: number; // Para calcular alertas automáticamente
+  showAlert?: boolean; // Para mostrar alertas
 }
 
 const EnhancedMetricCard = ({ 
@@ -22,8 +26,15 @@ const EnhancedMetricCard = ({
   color,
   isDragging = false,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  percentage,
+  showAlert = true
 }: EnhancedMetricCardProps) => {
+  
+  // Calcular alerta si se proporciona porcentaje
+  const alert = percentage !== undefined ? calculateMetricAlert(percentage) : null;
+  const shouldShowAlert = showAlert && alert && alert.level !== 'normal';
+  
   const getTrendIcon = () => {
     switch (trend) {
       case "up": return <TrendingUp className="w-4 h-4 text-success" />;
@@ -40,18 +51,42 @@ const EnhancedMetricCard = ({
     }
   };
 
+  const getAlertIcon = () => {
+    if (!alert) return null;
+    switch (alert.level) {
+      case 'critical': return <AlertTriangle className="w-4 h-4" />;
+      case 'warning': return <AlertCircle className="w-4 h-4" />;
+      default: return <CheckCircle className="w-4 h-4" />;
+    }
+  };
+
   return (
     <Card 
       className={`
         group cursor-grab active:cursor-grabbing transition-all duration-200 
         hover:shadow-elevated hover:-translate-y-1 bg-gradient-card border-0 shadow-kpi
         ${isDragging ? 'opacity-50 scale-95' : ''}
+        ${shouldShowAlert ? getAlertColor(alert!.level) : ''}
       `}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
       <CardContent className="p-6">
+        {shouldShowAlert && (
+          <div className="mb-3">
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${getAlertColor(alert!.level)} border-current`}
+            >
+              {getAlertIcon()}
+              <span className="ml-1">
+                {alert!.level === 'warning' ? 'Alerta Leve' : 'Crítico'} - {percentage}%
+              </span>
+            </Badge>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className={`
@@ -72,6 +107,11 @@ const EnhancedMetricCard = ({
             <p className={`text-sm font-medium ${getTrendColor()}`}>
               {description}
             </p>
+            {shouldShowAlert && (
+              <p className={`text-xs mt-1 ${getAlertColor(alert!.level)}`}>
+                {alert!.message}
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
