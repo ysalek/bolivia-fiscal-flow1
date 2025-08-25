@@ -54,8 +54,7 @@ const NotificationCenter = () => {
             label: 'Ver Productos',
             onClick: () => {
               // Navegar a inventario donde están los productos
-              const event = new CustomEvent('navigate-to-module', { detail: 'inventario' });
-              window.dispatchEvent(event);
+              window.location.hash = '#inventario';
             }
           },
           module: 'inventario'
@@ -77,8 +76,7 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Facturas',
             onClick: () => {
-              const event = new CustomEvent('navigate-to-module', { detail: 'facturacion' });
-              window.dispatchEvent(event);
+              window.location.hash = '#facturacion';
             }
           },
           module: 'facturacion'
@@ -103,8 +101,7 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Cuentas',
             onClick: () => {
-              const event = new CustomEvent('navigate-to-module', { detail: 'cuentas-cobrar-pagar' });
-              window.dispatchEvent(event);
+              window.location.hash = '#cuentas-cobrar-pagar';
             }
           },
           module: 'cobranzas'
@@ -139,8 +136,7 @@ const NotificationCenter = () => {
           action: {
             label: 'Ver Balance',
             onClick: () => {
-              const event = new CustomEvent('navigate-to-module', { detail: 'balance-comprobacion' });
-              window.dispatchEvent(event);
+              window.location.hash = '#balance-comprobacion';
             }
           },
             module: 'contabilidad'
@@ -171,8 +167,7 @@ const NotificationCenter = () => {
           action: {
             label: 'Crear Backup',
             onClick: () => {
-              const event = new CustomEvent('navigate-to-module', { detail: 'backup' });
-              window.dispatchEvent(event);
+              window.location.hash = '#backup';
             }
           },
           module: 'backup'
@@ -192,8 +187,7 @@ const NotificationCenter = () => {
             action: {
               label: 'Crear Backup',
               onClick: () => {
-                const event = new CustomEvent('navigate-to-module', { detail: 'backup' });
-                window.dispatchEvent(event);
+                window.location.hash = '#backup';
               }
             },
             module: 'backup'
