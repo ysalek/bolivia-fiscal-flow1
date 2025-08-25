@@ -50,15 +50,27 @@ export const SystemHealth: React.FC = () => {
       });
     }
 
-    // Memory Usage
-    const memoryUsage = (performance as any).memory ? 
-      Math.round(((performance as any).memory.usedJSHeapSize / (performance as any).memory.totalJSHeapSize) * 100) : 75;
+    // Memory Usage (solo disponible en navegadores Chromium)
+    let memoryUsage = 50; // valor por defecto
+    let memoryDescription = 'Información de memoria no disponible';
+    
+    try {
+      if ('memory' in performance && (performance as any).memory) {
+        const memory = (performance as any).memory;
+        if (memory.usedJSHeapSize && memory.totalJSHeapSize) {
+          memoryUsage = Math.round((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100);
+          memoryDescription = `${memoryUsage}% de memoria utilizada`;
+        }
+      }
+    } catch (error) {
+      console.log('Métricas de memoria no disponibles en este navegador');
+    }
     
     metrics.push({
       name: 'Memoria',
-      value: 100 - memoryUsage,
+      value: Math.max(0, 100 - memoryUsage),
       status: memoryUsage < 70 ? 'good' : memoryUsage < 85 ? 'warning' : 'critical',
-      description: `${memoryUsage}% de memoria utilizada`,
+      description: memoryDescription,
       lastCheck: new Date()
     });
 
@@ -72,13 +84,26 @@ export const SystemHealth: React.FC = () => {
       lastCheck: new Date()
     });
 
-    // Performance
-    const performanceScore = Math.max(0, 100 - (performance.now() / 100));
+    // Performance (usar navegación timing si está disponible)
+    let performanceScore = 85; // valor por defecto
+    let performanceDescription = 'Rendimiento estimado';
+    
+    try {
+      if ('navigation' in performance && performance.navigation) {
+        // Usar tiempo de carga de la página como métrica base
+        const loadTime = Date.now() - performance.timeOrigin;
+        performanceScore = Math.max(0, Math.min(100, 100 - Math.floor(loadTime / 1000)));
+        performanceDescription = `Carga de página: ${Math.round(loadTime)}ms`;
+      }
+    } catch (error) {
+      console.log('Métricas de rendimiento no disponibles');
+    }
+    
     metrics.push({
       name: 'Rendimiento',
-      value: Math.min(100, performanceScore),
+      value: performanceScore,
       status: performanceScore > 80 ? 'good' : performanceScore > 60 ? 'warning' : 'critical',
-      description: `Tiempo de respuesta: ${Math.round(performance.now())}ms`,
+      description: performanceDescription,
       lastCheck: new Date()
     });
 
