@@ -12,6 +12,8 @@ import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from './dashb
 import { inicializarSistemaCompleto } from '../../utils/inicializarSistema';
 import { useToast } from '@/hooks/use-toast';
 import ModuleIntegrationValidator from './integration/ModuleIntegrationValidator';
+import SystemValidator from './validation/SystemValidator';
+import SystemHealth from './dashboard/SystemHealth';
 
 const Dashboard = () => {
   const [fechaActual] = useState(new Date().toLocaleDateString('es-BO', {
@@ -339,6 +341,22 @@ const Dashboard = () => {
         subtitle="Verificación automática de la conectividad entre módulos"
       >
         <ModuleIntegrationValidator />
+      </Section>
+
+      {/* Validador del Sistema */}
+      <Section
+        title="Validación Integral del Sistema"
+        subtitle="Análisis completo de la salud y seguridad del sistema contable"
+      >
+        <SystemValidator />
+      </Section>
+
+      {/* Salud del Sistema */}
+      <Section
+        title="Monitoreo de Salud del Sistema"
+        subtitle="Métricas en tiempo real del rendimiento y estado operacional"
+      >
+        <SystemHealth />
       </Section>
     </div>
   );
