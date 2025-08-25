@@ -44,6 +44,16 @@ class NormativaService {
         organismo: 'SIN'
       },
       {
+        codigo: 'RND-102400000021',
+        titulo: 'Nueva Normativa de Bancarización 2025',
+        descripcion: 'Requisitos de bancarización para transacciones comerciales y tributarias en gestión 2025',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2024-12-20',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
         codigo: 'RND-102400000003',
         titulo: 'Facturación Electrónica - Octavo Grupo',
         descripcion: 'Obligatoriedad de facturación electrónica para el octavo grupo de contribuyentes',
@@ -60,6 +70,46 @@ class NormativaService {
         fechaVigencia: '2024-06-01',
         fechaActualizacion: '2024-05-30',
         categoria: 'facturacion',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'RC-IVA-PROFESIONALES',
+        titulo: 'RC-IVA Profesionales Independientes',
+        descripcion: 'Normativa específica para retenciones de RC-IVA aplicables a profesionales independientes',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-15',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'FACILIDADES-PAGO-2025',
+        titulo: 'Facilidades de Pago Actualizadas 2025',
+        descripcion: 'Marco normativo actualizado para facilidades de pago tributario, incluyendo oportunidades para contribuyentes con planes incumplidos',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-10',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'ARREPENTIMIENTO-EFICAZ',
+        titulo: 'Arrepentimiento Eficaz',
+        descripcion: 'Mecanismo para que contribuyentes puedan regularizar voluntariamente sus obligaciones tributarias con beneficios',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-08',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'LEY-1448',
+        titulo: 'Ley de Fortalecimiento de Ingresos',
+        descripcion: 'Marco legal para el fortalecimiento de los ingresos del Estado y medidas tributarias especiales',
+        fechaVigencia: '2024-01-01',
+        fechaActualizacion: '2024-12-01',
+        categoria: 'tributaria',
         estado: 'vigente',
         organismo: 'SIN'
       },
@@ -92,6 +142,16 @@ class NormativaService {
         categoria: 'tributaria',
         estado: 'vigente',
         organismo: 'SIN'
+      },
+      {
+        codigo: 'SALARIO-MINIMO-2025',
+        titulo: 'Incremento Salarial y SMN 2025',
+        descripcion: 'D.S. N° 5383 - Incremento mínimo del 5% sobre salario básico para sector privado',
+        fechaVigencia: '2025-05-01',
+        fechaActualizacion: '2025-05-15',
+        categoria: 'laboral',
+        estado: 'vigente',
+        organismo: 'Ministerio_Trabajo'
       }
     ];
   }
@@ -99,6 +159,7 @@ class NormativaService {
   private inicializarRequisitos(): void {
     const hoy = new Date();
     const proximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 20);
+    const proximoTrimestre = new Date(hoy.getFullYear(), hoy.getMonth() + 3, 31);
     
     this.requisitos = [
       {
@@ -107,7 +168,7 @@ class NormativaService {
         obligatorio: true,
         frecuencia: 'mensual',
         fechaLimite: proximoMes.toISOString().slice(0, 10),
-        sancion: 'Multa del 10% más intereses',
+        sancion: 'Multa del 10% más intereses por mora',
         estado: 'pendiente'
       },
       {
@@ -116,7 +177,7 @@ class NormativaService {
         obligatorio: true,
         frecuencia: 'mensual',
         fechaLimite: proximoMes.toISOString().slice(0, 10),
-        sancion: 'Multa del 10% más intereses',
+        sancion: 'Multa del 10% más intereses por mora',
         estado: 'pendiente'
       },
       {
@@ -125,16 +186,42 @@ class NormativaService {
         obligatorio: true,
         frecuencia: 'mensual',
         fechaLimite: proximoMes.toISOString().slice(0, 10),
-        sancion: 'Multa del 20% más intereses',
+        sancion: 'Multa del 20% más intereses por mora',
+        estado: 'pendiente'
+      },
+      {
+        codigo: 'RC-IT-MENSUAL',
+        descripcion: 'Declaración de retenciones RC-IT (Formulario 610)',
+        obligatorio: true,
+        frecuencia: 'mensual',
+        fechaLimite: proximoMes.toISOString().slice(0, 10),
+        sancion: 'Multa del 20% más intereses por mora',
+        estado: 'pendiente'
+      },
+      {
+        codigo: 'IUE-TRIMESTRAL',
+        descripcion: 'Declaración jurada trimestral IUE (Formulario 500)',
+        obligatorio: true,
+        frecuencia: 'trimestral',
+        fechaLimite: proximoTrimestre.toISOString().slice(0, 10),
+        sancion: 'Multa del 15% más intereses por mora',
         estado: 'pendiente'
       },
       {
         codigo: 'ESTADOS-FINANCIEROS',
-        descripcion: 'Presentación de Estados Financieros anuales',
+        descripcion: 'Presentación de Estados Financieros anuales con prórroga',
         obligatorio: true,
         frecuencia: 'anual',
         fechaLimite: '2025-07-21',
         sancion: 'Multa progresiva según días de atraso',
+        estado: 'pendiente'
+      },
+      {
+        codigo: 'BANCARIZACION-2025',
+        descripcion: 'Cumplimiento de requisitos de bancarización según RND-102400000021',
+        obligatorio: true,
+        frecuencia: 'mensual',
+        sancion: 'Rechazo de gastos y costos no bancarizados',
         estado: 'pendiente'
       },
       {
@@ -144,6 +231,24 @@ class NormativaService {
         frecuencia: 'eventual',
         sancion: 'Suspensión de actividades',
         estado: 'cumplido'
+      },
+      {
+        codigo: 'ACTUALIZACION-PADRON',
+        descripcion: 'Actualización anual de datos en padrón de contribuyentes',
+        obligatorio: true,
+        frecuencia: 'anual',
+        fechaLimite: '2025-03-31',
+        sancion: 'Multa fija y suspensión temporal',
+        estado: 'pendiente'
+      },
+      {
+        codigo: 'LIBROS-CONTABLES',
+        descripcion: 'Presentación y legalización de libros contables obligatorios',
+        obligatorio: true,
+        frecuencia: 'anual',
+        fechaLimite: '2025-03-31',
+        sancion: 'Multa progresiva según días de atraso',
+        estado: 'pendiente'
       }
     ];
   }
