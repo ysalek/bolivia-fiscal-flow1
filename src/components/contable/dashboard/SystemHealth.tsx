@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { calculateMetricAlert, getAlertColor, generateSystemAlerts } from '@/utils/metricsUtils';
+import { calculateMetricAlert, getAlertColor } from '@/utils/metricsUtils';
 import { 
   Activity, 
   Database, 
@@ -26,7 +25,6 @@ interface HealthMetric {
 export const SystemHealth: React.FC = () => {
   const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
   const [overallHealth, setOverallHealth] = useState<number>(100);
-  const { toast } = useToast();
 
   const checkSystemHealth = async () => {
     const metrics: HealthMetric[] = [];
@@ -147,26 +145,23 @@ export const SystemHealth: React.FC = () => {
     const avgHealth = metrics.reduce((sum, metric) => sum + metric.value, 0) / metrics.length;
     setOverallHealth(Math.round(avgHealth));
 
-    // Generar alertas del sistema usando la nueva utilidad
-    const systemAlerts = generateSystemAlerts(metrics.map(m => ({ name: m.name, value: m.value })));
+    // Comentado: Toast notifications removidas por solicitud del usuario
+    // const warningIssues = metrics.filter(m => m.status === 'warning').length;
+    // const criticalIssues = metrics.filter(m => m.status === 'critical').length;
     
-    // Show toast for warnings (80%+) and critical issues (95%+)
-    const warningIssues = metrics.filter(m => m.status === 'warning').length;
-    const criticalIssues = metrics.filter(m => m.status === 'critical').length;
-    
-    if (criticalIssues > 0) {
-      toast({
-        title: "⚠️ Problemas Críticos Detectados",
-        description: `${criticalIssues} métricas en estado crítico (≥95%)`,
-        variant: "destructive"
-      });
-    } else if (warningIssues > 0) {
-      toast({
-        title: "⚡ Alertas Leves Detectadas",
-        description: `${warningIssues} métricas requieren atención (≥80%)`,
-        variant: "default"
-      });
-    }
+    // if (criticalIssues > 0) {
+    //   toast({
+    //     title: "⚠️ Problemas Críticos Detectados",
+    //     description: `${criticalIssues} métricas en estado crítico (≥95%)`,
+    //     variant: "destructive"
+    //   });
+    // } else if (warningIssues > 0) {
+    //   toast({
+    //     title: "⚡ Alertas Leves Detectadas",
+    //     description: `${warningIssues} métricas requieren atención (≥80%)`,
+    //     variant: "default"
+    //   });
+    // }
   };
 
   const getStatusColor = (status: string) => {

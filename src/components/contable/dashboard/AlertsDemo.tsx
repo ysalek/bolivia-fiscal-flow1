@@ -72,6 +72,8 @@ const AlertsDemo: React.FC = () => {
               • <Badge variant="outline" className="text-warning border-warning">Alerta Leve</Badge> cuando las métricas superan el <strong>80%</strong>
               <br />
               • <Badge variant="outline" className="text-destructive border-destructive">Estado Crítico</Badge> cuando las métricas superan el <strong>95%</strong>
+              <br />
+              • <span className="text-sm text-muted-foreground">Notificaciones flotantes deshabilitadas</span>
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -149,10 +151,10 @@ const AlertsDemo: React.FC = () => {
             <h4 className="font-semibold mb-2">Características del Sistema:</h4>
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li>• Monitoreo automático cada 30 segundos</li>
-              <li>• Notificaciones toast para alertas leves y críticas</li>
               <li>• Indicadores visuales en tiempo real</li>
               <li>• Colores y bordes adaptativos según el nivel de alerta</li>
               <li>• Mensajes descriptivos para cada tipo de alerta</li>
+              <li>• Sin notificaciones flotantes (removidas por solicitud)</li>
             </ul>
           </div>
         </CardContent>
