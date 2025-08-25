@@ -1,72 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, Edit, Trash2, Eye, Calendar, DollarSign, Users, UserPlus } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useSupabaseEmpleados, EmpleadoSupabase } from "@/hooks/useSupabaseEmpleados";
 import { 
-  Users, 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  UserPlus, 
-  Calendar,
-  Phone,
-  Mail,
-  MapPin,
-  Briefcase,
-  DollarSign,
-  FileText,
-  Award,
-  Clock
-} from 'lucide-react';
-import { 
-  Empleado, 
-  empleadosIniciales, 
   cargosPorDepartamento, 
   beneficiosDisponibles,
-  calcularAntiguedad,
-  calcularEdad,
-  generarNumeroEmpleado,
   validarCI,
   validarEmail
-} from './EmpleadosData';
+} from "./EmpleadosData";
 
 const EmpleadosModule: React.FC = () => {
-  const [empleados, setEmpleados] = useState<Empleado[]>([]);
-  const [empleadoForm, setEmpleadoForm] = useState<Partial<Empleado>>({});
+  const { empleados, loading, crearEmpleado, actualizarEmpleado, eliminarEmpleado, generarNumeroEmpleado } = useSupabaseEmpleados();
+  const [empleadoForm, setEmpleadoForm] = useState<Partial<EmpleadoSupabase>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('lista');
-  const [selectedEmpleado, setSelectedEmpleado] = useState<Empleado | null>(null);
   const { toast } = useToast();
 
-  // Cargar empleados del localStorage
-  useEffect(() => {
-    const data = localStorage.getItem('empleados');
-    if (data) {
-      setEmpleados(JSON.parse(data));
-    } else {
-      // Usar datos iniciales importados
-      setEmpleados(empleadosIniciales);
-      localStorage.setItem('empleados', JSON.stringify(empleadosIniciales));
-    }
-  }, []);
-
-  const saveEmpleados = (newEmpleados: Empleado[]) => {
-    setEmpleados(newEmpleados);
-    localStorage.setItem('empleados', JSON.stringify(newEmpleados));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!empleadoForm.nombres || !empleadoForm.apellidos || !empleadoForm.ci || !empleadoForm.cargo) {
@@ -109,91 +70,70 @@ const EmpleadosModule: React.FC = () => {
       return;
     }
 
-    const now = new Date().toISOString();
-    
-    if (editingId) {
-      // Actualizar empleado
-      const updatedEmpleados = empleados.map(emp => 
-        emp.id === editingId 
-          ? { ...emp, ...empleadoForm, updatedAt: now } as Empleado
-          : emp
-      );
-      saveEmpleados(updatedEmpleados);
-      toast({
-        title: "Empleado actualizado",
-        description: "Los datos del empleado han sido actualizados exitosamente"
-      });
-    } else {
-      // Crear nuevo empleado usando utilidades importadas
-      const numeroEmpleado = generarNumeroEmpleado(empleados);
-      const newEmpleado: Empleado = {
-        id: Date.now().toString(),
-        numeroEmpleado,
-        ci: empleadoForm.ci || '',
-        nombres: empleadoForm.nombres || '',
-        apellidos: empleadoForm.apellidos || '',
-        fechaNacimiento: empleadoForm.fechaNacimiento || '',
-        telefono: empleadoForm.telefono || '',
-        email: empleadoForm.email || '',
-        direccion: empleadoForm.direccion || '',
-        cargo: empleadoForm.cargo || '',
-        departamento: empleadoForm.departamento || '',
-        fechaIngreso: empleadoForm.fechaIngreso || new Date().toISOString().split('T')[0],
-        salarioBase: empleadoForm.salarioBase || 0,
-        estado: empleadoForm.estado || 'activo',
-        tipoContrato: empleadoForm.tipoContrato || 'indefinido',
-        cuentaBancaria: empleadoForm.cuentaBancaria,
-        contactoEmergencia: empleadoForm.contactoEmergencia,
-        beneficios: empleadoForm.beneficios || [],
-        createdAt: now,
-        updatedAt: now
-      };
-      
-      saveEmpleados([...empleados, newEmpleado]);
-      toast({
-        title: "Empleado registrado",
-        description: `Empleado ${newEmpleado.nombres} ${newEmpleado.apellidos} registrado exitosamente`
-      });
-    }
+    try {
+      if (editingId) {
+        // Actualizar empleado
+        await actualizarEmpleado(editingId, empleadoForm);
+      } else {
+        // Crear nuevo empleado
+        const numeroEmpleado = generarNumeroEmpleado();
+        const newEmpleadoData = {
+          numero_empleado: numeroEmpleado,
+          ci: empleadoForm.ci,
+          nombres: empleadoForm.nombres,
+          apellidos: empleadoForm.apellidos,
+          fecha_nacimiento: empleadoForm.fecha_nacimiento || '',
+          genero: empleadoForm.genero || null,
+          estado_civil: empleadoForm.estado_civil || null,
+          telefono: empleadoForm.telefono || null,
+          email: empleadoForm.email || null,
+          direccion: empleadoForm.direccion || null,
+          cargo: empleadoForm.cargo,
+          departamento: empleadoForm.departamento || '',
+          fecha_ingreso: empleadoForm.fecha_ingreso || new Date().toISOString().split('T')[0],
+          salario_base: empleadoForm.salario_base || 0,
+          estado: empleadoForm.estado || 'activo',
+          beneficios: empleadoForm.beneficios || []
+        };
+        
+        await crearEmpleado(newEmpleadoData);
+      }
 
-    setEmpleadoForm({});
-    setEditingId(null);
-    setIsDialogOpen(false);
+      setEmpleadoForm({});
+      setEditingId(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
-  const handleEdit = (empleado: Empleado) => {
+  const handleEdit = (empleado: EmpleadoSupabase) => {
     setEmpleadoForm(empleado);
     setEditingId(empleado.id);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const empleado = empleados.find(emp => emp.id === id);
     if (empleado && window.confirm(`¿Está seguro de eliminar a ${empleado.nombres} ${empleado.apellidos}?`)) {
-      const updatedEmpleados = empleados.filter(emp => emp.id !== id);
-      saveEmpleados(updatedEmpleados);
-      toast({
-        title: "Empleado eliminado",
-        description: "El empleado ha sido eliminado del sistema"
-      });
+      try {
+        await eliminarEmpleado(id);
+      } catch (error) {
+        // Error handling is done in the hook
+      }
     }
-  };
-
-  const handleView = (empleado: Empleado) => {
-    setSelectedEmpleado(empleado);
-    setSelectedTab('detalle');
   };
 
   const filteredEmpleados = empleados.filter(empleado =>
     empleado.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
     empleado.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    empleado.numeroEmpleado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    empleado.numero_empleado.toLowerCase().includes(searchTerm.toLowerCase()) ||
     empleado.ci.includes(searchTerm) ||
     empleado.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     empleado.departamento.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getEstadoBadge = (estado: string) => {
+  const getEstadoBadge = (estado: string | null) => {
     switch (estado) {
       case 'activo':
         return <Badge className="bg-success text-success-foreground">Activo</Badge>;
@@ -204,7 +144,7 @@ const EmpleadosModule: React.FC = () => {
       case 'licencia':
         return <Badge variant="outline">Licencia</Badge>;
       default:
-        return <Badge variant="outline">{estado}</Badge>;
+        return <Badge variant="outline">{estado || 'Sin estado'}</Badge>;
     }
   };
 
@@ -213,8 +153,19 @@ const EmpleadosModule: React.FC = () => {
     activos: empleados.filter(emp => emp.estado === 'activo').length,
     inactivos: empleados.filter(emp => emp.estado === 'inactivo').length,
     enVacaciones: empleados.filter(emp => emp.estado === 'vacaciones').length,
-    totalNomina: empleados.reduce((sum, emp) => sum + emp.salarioBase, 0)
+    totalNomina: empleados.reduce((sum, emp) => sum + emp.salario_base, 0)
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Cargando empleados...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -263,9 +214,8 @@ const EmpleadosModule: React.FC = () => {
       </Card>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="lista">Lista de Empleados</TabsTrigger>
-          <TabsTrigger value="detalle" disabled={!selectedEmpleado}>Detalle Empleado</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
         </TabsList>
 
@@ -336,12 +286,12 @@ const EmpleadosModule: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
+                          <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento</Label>
                           <Input
-                            id="fechaNacimiento"
+                            id="fecha_nacimiento"
                             type="date"
-                            value={empleadoForm.fechaNacimiento || ''}
-                            onChange={(e) => setEmpleadoForm({...empleadoForm, fechaNacimiento: e.target.value})}
+                            value={empleadoForm.fecha_nacimiento || ''}
+                            onChange={(e) => setEmpleadoForm({...empleadoForm, fecha_nacimiento: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
@@ -376,76 +326,75 @@ const EmpleadosModule: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="cargo">Cargo *</Label>
-          <Select
-            value={empleadoForm.cargo || ''}
-            onValueChange={(value) => setEmpleadoForm({...empleadoForm, cargo: value})}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar cargo" />
-            </SelectTrigger>
-            <SelectContent>
-              {empleadoForm.departamento && cargosPorDepartamento[empleadoForm.departamento] ? 
-                cargosPorDepartamento[empleadoForm.departamento].map(cargo => (
-                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
-                )) :
-                [...new Set(Object.values(cargosPorDepartamento).flat())].map(cargo => (
-                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
-                ))
-              }
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="departamento">Departamento</Label>
-          <Select
-            value={empleadoForm.departamento || ''}
-            onValueChange={(value) => {
-              // Reset cargo when department changes
-              const newForm = { ...empleadoForm, departamento: value };
-              if (empleadoForm.cargo && !cargosPorDepartamento[value]?.includes(empleadoForm.cargo)) {
-                newForm.cargo = '';
-              }
-              setEmpleadoForm(newForm);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar departamento" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(cargosPorDepartamento).map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
                         <div className="space-y-2">
-                          <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
+                          <Label htmlFor="cargo">Cargo *</Label>
+                          <Select
+                            value={empleadoForm.cargo || ''}
+                            onValueChange={(value) => setEmpleadoForm({...empleadoForm, cargo: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar cargo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {empleadoForm.departamento && cargosPorDepartamento[empleadoForm.departamento] ? 
+                                cargosPorDepartamento[empleadoForm.departamento].map(cargo => (
+                                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
+                                )) :
+                                [...new Set(Object.values(cargosPorDepartamento).flat())].map(cargo => (
+                                  <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>
+                                ))
+                              }
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="departamento">Departamento</Label>
+                          <Select
+                            value={empleadoForm.departamento || ''}
+                            onValueChange={(value) => {
+                              const newForm = { ...empleadoForm, departamento: value };
+                              if (empleadoForm.cargo && !cargosPorDepartamento[value]?.includes(empleadoForm.cargo)) {
+                                newForm.cargo = '';
+                              }
+                              setEmpleadoForm(newForm);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar departamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(cargosPorDepartamento).map(dept => (
+                                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fecha_ingreso">Fecha de Ingreso</Label>
                           <Input
-                            id="fechaIngreso"
+                            id="fecha_ingreso"
                             type="date"
-                            value={empleadoForm.fechaIngreso || ''}
-                            onChange={(e) => setEmpleadoForm({...empleadoForm, fechaIngreso: e.target.value})}
+                            value={empleadoForm.fecha_ingreso || ''}
+                            onChange={(e) => setEmpleadoForm({...empleadoForm, fecha_ingreso: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="salarioBase">Salario Base (Bs.)</Label>
+                          <Label htmlFor="salario_base">Salario Base (Bs.)</Label>
                           <Input
-                            id="salarioBase"
+                            id="salario_base"
                             type="number"
                             step="0.01"
-                            value={empleadoForm.salarioBase || ''}
-                            onChange={(e) => setEmpleadoForm({...empleadoForm, salarioBase: parseFloat(e.target.value) || 0})}
+                            value={empleadoForm.salario_base || ''}
+                            onChange={(e) => setEmpleadoForm({...empleadoForm, salario_base: parseFloat(e.target.value) || 0})}
                             placeholder="4500.00"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="estado">Estado</Label>
-          <Select
-            value={empleadoForm.estado || 'activo'}
-            onValueChange={(value) => setEmpleadoForm({...empleadoForm, estado: value as 'activo' | 'inactivo' | 'vacaciones' | 'licencia'})}
-          >
+                          <Select
+                            value={empleadoForm.estado || 'activo'}
+                            onValueChange={(value) => setEmpleadoForm({...empleadoForm, estado: value as 'activo' | 'inactivo' | 'vacaciones' | 'licencia'})}
+                          >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -457,33 +406,6 @@ const EmpleadosModule: React.FC = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tipoContrato">Tipo de Contrato</Label>
-          <Select
-            value={empleadoForm.tipoContrato || 'indefinido'}
-            onValueChange={(value) => setEmpleadoForm({...empleadoForm, tipoContrato: value as 'indefinido' | 'temporal' | 'consultor' | 'practicante'})}
-          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="indefinido">Indefinido</SelectItem>
-                              <SelectItem value="temporal">Temporal</SelectItem>
-                              <SelectItem value="consultor">Consultor</SelectItem>
-                              <SelectItem value="practicante">Practicante</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="cuentaBancaria">Cuenta Bancaria</Label>
-                        <Input
-                          id="cuentaBancaria"
-                          value={empleadoForm.cuentaBancaria || ''}
-                          onChange={(e) => setEmpleadoForm({...empleadoForm, cuentaBancaria: e.target.value})}
-                          placeholder="1234567890"
-                        />
                       </div>
 
                       <div className="flex justify-end gap-2">
@@ -517,22 +439,15 @@ const EmpleadosModule: React.FC = () => {
                   <TableBody>
                     {filteredEmpleados.map((empleado) => (
                       <TableRow key={empleado.id}>
-                        <TableCell className="font-medium">{empleado.numeroEmpleado}</TableCell>
+                        <TableCell className="font-medium">{empleado.numero_empleado}</TableCell>
                         <TableCell>{empleado.nombres} {empleado.apellidos}</TableCell>
                         <TableCell>{empleado.ci}</TableCell>
                         <TableCell>{empleado.cargo}</TableCell>
                         <TableCell>{empleado.departamento}</TableCell>
-                        <TableCell>Bs. {empleado.salarioBase.toLocaleString()}</TableCell>
+                        <TableCell>Bs. {empleado.salario_base.toLocaleString()}</TableCell>
                         <TableCell>{getEstadoBadge(empleado.estado)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleView(empleado)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -556,172 +471,6 @@ const EmpleadosModule: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="detalle">
-          {selectedEmpleado && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Detalle del Empleado: {selectedEmpleado.nombres} {selectedEmpleado.apellidos}
-                </CardTitle>
-                <CardDescription>
-                  Información completa del empleado
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Información Personal
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">CI:</span>
-                        <span>{selectedEmpleado.ci}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fecha Nacimiento:</span>
-                        <span>{selectedEmpleado.fechaNacimiento || 'No especificada'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Teléfono:</span>
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {selectedEmpleado.telefono}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {selectedEmpleado.email}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Dirección:</span>
-                        <span className="flex items-center gap-1 text-right">
-                          <MapPin className="h-3 w-3" />
-                          <span className="max-w-40 truncate">{selectedEmpleado.direccion}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      Información Laboral
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">N° Empleado:</span>
-                        <span>{selectedEmpleado.numeroEmpleado}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Cargo:</span>
-                        <span>{selectedEmpleado.cargo}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Departamento:</span>
-                        <span>{selectedEmpleado.departamento}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fecha Ingreso:</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {selectedEmpleado.fechaIngreso}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tipo Contrato:</span>
-                        <span>{selectedEmpleado.tipoContrato}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Estado:</span>
-                        {getEstadoBadge(selectedEmpleado.estado)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Información Financiera
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Salario Base:</span>
-                        <span className="font-semibold">Bs. {selectedEmpleado.salarioBase.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Cuenta Bancaria:</span>
-                        <span>{selectedEmpleado.cuentaBancaria || 'No especificada'}</span>
-                      </div>
-                    </div>
-
-                    {selectedEmpleado.contactoEmergencia && (
-                      <>
-                        <h4 className="font-semibold mt-4 mb-2 text-sm">Contacto de Emergencia:</h4>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Nombre:</span>
-                            <span>{selectedEmpleado.contactoEmergencia.nombre}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Teléfono:</span>
-                            <span>{selectedEmpleado.contactoEmergencia.telefono}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Relación:</span>
-                            <span>{selectedEmpleado.contactoEmergencia.relacion}</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {selectedEmpleado.beneficios && selectedEmpleado.beneficios.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Award className="h-4 w-4" />
-                      Beneficios
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedEmpleado.beneficios.map((beneficio, index) => (
-                        <Badge key={index} variant="outline">{beneficio}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Registrado: {new Date(selectedEmpleado.createdAt).toLocaleDateString()}
-                    </span>
-                    <span>
-                      Actualizado: {new Date(selectedEmpleado.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => handleEdit(selectedEmpleado)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button onClick={() => setSelectedTab('lista')}>
-                    Volver a Lista
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="reportes">
@@ -749,46 +498,6 @@ const EmpleadosModule: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Tipos de Contrato</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(
-                    empleados.reduce((acc, emp) => {
-                      acc[emp.tipoContrato] = (acc[emp.tipoContrato] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  ).map(([tipo, count]) => (
-                    <div key={tipo} className="flex justify-between items-center">
-                      <span className="capitalize">{tipo}</span>
-                      <Badge variant="outline">{count} empleado{count !== 1 ? 's' : ''}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Antigüedad Promedio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {empleados.map(emp => {
-                    const antiguedad = calcularAntiguedad(emp.fechaIngreso);
-                    return (
-                      <div key={emp.id} className="flex justify-between items-center">
-                        <span className="text-sm">{emp.nombres} {emp.apellidos}</span>
-                        <Badge variant="outline">{antiguedad} año{antiguedad !== 1 ? 's' : ''}</Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Análisis Salarial</CardTitle>
               </CardHeader>
               <CardContent>
@@ -802,13 +511,13 @@ const EmpleadosModule: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Salario Máximo:</span>
                     <span className="font-semibold">
-                      Bs. {Math.max(...empleados.map(e => e.salarioBase)).toLocaleString()}
+                      Bs. {empleados.length > 0 ? Math.max(...empleados.map(e => e.salario_base)).toLocaleString() : '0'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Salario Mínimo:</span>
                     <span className="font-semibold">
-                      Bs. {Math.min(...empleados.map(e => e.salarioBase)).toLocaleString()}
+                      Bs. {empleados.length > 0 ? Math.min(...empleados.map(e => e.salario_base)).toLocaleString() : '0'}
                     </span>
                   </div>
                 </div>
