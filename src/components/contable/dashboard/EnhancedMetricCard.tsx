@@ -73,19 +73,6 @@ const EnhancedMetricCard = ({
       onDragEnd={onDragEnd}
     >
       <CardContent className="p-6">
-        {shouldShowAlert && (
-          <div className="mb-3">
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${getAlertColor(alert!.level)} border-current`}
-            >
-              {getAlertIcon()}
-              <span className="ml-1">
-                {alert!.level === 'warning' ? 'Alerta Leve' : 'Crítico'} - {percentage}%
-              </span>
-            </Badge>
-          </div>
-        )}
         
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -107,11 +94,6 @@ const EnhancedMetricCard = ({
             <p className={`text-sm font-medium ${getTrendColor()}`}>
               {description}
             </p>
-            {shouldShowAlert && (
-              <p className={`text-xs mt-1 ${getAlertColor(alert!.level)}`}>
-                {alert!.message}
-              </p>
-            )}
           </div>
         </div>
       </CardContent>

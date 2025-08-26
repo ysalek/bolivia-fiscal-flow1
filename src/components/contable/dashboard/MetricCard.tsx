@@ -58,17 +58,6 @@ const MetricCard = ({
         </CardTitle>
         <div className="flex items-center gap-2">
           <Icon className={`w-5 h-5 ${color}`} />
-          {shouldShowAlert && (
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${getAlertColor(alert!.level)} border-current`}
-            >
-              {getAlertIcon()}
-              <span className="ml-1">
-                {alert!.level === 'warning' ? 'Leve' : 'Crítico'}
-              </span>
-            </Badge>
-          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -77,11 +66,6 @@ const MetricCard = ({
           {getTrendIcon(trend)}
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        {shouldShowAlert && (
-          <div className={`text-xs mt-2 font-medium ${getAlertColor(alert!.level)}`}>
-            ⚠️ {alert!.message} ({percentage}%)
-          </div>
-        )}
       </CardContent>
     </Card>
   );
