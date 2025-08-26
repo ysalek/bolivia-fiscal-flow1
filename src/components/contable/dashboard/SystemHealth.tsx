@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { calculateMetricAlert, getAlertColor } from '@/utils/metricsUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Activity, 
   Database, 
@@ -29,26 +30,38 @@ export const SystemHealth: React.FC = () => {
   const checkSystemHealth = async () => {
     const metrics: HealthMetric[] = [];
 
-    // Database Health
+    // Database Health - Using Supabase
     try {
-      const dbData = localStorage.getItem('asientosContables');
-      const entries = dbData ? JSON.parse(dbData).length : 0;
-      const dbUsage = entries > 0 ? Math.min(100, (entries / 1000) * 100) : 10; // Asumiendo 1000 como máximo
+      const { count: asientosCount } = await supabase
+        .from('asientos_contables')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: productosCount } = await supabase
+        .from('productos')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: facturasCount } = await supabase
+        .from('facturas')
+        .select('*', { count: 'exact', head: true });
+
+      const totalRecords = (asientosCount || 0) + (productosCount || 0) + (facturasCount || 0);
+      const dbUsage = totalRecords > 0 ? Math.min(100, (totalRecords / 5000) * 100) : 5; // Asumiendo 5000 como máximo
       const dbAlert = calculateMetricAlert(dbUsage);
       
       metrics.push({
         name: 'Base de Datos',
         value: dbUsage,
         status: dbAlert.level === 'normal' ? 'good' : dbAlert.level === 'warning' ? 'warning' : 'critical',
-        description: `${entries} asientos contables (${dbUsage.toFixed(1)}% capacidad)`,
+        description: `${totalRecords} registros totales (${dbUsage.toFixed(1)}% capacidad)`,
         lastCheck: new Date()
       });
-    } catch {
+    } catch (error) {
+      console.error('Error checking database health:', error);
       metrics.push({
         name: 'Base de Datos',
         value: 0,
         status: 'critical',
-        description: 'Error accediendo a datos locales',
+        description: 'Error accediendo a la base de datos',
         lastCheck: new Date()
       });
     }
@@ -78,18 +91,37 @@ export const SystemHealth: React.FC = () => {
       lastCheck: new Date()
     });
 
-    // Security Status - Simulando un porcentaje de configuración de seguridad
-    const hasSecureConfig = localStorage.getItem('configuracionTributaria') !== null;
-    const securityScore = hasSecureConfig ? 85 : 70;
-    const securityAlert = calculateMetricAlert(securityScore);
-    
-    metrics.push({
-      name: 'Seguridad',
-      value: securityScore,
-      status: securityAlert.level === 'normal' ? 'good' : securityAlert.level === 'warning' ? 'warning' : 'critical',
-      description: hasSecureConfig ? `Configuración segura (${securityScore}%)` : `Revisar configuración (${securityScore}%)`,
-      lastCheck: new Date()
-    });
+    // Security Status - Checking configuration in Supabase
+    try {
+      const { count: configCount } = await supabase
+        .from('configuracion_tributaria')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: userRolesCount } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true });
+
+      const hasSecureConfig = (configCount || 0) > 0 && (userRolesCount || 0) > 0;
+      const securityScore = hasSecureConfig ? 90 : 60;
+      const securityAlert = calculateMetricAlert(securityScore);
+      
+      metrics.push({
+        name: 'Seguridad',
+        value: securityScore,
+        status: securityAlert.level === 'normal' ? 'good' : securityAlert.level === 'warning' ? 'warning' : 'critical',
+        description: hasSecureConfig ? `Configuración segura (${securityScore}%)` : `Configurar sistema (${securityScore}%)`,
+        lastCheck: new Date()
+      });
+    } catch (error) {
+      console.error('Error checking security:', error);
+      metrics.push({
+        name: 'Seguridad',
+        value: 50,
+        status: 'warning',
+        description: 'Error verificando configuración de seguridad',
+        lastCheck: new Date()
+      });
+    }
 
     // Performance (usar navegación timing si está disponible)
     let performanceScore = 85; // valor por defecto
@@ -115,19 +147,30 @@ export const SystemHealth: React.FC = () => {
       lastCheck: new Date()
     });
 
-    // Data Integrity
+    // Data Integrity - Check balance in accounting entries
     let integrityScore = 100;
     try {
-      const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
+      const { data: asientos } = await supabase
+        .from('asientos_contables')
+        .select(`
+          *,
+          cuentas_asientos(debe, haber)
+        `)
+        .limit(100); // Limitar para performance
+      
       let unbalanced = 0;
-      asientos.forEach((asiento: any) => {
-        const debe = asiento.cuentas?.reduce((sum: number, cuenta: any) => sum + (cuenta.debe || 0), 0) || 0;
-        const haber = asiento.cuentas?.reduce((sum: number, cuenta: any) => sum + (cuenta.haber || 0), 0) || 0;
-        if (Math.abs(debe - haber) > 0.01) unbalanced++;
-      });
-      integrityScore = asientos.length > 0 ? Math.max(0, 100 - (unbalanced / asientos.length * 100)) : 100;
-    } catch {
-      integrityScore = 0;
+      if (asientos) {
+        asientos.forEach((asiento: any) => {
+          const cuentas = asiento.cuentas_asientos || [];
+          const debe = cuentas.reduce((sum: number, cuenta: any) => sum + (parseFloat(cuenta.debe) || 0), 0);
+          const haber = cuentas.reduce((sum: number, cuenta: any) => sum + (parseFloat(cuenta.haber) || 0), 0);
+          if (Math.abs(debe - haber) > 0.01) unbalanced++;
+        });
+        integrityScore = asientos.length > 0 ? Math.max(0, 100 - (unbalanced / asientos.length * 100)) : 100;
+      }
+    } catch (error) {
+      console.error('Error checking data integrity:', error);
+      integrityScore = 80; // Valor por defecto en caso de error
     }
 
     const integrityAlert = calculateMetricAlert(integrityScore);

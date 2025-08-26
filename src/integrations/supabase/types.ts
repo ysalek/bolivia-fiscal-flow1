@@ -68,6 +68,79 @@ export type Database = {
         }
         Relationships: []
       }
+      anticipos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          empleado_id: string | null
+          estado: string | null
+          fecha: string
+          id: string
+          monto: number
+          monto_descontado: number | null
+          motivo: string
+          proveedor_id: string | null
+          saldo_pendiente: number
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          empleado_id?: string | null
+          estado?: string | null
+          fecha: string
+          id?: string
+          monto: number
+          monto_descontado?: number | null
+          motivo: string
+          proveedor_id?: string | null
+          saldo_pendiente: number
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          empleado_id?: string | null
+          estado?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          monto_descontado?: number | null
+          motivo?: string
+          proveedor_id?: string | null
+          saldo_pendiente?: number
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anticipos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticipos_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticipos_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -158,6 +231,42 @@ export type Database = {
           nombre?: string
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      centros_costo: {
+        Row: {
+          activo: boolean | null
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          tipo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean | null
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          tipo?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean | null
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          tipo?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -258,6 +367,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      comprobantes_integrados: {
+        Row: {
+          codigo_control: string | null
+          created_at: string
+          cuf: string | null
+          cufd: string | null
+          estado: string | null
+          estado_sin: string | null
+          fecha: string
+          id: string
+          iva: number
+          nit: string
+          numero_comprobante: string
+          razon_social: string
+          subtotal: number
+          tipo_comprobante: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          codigo_control?: string | null
+          created_at?: string
+          cuf?: string | null
+          cufd?: string | null
+          estado?: string | null
+          estado_sin?: string | null
+          fecha: string
+          id?: string
+          iva?: number
+          nit: string
+          numero_comprobante: string
+          razon_social: string
+          subtotal?: number
+          tipo_comprobante: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          codigo_control?: string | null
+          created_at?: string
+          cuf?: string | null
+          cufd?: string | null
+          estado?: string | null
+          estado_sin?: string | null
+          fecha?: string
+          id?: string
+          iva?: number
+          nit?: string
+          numero_comprobante?: string
+          razon_social?: string
+          subtotal?: number
+          tipo_comprobante?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       configuracion_tributaria: {
         Row: {
@@ -388,6 +557,60 @@ export type Database = {
           numero_cuenta?: string
           saldo?: number | null
           tipo_cuenta?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      declaraciones_tributarias: {
+        Row: {
+          created_at: string
+          estado: string | null
+          fecha_presentacion: string | null
+          fecha_vencimiento: string
+          gestion: number
+          id: string
+          mes: number | null
+          monto_base: number | null
+          monto_impuesto: number | null
+          monto_pagado: number | null
+          observaciones: string | null
+          periodo: string
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string | null
+          fecha_presentacion?: string | null
+          fecha_vencimiento: string
+          gestion: number
+          id?: string
+          mes?: number | null
+          monto_base?: number | null
+          monto_impuesto?: number | null
+          monto_pagado?: number | null
+          observaciones?: string | null
+          periodo: string
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string | null
+          fecha_presentacion?: string | null
+          fecha_vencimiento?: string
+          gestion?: number
+          id?: string
+          mes?: number | null
+          monto_base?: number | null
+          monto_impuesto?: number | null
+          monto_pagado?: number | null
+          observaciones?: string | null
+          periodo?: string
+          tipo?: string
           updated_at?: string
           user_id?: string
         }
@@ -621,6 +844,60 @@ export type Database = {
           },
           {
             foreignKeyName: "items_compras_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items_comprobantes_integrados: {
+        Row: {
+          cantidad: number
+          codigo: string
+          comprobante_id: string
+          created_at: string
+          descripcion: string
+          descuento: number | null
+          id: string
+          precio_unitario: number
+          producto_id: string | null
+          subtotal: number
+        }
+        Insert: {
+          cantidad: number
+          codigo: string
+          comprobante_id: string
+          created_at?: string
+          descripcion: string
+          descuento?: number | null
+          id?: string
+          precio_unitario: number
+          producto_id?: string | null
+          subtotal: number
+        }
+        Update: {
+          cantidad?: number
+          codigo?: string
+          comprobante_id?: string
+          created_at?: string
+          descripcion?: string
+          descuento?: number | null
+          id?: string
+          precio_unitario?: number
+          producto_id?: string | null
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_comprobantes_integrados_comprobante_id_fkey"
+            columns: ["comprobante_id"]
+            isOneToOne: false
+            referencedRelation: "comprobantes_integrados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_comprobantes_integrados_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "productos"
@@ -1251,6 +1528,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ventas_credito: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          estado: string | null
+          factura_id: string
+          fecha_vencimiento: string
+          fecha_venta: string
+          id: string
+          interes_mora: number | null
+          monto_pagado: number | null
+          monto_total: number
+          plazo_dias: number
+          saldo_pendiente: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          estado?: string | null
+          factura_id: string
+          fecha_vencimiento: string
+          fecha_venta: string
+          id?: string
+          interes_mora?: number | null
+          monto_pagado?: number | null
+          monto_total: number
+          plazo_dias: number
+          saldo_pendiente: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          estado?: string | null
+          factura_id?: string
+          fecha_vencimiento?: string
+          fecha_venta?: string
+          id?: string
+          interes_mora?: number | null
+          monto_pagado?: number | null
+          monto_total?: number
+          plazo_dias?: number
+          saldo_pendiente?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventas_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventas_credito_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
