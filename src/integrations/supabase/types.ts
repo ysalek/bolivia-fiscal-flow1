@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      activos_fijos: {
+        Row: {
+          categoria: string | null
+          codigo: string
+          costo_inicial: number
+          created_at: string
+          descripcion: string | null
+          estado: string | null
+          fecha_adquisicion: string
+          id: string
+          metodo_depreciacion: string | null
+          nombre: string
+          ubicacion: string | null
+          updated_at: string
+          user_id: string
+          valor_residual: number | null
+          vida_util_anos: number
+        }
+        Insert: {
+          categoria?: string | null
+          codigo: string
+          costo_inicial?: number
+          created_at?: string
+          descripcion?: string | null
+          estado?: string | null
+          fecha_adquisicion: string
+          id?: string
+          metodo_depreciacion?: string | null
+          nombre: string
+          ubicacion?: string | null
+          updated_at?: string
+          user_id: string
+          valor_residual?: number | null
+          vida_util_anos: number
+        }
+        Update: {
+          categoria?: string | null
+          codigo?: string
+          costo_inicial?: number
+          created_at?: string
+          descripcion?: string | null
+          estado?: string | null
+          fecha_adquisicion?: string
+          id?: string
+          metodo_depreciacion?: string | null
+          nombre?: string
+          ubicacion?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_residual?: number | null
+          vida_util_anos?: number
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -293,6 +347,92 @@ export type Database = {
             columns: ["asiento_id"]
             isOneToOne: false
             referencedRelation: "asientos_contables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuentas_bancarias: {
+        Row: {
+          activa: boolean | null
+          banco: string
+          created_at: string
+          id: string
+          moneda: string | null
+          nombre: string
+          numero_cuenta: string
+          saldo: number | null
+          tipo_cuenta: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activa?: boolean | null
+          banco: string
+          created_at?: string
+          id?: string
+          moneda?: string | null
+          nombre: string
+          numero_cuenta: string
+          saldo?: number | null
+          tipo_cuenta?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activa?: boolean | null
+          banco?: string
+          created_at?: string
+          id?: string
+          moneda?: string | null
+          nombre?: string
+          numero_cuenta?: string
+          saldo?: number | null
+          tipo_cuenta?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      depreciaciones_activos: {
+        Row: {
+          activo_id: string
+          created_at: string
+          depreciacion_acumulada: number
+          fecha_depreciacion: string
+          id: string
+          periodo: string
+          user_id: string
+          valor_depreciacion: number
+          valor_neto: number
+        }
+        Insert: {
+          activo_id: string
+          created_at?: string
+          depreciacion_acumulada?: number
+          fecha_depreciacion: string
+          id?: string
+          periodo: string
+          user_id: string
+          valor_depreciacion: number
+          valor_neto: number
+        }
+        Update: {
+          activo_id?: string
+          created_at?: string
+          depreciacion_acumulada?: number
+          fecha_depreciacion?: string
+          id?: string
+          periodo?: string
+          user_id?: string
+          valor_depreciacion?: number
+          valor_neto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciaciones_activos_activo_id_fkey"
+            columns: ["activo_id"]
+            isOneToOne: false
+            referencedRelation: "activos_fijos"
             referencedColumns: ["id"]
           },
         ]
@@ -592,6 +732,59 @@ export type Database = {
           },
         ]
       }
+      movimientos_bancarios: {
+        Row: {
+          beneficiario: string | null
+          created_at: string
+          cuenta_bancaria_id: string
+          descripcion: string
+          fecha: string
+          id: string
+          monto: number
+          numero_comprobante: string | null
+          saldo_actual: number | null
+          saldo_anterior: number | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          beneficiario?: string | null
+          created_at?: string
+          cuenta_bancaria_id: string
+          descripcion: string
+          fecha: string
+          id?: string
+          monto: number
+          numero_comprobante?: string | null
+          saldo_actual?: number | null
+          saldo_anterior?: number | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          beneficiario?: string | null
+          created_at?: string
+          cuenta_bancaria_id?: string
+          descripcion?: string
+          fecha?: string
+          id?: string
+          monto?: number
+          numero_comprobante?: string | null
+          saldo_actual?: number | null
+          saldo_anterior?: number | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_bancarios_cuenta_bancaria_id_fkey"
+            columns: ["cuenta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_bancarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimientos_inventario: {
         Row: {
           cantidad: number
@@ -661,6 +854,114 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pagos: {
+        Row: {
+          compra_id: string | null
+          created_at: string
+          estado: string | null
+          factura_id: string | null
+          fecha: string
+          id: string
+          metodo_pago: string | null
+          monto: number
+          numero_comprobante: string | null
+          observaciones: string | null
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compra_id?: string | null
+          created_at?: string
+          estado?: string | null
+          factura_id?: string | null
+          fecha: string
+          id?: string
+          metodo_pago?: string | null
+          monto: number
+          numero_comprobante?: string | null
+          observaciones?: string | null
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compra_id?: string | null
+          created_at?: string
+          estado?: string | null
+          factura_id?: string | null
+          fecha?: string
+          id?: string
+          metodo_pago?: string | null
+          monto?: number
+          numero_comprobante?: string | null
+          observaciones?: string | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "compras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_cuentas: {
+        Row: {
+          activa: boolean | null
+          codigo: string
+          created_at: string
+          cuenta_padre: string | null
+          id: string
+          naturaleza: string
+          nivel: number | null
+          nombre: string
+          saldo: number | null
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activa?: boolean | null
+          codigo: string
+          created_at?: string
+          cuenta_padre?: string | null
+          id?: string
+          naturaleza: string
+          nivel?: number | null
+          nombre: string
+          saldo?: number | null
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activa?: boolean | null
+          codigo?: string
+          created_at?: string
+          cuenta_padre?: string | null
+          id?: string
+          naturaleza?: string
+          nivel?: number | null
+          nombre?: string
+          saldo?: number | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       plan_cuentas_2025: {
         Row: {
