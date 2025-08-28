@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,36 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useSupabaseActivosFijos } from "@/hooks/useSupabaseActivosFijos";
 import { Building, Plus, Calculator, TrendingDown, FileText, Wrench } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
 
-interface ActivoFijo {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  categoria: 'edificios' | 'maquinaria' | 'vehiculos' | 'muebles' | 'equipos_computo' | 'herramientas' | 'otros';
-  fechaAdquisicion: string;
-  costoAdquisicion: number;
-  vidaUtilAnios: number;
-  vidaUtilMeses: number;
-  valorResidual: number;
-  metodoDepreciacion: 'lineal' | 'acelerada' | 'unidades_produccion';
-  depreciacionAcumulada: number;
-  valorLibros: number;
-  estado: 'activo' | 'depreciado_total' | 'vendido' | 'dado_baja';
-  ubicacion: string;
-  responsable: string;
-  observaciones: string;
-}
-
-interface DepreciacionMensual {
-  id: string;
-  activoId: string;
-  periodo: string; // YYYY-MM
-  montoDepreciacion: number;
-  depreciacionAcumulada: number;
-  valorLibros: number;
-  asientoId?: string;
-}
+type ActivoFijo = Database['public']['Tables']['activos_fijos']['Row'];
+type DepreciacionActivo = Database['public']['Tables']['depreciaciones_activos']['Row'];
 
 const categoriasActivos = [
   { value: 'edificios', label: 'Edificios y Construcciones', vidaUtil: 40, coeficiente: 2.5 },
@@ -54,177 +29,131 @@ const categoriasActivos = [
 ];
 
 const ActivosFijosModule = () => {
-  const [activos, setActivos] = useState<ActivoFijo[]>([]);
-  const [depreciaciones, setDepreciaciones] = useState<DepreciacionMensual[]>([]);
-  const [selectedActivo, setSelectedActivo] = useState<string>('');
+  const [selectedActivo, setSelectedActivo] = useState<ActivoFijo | null>(null);
   const [showNewActivo, setShowNewActivo] = useState(false);
   const [showDepreciacion, setShowDepreciacion] = useState(false);
   const { toast } = useToast();
   const { guardarAsiento } = useContabilidadIntegration();
+  const { 
+    activosFijos: activos, 
+    depreciaciones, 
+    loading, 
+    createActivoFijo, 
+    updateActivoFijo, 
+    deleteActivoFijo,
+    createDepreciacion,
+    refetch
+  } = useSupabaseActivosFijos();
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = () => {
-    const activosGuardados = localStorage.getItem('activosFijos');
-    if (activosGuardados) {
-      setActivos(JSON.parse(activosGuardados));
-    }
-
-    const depreciacionesGuardadas = localStorage.getItem('depreciacionesActivos');
-    if (depreciacionesGuardadas) {
-      setDepreciaciones(JSON.parse(depreciacionesGuardadas));
-    }
-  };
-
-  const guardarActivo = (nuevoActivo: Omit<ActivoFijo, 'id'>) => {
-    const activo: ActivoFijo = {
-      ...nuevoActivo,
-      id: Date.now().toString(),
-      depreciacionAcumulada: 0,
-      valorLibros: nuevoActivo.costoAdquisicion
-    };
-    
-    const nuevosActivos = [...activos, activo];
-    setActivos(nuevosActivos);
-    localStorage.setItem('activosFijos', JSON.stringify(nuevosActivos));
-    
-    // Generar asiento de compra
-    const asientoCompra = {
-      id: Date.now().toString(),
-      numero: `AF-${Date.now().toString().slice(-6)}`,
-      fecha: nuevoActivo.fechaAdquisicion,
-      concepto: `Adquisición de activo fijo - ${nuevoActivo.descripcion}`,
-      referencia: `Código: ${nuevoActivo.codigo}`,
-      debe: nuevoActivo.costoAdquisicion,
-      haber: nuevoActivo.costoAdquisicion,
-      estado: 'registrado' as const,
-      cuentas: [
-        {
-          codigo: "1241",
-          nombre: "Activos Fijos",
-          debe: nuevoActivo.costoAdquisicion,
-          haber: 0
-        },
-        {
-          codigo: "1111",
-          nombre: "Caja y Bancos",
-          debe: 0,
-          haber: nuevoActivo.costoAdquisicion
-        }
-      ]
-    };
-
-    guardarAsiento(asientoCompra);
-    
-    toast({
-      title: "Activo fijo registrado",
-      description: `${activo.codigo} - ${activo.descripcion}`,
-    });
-    
-    setShowNewActivo(false);
-  };
-
-  const calcularDepreciacionMensual = () => {
-    const periodoActual = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const nuevasDepreciaciones: DepreciacionMensual[] = [];
-
-    activos.forEach(activo => {
-      if (activo.estado === 'activo') {
-        const categoria = categoriasActivos.find(c => c.value === activo.categoria);
-        if (categoria) {
-          const depreciacionAnual = (activo.costoAdquisicion - activo.valorResidual) * (categoria.coeficiente / 100);
-          const depreciacionMensual = depreciacionAnual / 12;
-          
-          // Verificar si ya existe depreciación para este período
-          const yaExiste = depreciaciones.some(d => 
-            d.activoId === activo.id && d.periodo === periodoActual
-          );
-          
-          if (!yaExiste && depreciacionMensual > 0) {
-            const nuevaDepreciacionAcumulada = activo.depreciacionAcumulada + depreciacionMensual;
-            const nuevoValorLibros = activo.costoAdquisicion - nuevaDepreciacionAcumulada;
-            
-            nuevasDepreciaciones.push({
-              id: `${activo.id}-${periodoActual}`,
-              activoId: activo.id,
-              periodo: periodoActual,
-              montoDepreciacion: depreciacionMensual,
-              depreciacionAcumulada: nuevaDepreciacionAcumulada,
-              valorLibros: Math.max(nuevoValorLibros, activo.valorResidual)
-            });
-          }
-        }
-      }
-    });
-
-    if (nuevasDepreciaciones.length > 0) {
-      const todasDepreciaciones = [...depreciaciones, ...nuevasDepreciaciones];
-      setDepreciaciones(todasDepreciaciones);
-      localStorage.setItem('depreciacionesActivos', JSON.stringify(todasDepreciaciones));
+  const guardarActivo = async (nuevoActivo: any) => {
+    try {
+      const activoData = {
+        codigo: nuevoActivo.codigo,
+        nombre: nuevoActivo.descripcion,
+        descripcion: nuevoActivo.descripcion,
+        categoria: nuevoActivo.categoria,
+        fecha_adquisicion: nuevoActivo.fechaAdquisicion,
+        costo_inicial: nuevoActivo.costoAdquisicion,
+        vida_util_anos: nuevoActivo.vidaUtilAnios,
+        valor_residual: nuevoActivo.valorResidual,
+        metodo_depreciacion: nuevoActivo.metodoDepreciacion,
+        ubicacion: nuevoActivo.ubicacion,
+        estado: nuevoActivo.estado
+      };
       
-      // Actualizar activos con nueva depreciación
-      const activosActualizados = activos.map(activo => {
-        const depreciacionActivo = nuevasDepreciaciones.find(d => d.activoId === activo.id);
-        if (depreciacionActivo) {
-          return {
-            ...activo,
-            depreciacionAcumulada: depreciacionActivo.depreciacionAcumulada,
-            valorLibros: depreciacionActivo.valorLibros
-          };
-        }
-        return activo;
-      });
+      const activo = await createActivoFijo(activoData);
       
-      setActivos(activosActualizados);
-      localStorage.setItem('activosFijos', JSON.stringify(activosActualizados));
-      
-      // Generar asiento de depreciación
-      const totalDepreciacion = nuevasDepreciaciones.reduce((sum, d) => sum + d.montoDepreciacion, 0);
-      const asientoDepreciacion = {
+      // Generar asiento de compra
+      const asientoCompra = {
         id: Date.now().toString(),
-        numero: `DEP-${Date.now().toString().slice(-6)}`,
-        fecha: new Date().toISOString().slice(0, 10),
-        concepto: `Depreciación de activos fijos - ${periodoActual}`,
-        referencia: `Período: ${periodoActual}`,
-        debe: totalDepreciacion,
-        haber: totalDepreciacion,
+        numero: `AF-${Date.now().toString().slice(-6)}`,
+        fecha: nuevoActivo.fechaAdquisicion,
+        concepto: `Adquisición de activo fijo - ${nuevoActivo.descripcion}`,
+        referencia: `Código: ${nuevoActivo.codigo}`,
+        debe: nuevoActivo.costoAdquisicion,
+        haber: nuevoActivo.costoAdquisicion,
         estado: 'registrado' as const,
         cuentas: [
           {
-            codigo: "5152",
-            nombre: "Depreciación de Activos Fijos",
-            debe: totalDepreciacion,
+            codigo: "1241",
+            nombre: "Activos Fijos",
+            debe: nuevoActivo.costoAdquisicion,
             haber: 0
           },
           {
-            codigo: "1242",
-            nombre: "Depreciación Acumulada Activos Fijos",
+            codigo: "1111",
+            nombre: "Caja y Bancos",
             debe: 0,
-            haber: totalDepreciacion
+            haber: nuevoActivo.costoAdquisicion
           }
         ]
       };
 
-      guardarAsiento(asientoDepreciacion);
+      guardarAsiento(asientoCompra);
       
       toast({
-        title: "Depreciación calculada",
-        description: `Se calculó la depreciación de ${nuevasDepreciaciones.length} activos por Bs. ${totalDepreciacion.toFixed(2)}`,
+        title: "Activo fijo registrado",
+        description: `${activo.codigo} - ${activo.nombre}`,
       });
-    } else {
+      
+      setShowNewActivo(false);
+    } catch (error) {
       toast({
-        title: "Sin depreciaciones",
-        description: "No hay activos pendientes de depreciación para este período",
+        title: "Error al registrar activo",
+        description: "No se pudo registrar el activo fijo",
+        variant: "destructive"
       });
     }
   };
 
+  const calcularDepreciacionMensual = async () => {
+    const periodoActual = new Date().toISOString().slice(0, 7); // YYYY-MM
+    
+    for (const activo of activos) {
+      if (activo.estado === 'activo') {
+        const categoria = categoriasActivos.find(c => c.value === activo.categoria);
+        if (categoria) {
+          const depreciacionAnual = (activo.costo_inicial - activo.valor_residual) * (categoria.coeficiente / 100);
+          const depreciacionMensual = depreciacionAnual / 12;
+          
+          // Verificar si ya existe depreciación para este período
+          const yaExiste = depreciaciones.some(d => 
+            d.activo_id === activo.id && d.periodo === periodoActual
+          );
+          
+          if (!yaExiste && depreciacionMensual > 0) {
+            const depreciacionesActivo = depreciaciones.filter(d => d.activo_id === activo.id);
+            const depreciacionAcumuladaAnterior = depreciacionesActivo.reduce((sum, d) => sum + d.valor_depreciacion, 0);
+            const nuevaDepreciacionAcumulada = depreciacionAcumuladaAnterior + depreciacionMensual;
+            const nuevoValorNeto = activo.costo_inicial - nuevaDepreciacionAcumulada;
+            
+            await createDepreciacion({
+              activo_id: activo.id,
+              periodo: periodoActual,
+              valor_depreciacion: depreciacionMensual,
+              depreciacion_acumulada: nuevaDepreciacionAcumulada,
+              valor_neto: Math.max(nuevoValorNeto, activo.valor_residual),
+              fecha_depreciacion: new Date().toISOString().split('T')[0]
+            });
+          }
+        }
+      }
+    }
+    
+    toast({
+      title: "Depreciación calculada",
+      description: "Se calculó la depreciación mensual de activos fijos",
+    });
+  };
+
   const activosActivos = activos.filter(a => a.estado === 'activo');
-  const valorTotalActivos = activosActivos.reduce((sum, a) => sum + a.costoAdquisicion, 0);
-  const valorTotalLibros = activosActivos.reduce((sum, a) => sum + a.valorLibros, 0);
-  const depreciacionTotalAcumulada = activosActivos.reduce((sum, a) => sum + a.depreciacionAcumulada, 0);
+  const valorTotalActivos = activosActivos.reduce((sum, a) => sum + a.costo_inicial, 0);
+  const depreciacionTotalAcumulada = depreciaciones.reduce((sum, d) => sum + d.valor_depreciacion, 0);
+  const valorTotalLibros = valorTotalActivos - depreciacionTotalAcumulada;
+
+  if (loading) {
+    return <div className="flex items-center justify-center p-8">Cargando activos fijos...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -343,8 +272,7 @@ const ActivosFijosModule = () => {
                     <TableHead>Descripción</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Fecha Adquisición</TableHead>
-                    <TableHead className="text-right">Costo Adquisición</TableHead>
-                    <TableHead className="text-right">Valor Libros</TableHead>
+                    <TableHead className="text-right">Costo Inicial</TableHead>
                     <TableHead>Estado</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -352,20 +280,17 @@ const ActivosFijosModule = () => {
                   {activos.map(activo => (
                     <TableRow key={activo.id}>
                       <TableCell className="font-medium">{activo.codigo}</TableCell>
-                      <TableCell>{activo.descripcion}</TableCell>
+                      <TableCell>{activo.nombre}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {categoriasActivos.find(c => c.value === activo.categoria)?.label}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(activo.fechaAdquisicion).toLocaleDateString('es-BO')}</TableCell>
-                      <TableCell className="text-right">Bs. {activo.costoAdquisicion.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">Bs. {activo.valorLibros.toFixed(2)}</TableCell>
+                      <TableCell>{new Date(activo.fecha_adquisicion).toLocaleDateString('es-BO')}</TableCell>
+                      <TableCell className="text-right">Bs. {activo.costo_inicial.toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant={activo.estado === 'activo' ? 'default' : 'secondary'}>
-                          {activo.estado === 'activo' ? 'Activo' : 
-                           activo.estado === 'depreciado_total' ? 'Depreciado' :
-                           activo.estado === 'vendido' ? 'Vendido' : 'Dado de Baja'}
+                          {activo.estado}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -392,19 +317,19 @@ const ActivosFijosModule = () => {
                     <TableHead>Activo</TableHead>
                     <TableHead className="text-right">Depreciación Mensual</TableHead>
                     <TableHead className="text-right">Depreciación Acumulada</TableHead>
-                    <TableHead className="text-right">Valor en Libros</TableHead>
+                    <TableHead className="text-right">Valor Neto</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {depreciaciones.map(dep => {
-                    const activo = activos.find(a => a.id === dep.activoId);
+                    const activo = activos.find(a => a.id === dep.activo_id);
                     return (
                       <TableRow key={dep.id}>
                         <TableCell>{dep.periodo}</TableCell>
-                        <TableCell>{activo?.descripcion || 'Activo no encontrado'}</TableCell>
-                        <TableCell className="text-right">Bs. {dep.montoDepreciacion.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">Bs. {dep.depreciacionAcumulada.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">Bs. {dep.valorLibros.toFixed(2)}</TableCell>
+                        <TableCell>{activo?.nombre || 'Activo no encontrado'}</TableCell>
+                        <TableCell className="text-right">Bs. {dep.valor_depreciacion.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">Bs. {dep.depreciacion_acumulada.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">Bs. {dep.valor_neto.toFixed(2)}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -420,32 +345,27 @@ const ActivosFijosModule = () => {
 
 // Componente para formulario de nuevo activo
 const NewActivoForm = ({ onSave, onCancel }: { 
-  onSave: (activo: Omit<ActivoFijo, 'id'>) => void, 
+  onSave: (activo: any) => void, 
   onCancel: () => void 
 }) => {
-  const [formData, setFormData] = useState<Omit<ActivoFijo, 'id'>>({
+  const [formData, setFormData] = useState({
     codigo: '',
     descripcion: '',
     categoria: 'muebles',
     fechaAdquisicion: new Date().toISOString().slice(0, 10),
     costoAdquisicion: 0,
     vidaUtilAnios: 10,
-    vidaUtilMeses: 0,
     valorResidual: 0,
     metodoDepreciacion: 'lineal',
-    depreciacionAcumulada: 0,
-    valorLibros: 0,
     estado: 'activo',
-    ubicacion: '',
-    responsable: '',
-    observaciones: ''
+    ubicacion: ''
   });
 
   const handleCategoriaChange = (categoria: string) => {
     const categoriaInfo = categoriasActivos.find(c => c.value === categoria);
     setFormData(prev => ({ 
       ...prev, 
-      categoria: categoria as any,
+      categoria,
       vidaUtilAnios: categoriaInfo?.vidaUtil || 10
     }));
   };
@@ -554,27 +474,6 @@ const NewActivoForm = ({ onSave, onCancel }: {
             placeholder="Oficina, Planta, Almacén, etc."
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="responsable">Responsable</Label>
-        <Input
-          id="responsable"
-          value={formData.responsable}
-          onChange={(e) => setFormData(prev => ({ ...prev, responsable: e.target.value }))}
-          placeholder="Nombre del responsable del activo"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="observaciones">Observaciones</Label>
-        <Textarea
-          id="observaciones"
-          value={formData.observaciones}
-          onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-          placeholder="Observaciones adicionales"
-          rows={3}
-        />
       </div>
 
       <div className="flex justify-end gap-2">

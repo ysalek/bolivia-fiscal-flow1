@@ -12,43 +12,45 @@ import ClienteForm from "./clients/ClienteForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 const ClientesModule = () => {
-  const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
   const [showForm, setShowForm] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const {
+    clientes,
+    loading,
+    crearCliente,
+    actualizarCliente,
+    eliminarCliente,
+    refetch
+  } = useSupabaseClientes();
 
-  // Cargar datos desde localStorage
-  useEffect(() => {
-    const clientesGuardados = localStorage.getItem('clientes');
-    if (clientesGuardados) {
-      setClientes(JSON.parse(clientesGuardados));
-    }
-  }, []);
-
-  const handleSaveCliente = (cliente: Cliente) => {
-    let nuevosClientes;
-    
-    if (editingCliente) {
-      // Editar cliente existente
-      nuevosClientes = clientes.map(c => c.id === cliente.id ? cliente : c);
+  const handleSaveCliente = async (cliente: any) => {
+    try {
+      if (editingCliente) {
+        // Editar cliente existente
+        await actualizarCliente(editingCliente.id, cliente);
+        toast({
+          title: "Cliente actualizado",
+          description: `${cliente.nombre} ha sido actualizado exitosamente.`,
+        });
+      } else {
+        // Crear nuevo cliente
+        await crearCliente(cliente);
+        toast({
+          title: "Cliente creado",
+          description: `${cliente.nombre} ha sido agregado exitosamente.`,
+        });
+      }
+      
+      setShowForm(false);
+      setEditingCliente(null);
+    } catch (error) {
       toast({
-        title: "Cliente actualizado",
-        description: `${cliente.nombre} ha sido actualizado exitosamente.`,
-      });
-    } else {
-      // Crear nuevo cliente
-      nuevosClientes = [cliente, ...clientes];
-      toast({
-        title: "Cliente creado",
-        description: `${cliente.nombre} ha sido agregado exitosamente.`,
+        title: "Error",
+        description: "No se pudo guardar el cliente",
+        variant: "destructive"
       });
     }
-    
-    setClientes(nuevosClientes);
-    localStorage.setItem('clientes', JSON.stringify(nuevosClientes));
-    setShowForm(false);
-    setEditingCliente(null);
   };
 
   const handleEditCliente = (cliente: Cliente) => {

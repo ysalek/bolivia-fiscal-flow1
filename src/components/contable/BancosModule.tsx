@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,200 +8,164 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { Building2, Plus, Upload, Download, ArrowUpDown, CheckCircle, AlertCircle, CreditCard, Banknote, TrendingUp, Activity } from "lucide-react";
-import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
+import { useSupabaseBancos } from "@/hooks/useSupabaseBancos";
+import { Building2, Plus, CreditCard, TrendingUp, DollarSign, ArrowUpDown } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
 
-interface CuentaBancaria {
-  id: string;
-  banco: string;
-  numeroCuenta: string;
-  tipoCuenta: 'corriente' | 'ahorro';
-  moneda: 'BOB' | 'USD';
-  saldoLibros: number;
-  saldoEstado: number;
-  fechaUltimaConciliacion: string;
-  estado: 'activa' | 'inactiva';
-}
-
-interface MovimientoBancario {
-  id: string;
-  cuentaId: string;
-  fecha: string;
-  concepto: string;
-  referencia: string;
-  tipo: 'deposito' | 'retiro' | 'transferencia' | 'comision' | 'interes';
-  monto: number;
-  saldo: number;
-  conciliado: boolean;
-  asientoId?: string;
-}
-
-const bancosBolivianos = [
-  'Banco Nacional de Bolivia',
-  'Banco Mercantil Santa Cruz',
-  'Banco de Crédito de Bolivia',
-  'Banco Bisa',
-  'Banco Ganadero',
-  'Banco Económico',
-  'Banco Fortaleza',
-  'Banco Solidario',
-  'Banco Pyme Ecofuturo',
-  // Cooperativas de Ahorro y Crédito
-  'Cooperativa de Ahorro y Crédito Jesús Nazareno',
-  'Cooperativa de Ahorro y Crédito San Martín de Porres',
-  'Cooperativa de Ahorro y Crédito Fatima',
-  'Cooperativa de Ahorro y Crédito La Merced',
-  'Cooperativa de Ahorro y Crédito Potosí',
-  'Cooperativa de Ahorro y Crédito Univida',
-  'Cooperativa de Ahorro y Crédito Coopnor',
-  'Cooperativa de Ahorro y Crédito Mujeres en Desarrollo',
-  'Cooperativa de Ahorro y Crédito Inti Raymi',
-  'Cooperativa de Ahorro y Crédito Camiri'
-];
+type CuentaBancaria = Database['public']['Tables']['cuentas_bancarias']['Row'];
+type MovimientoBancario = Database['public']['Tables']['movimientos_bancarios']['Row'];
 
 const BancosModule = () => {
-  const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
-  const [movimientos, setMovimientos] = useState<MovimientoBancario[]>([]);
-  const [selectedCuenta, setSelectedCuenta] = useState<string>('');
+  const [selectedCuenta, setSelectedCuenta] = useState<CuentaBancaria | null>(null);
   const [showNewAccount, setShowNewAccount] = useState(false);
   const [showNewMovement, setShowNewMovement] = useState(false);
   const { toast } = useToast();
   const { guardarAsiento } = useContabilidadIntegration();
+  const {
+    cuentasBancarias: cuentas,
+    movimientosBancarios: movimientos,
+    loading,
+    createCuentaBancaria,
+    updateCuentaBancaria,
+    deleteCuentaBancaria,
+    createMovimientoBancario,
+    refetch
+  } = useSupabaseBancos();
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = () => {
-    const cuentasGuardadas = localStorage.getItem('cuentasBancarias');
-    if (cuentasGuardadas) {
-      setCuentas(JSON.parse(cuentasGuardadas));
-    } else {
-      // Crear cuenta de ejemplo
-      const cuentasIniciales: CuentaBancaria[] = [
-        {
-          id: '1',
-          banco: 'Banco Nacional de Bolivia',
-          numeroCuenta: '10000012345',
-          tipoCuenta: 'corriente',
-          moneda: 'BOB',
-          saldoLibros: 25000.00,
-          saldoEstado: 24850.00,
-          fechaUltimaConciliacion: new Date().toISOString().slice(0, 10),
-          estado: 'activa'
-        }
-      ];
-      setCuentas(cuentasIniciales);
-      localStorage.setItem('cuentasBancarias', JSON.stringify(cuentasIniciales));
+  const guardarCuenta = async (nuevaCuenta: any) => {
+    try {
+      const cuentaData = {
+        banco: nuevaCuenta.banco,
+        numero_cuenta: nuevaCuenta.numeroCuenta,
+        tipo_cuenta: nuevaCuenta.tipoCuenta,
+        nombre: nuevaCuenta.nombre,
+        moneda: nuevaCuenta.moneda,
+        saldo: nuevaCuenta.saldo || 0,
+        activa: true
+      };
+      
+      const cuenta = await createCuentaBancaria(cuentaData);
+      
+      toast({
+        title: "Cuenta bancaria agregada",
+        description: `${cuenta.banco} - ${cuenta.numero_cuenta}`,
+      });
+      
+      setShowNewAccount(false);
+    } catch (error) {
+      toast({
+        title: "Error al crear cuenta",
+        description: "No se pudo crear la cuenta bancaria",
+        variant: "destructive"
+      });
     }
+  };
 
-    const movimientosGuardados = localStorage.getItem('movimientosBancarios');
-    if (movimientosGuardados) {
-      setMovimientos(JSON.parse(movimientosGuardados));
+  const guardarMovimiento = async (nuevoMovimiento: any) => {
+    try {
+      const movimientoData = {
+        cuenta_bancaria_id: nuevoMovimiento.cuentaId,
+        tipo: nuevoMovimiento.tipo,
+        fecha: nuevoMovimiento.fecha,
+        descripcion: nuevoMovimiento.descripcion,
+        monto: nuevoMovimiento.monto,
+        beneficiario: nuevoMovimiento.beneficiario,
+        numero_comprobante: nuevoMovimiento.numeroComprobante,
+        saldo_anterior: selectedCuenta?.saldo || 0,
+        saldo_actual: (selectedCuenta?.saldo || 0) + (nuevoMovimiento.tipo === 'ingreso' ? nuevoMovimiento.monto : -nuevoMovimiento.monto)
+      };
+      
+      await createMovimientoBancario(movimientoData);
+      
+      // Actualizar saldo de la cuenta
+      if (selectedCuenta) {
+        await updateCuentaBancaria(selectedCuenta.id, {
+          saldo: movimientoData.saldo_actual
+        });
+      }
+      
+      // Generar asiento contable
+      const asiento = {
+        id: Date.now().toString(),
+        numero: `BCO-${Date.now().toString().slice(-6)}`,
+        fecha: nuevoMovimiento.fecha,
+        concepto: `${nuevoMovimiento.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'} bancario - ${nuevoMovimiento.descripcion}`,
+        referencia: `${selectedCuenta?.banco} - ${nuevoMovimiento.numeroComprobante}`,
+        debe: nuevoMovimiento.monto,
+        haber: nuevoMovimiento.monto,
+        estado: 'registrado' as const,
+        cuentas: nuevoMovimiento.tipo === 'ingreso' ? [
+          {
+            codigo: "1112",
+            nombre: "Bancos",
+            debe: nuevoMovimiento.monto,
+            haber: 0
+          },
+          {
+            codigo: "4111",
+            nombre: "Ingresos por Ventas",
+            debe: 0,
+            haber: nuevoMovimiento.monto
+          }
+        ] : [
+          {
+            codigo: "5111",
+            nombre: "Gastos Operativos",
+            debe: nuevoMovimiento.monto,
+            haber: 0
+          },
+          {
+            codigo: "1112",
+            nombre: "Bancos",
+            debe: 0,
+            haber: nuevoMovimiento.monto
+          }
+        ]
+      };
+
+      guardarAsiento(asiento);
+      
+      toast({
+        title: "Movimiento registrado",
+        description: `${nuevoMovimiento.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'} por Bs. ${nuevoMovimiento.monto}`,
+      });
+      
+      setShowNewMovement(false);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error al registrar movimiento",
+        description: "No se pudo registrar el movimiento bancario",
+        variant: "destructive"
+      });
     }
   };
 
-  const guardarCuenta = (nuevaCuenta: Omit<CuentaBancaria, 'id'>) => {
-    const cuenta: CuentaBancaria = {
-      ...nuevaCuenta,
-      id: Date.now().toString()
-    };
-    
-    const nuevasCuentas = [...cuentas, cuenta];
-    setCuentas(nuevasCuentas);
-    localStorage.setItem('cuentasBancarias', JSON.stringify(nuevasCuentas));
-    
-    toast({
-      title: "Cuenta bancaria agregada",
-      description: `${cuenta.banco} - ${cuenta.numeroCuenta}`,
-    });
-    
-    setShowNewAccount(false);
-  };
+  const totalSaldos = cuentas.reduce((sum, c) => sum + (c.saldo || 0), 0);
+  const cuentasActivas = cuentas.filter(c => c.activa).length;
+  const movimientosHoy = movimientos.filter(m => 
+    new Date(m.fecha).toDateString() === new Date().toDateString()
+  ).length;
 
-  const registrarMovimiento = (movimiento: Omit<MovimientoBancario, 'id'>) => {
-    const nuevoMovimiento: MovimientoBancario = {
-      ...movimiento,
-      id: Date.now().toString()
-    };
-
-    const nuevosMovimientos = [nuevoMovimiento, ...movimientos];
-    setMovimientos(nuevosMovimientos);
-    localStorage.setItem('movimientosBancarios', JSON.stringify(nuevosMovimientos));
-
-    // Generar asiento contable automático
-    const asiento = {
-      id: Date.now().toString(),
-      numero: `BCO-${Date.now().toString().slice(-6)}`,
-      fecha: movimiento.fecha,
-      concepto: `${movimiento.tipo} bancario - ${movimiento.concepto}`,
-      referencia: movimiento.referencia,
-      debe: movimiento.tipo === 'deposito' ? movimiento.monto : 0,
-      haber: movimiento.tipo === 'retiro' ? movimiento.monto : 0,
-      estado: 'registrado' as const,
-      cuentas: [
-        {
-          codigo: "1111",
-          nombre: "Caja y Bancos",
-          debe: movimiento.tipo === 'deposito' ? movimiento.monto : 0,
-          haber: movimiento.tipo === 'retiro' ? movimiento.monto : 0
-        },
-        {
-          codigo: movimiento.tipo === 'deposito' ? "1131" : "5211",
-          nombre: movimiento.tipo === 'deposito' ? "Cuentas por Cobrar" : "Gastos Bancarios",
-          debe: movimiento.tipo === 'retiro' ? movimiento.monto : 0,
-          haber: movimiento.tipo === 'deposito' ? movimiento.monto : 0
-        }
-      ]
-    };
-
-    guardarAsiento(asiento);
-
-    toast({
-      title: "Movimiento registrado",
-      description: "El movimiento bancario y su asiento contable han sido registrados",
-    });
-
-    setShowNewMovement(false);
-  };
-
-  const conciliarMovimiento = (movimientoId: string) => {
-    const movimientosActualizados = movimientos.map(m => 
-      m.id === movimientoId ? { ...m, conciliado: true } : m
-    );
-    setMovimientos(movimientosActualizados);
-    localStorage.setItem('movimientosBancarios', JSON.stringify(movimientosActualizados));
-    
-    toast({
-      title: "Movimiento conciliado",
-      description: "El movimiento ha sido marcado como conciliado",
-    });
-  };
-
-  const cuentaSeleccionada = cuentas.find(c => c.id === selectedCuenta);
-  const movimientosCuenta = movimientos.filter(m => m.cuentaId === selectedCuenta);
-  const movimientosPendientes = movimientosCuenta.filter(m => !m.conciliado);
-  
-  const totalSaldoLibros = cuentas.reduce((sum, c) => sum + c.saldoLibros, 0);
-  const totalSaldoEstados = cuentas.reduce((sum, c) => sum + c.saldoEstado, 0);
-  const diferenciasTotal = Math.abs(totalSaldoLibros - totalSaldoEstados);
-  const cuentasActivas = cuentas.filter(c => c.estado === 'activa').length;
+  if (loading) {
+    return <div className="flex items-center justify-center p-8">Cargando información bancaria...</div>;
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Header */}
-      <EnhancedHeader
-        title="Control Bancario Avanzado"
-        subtitle="Conciliación bancaria automática y gestión integral de cuentas financieras"
-        badge={{
-          text: `${cuentas.length} Cuentas Registradas`,
-          variant: "default"
-        }}
-        actions={
-          <div className="flex gap-2">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Building2 className="w-6 h-6 text-primary" />
+          <div>
+            <h2 className="text-2xl font-bold">Bancos</h2>
+            <p className="text-slate-600">
+              Gestión de cuentas bancarias y movimientos
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
           <Dialog open={showNewAccount} onOpenChange={setShowNewAccount}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -211,272 +175,226 @@ const BancosModule = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Agregar Cuenta Bancaria</DialogTitle>
+                <DialogTitle>Nueva Cuenta Bancaria</DialogTitle>
                 <DialogDescription>
-                  Registre una nueva cuenta bancaria para conciliación
+                  Registre una nueva cuenta bancaria
                 </DialogDescription>
               </DialogHeader>
               <NewAccountForm onSave={guardarCuenta} onCancel={() => setShowNewAccount(false)} />
             </DialogContent>
           </Dialog>
           
-          <Dialog open={showNewMovement} onOpenChange={setShowNewMovement}>
-            <DialogTrigger asChild>
-              <Button disabled={!selectedCuenta}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Movimiento
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar Movimiento Bancario</DialogTitle>
-                <DialogDescription>
-                  Registre un nuevo movimiento bancario
-                </DialogDescription>
-              </DialogHeader>
-              {selectedCuenta && (
+          {selectedCuenta && (
+            <Dialog open={showNewMovement} onOpenChange={setShowNewMovement}>
+              <DialogTrigger asChild>
+                <Button>
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  Nuevo Movimiento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Movimiento</DialogTitle>
+                  <DialogDescription>
+                    Registrar movimiento en {selectedCuenta.banco}
+                  </DialogDescription>
+                </DialogHeader>
                 <NewMovementForm 
-                  cuentaId={selectedCuenta} 
-                  onSave={registrarMovimiento} 
+                  cuenta={selectedCuenta} 
+                  onSave={guardarMovimiento} 
                   onCancel={() => setShowNewMovement(false)} 
                 />
-              )}
-            </DialogContent>
-          </Dialog>
-          </div>
-        }
-      />
-
-      {/* Enhanced Metrics Section */}
-      <Section 
-        title="Métricas Bancarias" 
-        subtitle="Indicadores financieros y estado de conciliación"
-      >
-        <MetricGrid columns={4}>
-          <EnhancedMetricCard
-            title="Cuentas Activas"
-            value={cuentasActivas}
-            subtitle={`${cuentas.length} total registradas`}
-            icon={Building2}
-            variant="default"
-            trend="up"
-            trendValue="Sistema bancario"
-          />
-          <EnhancedMetricCard
-            title="Saldo Total Libros"
-            value={`Bs. ${totalSaldoLibros.toLocaleString()}`}
-            subtitle="Balance contable"
-            icon={Banknote}
-            variant="success"
-            trend="up"
-            trendValue="Posición financiera"
-          />
-          <EnhancedMetricCard
-            title="Diferencias Pendientes"
-            value={`Bs. ${diferenciasTotal.toFixed(2)}`}
-            subtitle="Por conciliar"
-            icon={AlertCircle}
-            variant={diferenciasTotal > 0 ? "warning" : "success"}
-            trend={diferenciasTotal > 0 ? "down" : "up"}
-            trendValue={movimientosPendientes.length > 0 ? `${movimientosPendientes.length} mov.` : "Conciliado"}
-          />
-          <EnhancedMetricCard
-            title="Movimientos Pendientes"
-            value={movimientos.filter(m => !m.conciliado).length}
-            subtitle="Requieren conciliación"
-            icon={Activity}
-            variant={movimientos.filter(m => !m.conciliado).length > 0 ? "warning" : "success"}
-            trend={movimientos.filter(m => !m.conciliado).length > 0 ? "down" : "up"}
-            trendValue="Control automático"
-          />
-        </MetricGrid>
-      </Section>
-
-      {/* Enhanced Bank Accounts Grid */}
-      <Section 
-        title="Cuentas Bancarias"
-        subtitle="Selecciona una cuenta para ver sus movimientos y realizar conciliaciones"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {cuentas.map(cuenta => (
-            <Card 
-              key={cuenta.id} 
-              className={`cursor-pointer transition-all hover:shadow-lg glass-effect ${
-                selectedCuenta === cuenta.id 
-                  ? 'ring-2 ring-primary shadow-lg nav-gradient text-white' 
-                  : 'hover:scale-105 hover:shadow-md'
-              }`}
-              onClick={() => setSelectedCuenta(cuenta.id)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className={`text-lg ${selectedCuenta === cuenta.id ? 'text-white' : ''}`}>
-                      {cuenta.banco}
-                    </CardTitle>
-                    <CardDescription className={selectedCuenta === cuenta.id ? 'text-white/80' : ''}>
-                      {cuenta.numeroCuenta}
-                    </CardDescription>
-                  </div>
-                  <div className={`p-2 rounded-full ${selectedCuenta === cuenta.id ? 'bg-white/20' : 'bg-primary/10'}`}>
-                    <CreditCard className={`w-5 h-5 ${selectedCuenta === cuenta.id ? 'text-white' : 'text-primary'}`} />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className={`text-sm ${selectedCuenta === cuenta.id ? 'text-white/90' : 'text-muted-foreground'}`}>
-                      Saldo Libros:
-                    </span>
-                    <span className={`font-bold ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
-                      Bs. {cuenta.saldoLibros.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className={`text-sm ${selectedCuenta === cuenta.id ? 'text-white/90' : 'text-muted-foreground'}`}>
-                      Saldo Estado:
-                    </span>
-                    <span className={`font-bold ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
-                      Bs. {cuenta.saldoEstado.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-opacity-20">
-                    <span className={`text-sm font-medium ${selectedCuenta === cuenta.id ? 'text-white' : 'text-foreground'}`}>
-                      Diferencia:
-                    </span>
-                    <Badge 
-                      variant={Math.abs(cuenta.saldoLibros - cuenta.saldoEstado) < 0.01 ? "default" : "destructive"}
-                      className="font-bold"
-                    >
-                      Bs. {Math.abs(cuenta.saldoLibros - cuenta.saldoEstado).toLocaleString()}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-center pt-2">
-                    <Badge variant="outline" className={selectedCuenta === cuenta.id ? 'border-white/50 text-white' : ''}>
-                      {cuenta.tipoCuenta.toUpperCase()} • {cuenta.moneda}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-      </Section>
+      </div>
 
-      {cuentaSeleccionada && (
-        <Section 
-          title={`Movimientos Bancarios - ${cuentaSeleccionada.banco}`}
-          subtitle={`${movimientosCuenta.length} movimientos registrados • ${movimientosPendientes.length} pendientes de conciliación`}
-        >
-          <Card className="card-gradient">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Control de Movimientos
-                  </CardTitle>
-                  <CardDescription>
-                    Cuenta: {cuentaSeleccionada.numeroCuenta} • Saldo actual: Bs. {cuentaSeleccionada.saldoLibros.toLocaleString()}
-                  </CardDescription>
-                </div>
-                <Badge 
-                  variant={movimientosPendientes.length === 0 ? "default" : "destructive"}
-                  className="px-3 py-1"
-                >
-                  {movimientosPendientes.length === 0 ? (
-                    <>
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Conciliado
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {movimientosPendientes.length} Pendientes
-                    </>
-                  )}
-                </Badge>
-              </div>
-            </CardHeader>
+      {/* Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Saldo Total
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Concepto</TableHead>
-                  <TableHead>Referencia</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
-                  <TableHead className="text-right">Saldo</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movimientosCuenta.map(movimiento => (
-                  <TableRow key={movimiento.id}>
-                    <TableCell>{new Date(movimiento.fecha).toLocaleDateString('es-BO')}</TableCell>
-                    <TableCell>{movimiento.concepto}</TableCell>
-                    <TableCell>{movimiento.referencia}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {movimiento.tipo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={movimiento.tipo === 'deposito' ? 'text-green-600' : 'text-red-600'}>
-                        {movimiento.tipo === 'deposito' ? '+' : '-'}Bs. {movimiento.monto.toFixed(2)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">Bs. {movimiento.saldo.toFixed(2)}</TableCell>
-                    <TableCell>
-                      {movimiento.conciliado ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Conciliado
+            <div className="text-2xl font-bold">Bs. {totalSaldos.toFixed(2)}</div>
+            <p className="text-sm text-muted-foreground">En todas las cuentas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Cuentas Activas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{cuentasActivas}</div>
+            <p className="text-sm text-muted-foreground">Cuentas disponibles</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Movimientos Hoy
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{movimientosHoy}</div>
+            <p className="text-sm text-muted-foreground">Transacciones registradas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ArrowUpDown className="w-5 h-5" />
+              Total Movimientos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{movimientos.length}</div>
+            <p className="text-sm text-muted-foreground">Historial completo</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="cuentas" className="w-full">
+        <TabsList>
+          <TabsTrigger value="cuentas">Cuentas Bancarias</TabsTrigger>
+          <TabsTrigger value="movimientos">Movimientos</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="cuentas">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cuentas Bancarias</CardTitle>
+              <CardDescription>
+                Gestión de cuentas bancarias de la empresa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Banco</TableHead>
+                    <TableHead>Número de Cuenta</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Moneda</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cuentas.map(cuenta => (
+                    <TableRow 
+                      key={cuenta.id} 
+                      className={selectedCuenta?.id === cuenta.id ? "bg-blue-50" : ""}
+                    >
+                      <TableCell className="font-medium">{cuenta.banco}</TableCell>
+                      <TableCell>{cuenta.numero_cuenta}</TableCell>
+                      <TableCell>{cuenta.tipo_cuenta}</TableCell>
+                      <TableCell>{cuenta.moneda}</TableCell>
+                      <TableCell className="text-right">
+                        Bs. {cuenta.saldo?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={cuenta.activa ? 'default' : 'secondary'}>
+                          {cuenta.activa ? 'Activa' : 'Inactiva'}
                         </Badge>
-                      ) : (
-                        <Badge variant="outline">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          Pendiente
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {!movimiento.conciliado && (
+                      </TableCell>
+                      <TableCell>
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => conciliarMovimiento(movimiento.id)}
+                          variant={selectedCuenta?.id === cuenta.id ? "default" : "outline"}
+                          onClick={() => setSelectedCuenta(cuenta)}
                         >
-                          Conciliar
+                          {selectedCuenta?.id === cuenta.id ? "Seleccionada" : "Seleccionar"}
                         </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
-        </Section>
-      )}
+        </TabsContent>
+
+        <TabsContent value="movimientos">
+          <Card>
+            <CardHeader>
+              <CardTitle>Movimientos Bancarios</CardTitle>
+              <CardDescription>
+                Historial de transacciones bancarias
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Cuenta</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {movimientos
+                    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                    .map(movimiento => {
+                      const cuenta = cuentas.find(c => c.id === movimiento.cuenta_bancaria_id);
+                      return (
+                        <TableRow key={movimiento.id}>
+                          <TableCell>{new Date(movimiento.fecha).toLocaleDateString('es-BO')}</TableCell>
+                          <TableCell>{cuenta?.banco || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={movimiento.tipo === 'ingreso' ? 'default' : 'destructive'}>
+                              {movimiento.tipo}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{movimiento.descripcion}</TableCell>
+                          <TableCell className="text-right">
+                            <span className={movimiento.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}>
+                              {movimiento.tipo === 'ingreso' ? '+' : '-'}Bs. {Math.abs(movimiento.monto).toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            Bs. {movimiento.saldo_actual?.toFixed(2) || '0.00'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
 // Componente para formulario de nueva cuenta
-const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBancaria, 'id'>) => void, onCancel: () => void }) => {
-  const [formData, setFormData] = useState<Omit<CuentaBancaria, 'id'>>({
+const NewAccountForm = ({ onSave, onCancel }: { 
+  onSave: (cuenta: any) => void, 
+  onCancel: () => void 
+}) => {
+  const [formData, setFormData] = useState({
     banco: '',
     numeroCuenta: '',
     tipoCuenta: 'corriente',
+    nombre: '',
     moneda: 'BOB',
-    saldoLibros: 0,
-    saldoEstado: 0,
-    fechaUltimaConciliacion: new Date().toISOString().slice(0, 10),
-    estado: 'activa'
+    saldo: 0
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -488,16 +406,13 @@ const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBanc
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="banco">Banco</Label>
-        <Select onValueChange={(value) => setFormData(prev => ({ ...prev, banco: value }))}>
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccione un banco" />
-          </SelectTrigger>
-          <SelectContent>
-            {bancosBolivianos.map(banco => (
-              <SelectItem key={banco} value={banco}>{banco}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Input
+          id="banco"
+          value={formData.banco}
+          onChange={(e) => setFormData(prev => ({ ...prev, banco: e.target.value }))}
+          placeholder="Nombre del banco"
+          required
+        />
       </div>
 
       <div className="space-y-2">
@@ -506,30 +421,31 @@ const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBanc
           id="numeroCuenta"
           value={formData.numeroCuenta}
           onChange={(e) => setFormData(prev => ({ ...prev, numeroCuenta: e.target.value }))}
-          placeholder="10000012345"
+          placeholder="Número de cuenta bancaria"
           required
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="tipoCuenta">Tipo de Cuenta</Label>
-          <Select onValueChange={(value: 'corriente' | 'ahorro') => setFormData(prev => ({ ...prev, tipoCuenta: value }))}>
+          <Label>Tipo de Cuenta</Label>
+          <Select value={formData.tipoCuenta} onValueChange={(value) => setFormData(prev => ({ ...prev, tipoCuenta: value }))}>
             <SelectTrigger>
-              <SelectValue placeholder="Tipo" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="corriente">Corriente</SelectItem>
               <SelectItem value="ahorro">Ahorro</SelectItem>
+              <SelectItem value="dolar">Dólares</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="moneda">Moneda</Label>
-          <Select onValueChange={(value: 'BOB' | 'USD') => setFormData(prev => ({ ...prev, moneda: value }))}>
+          <Label>Moneda</Label>
+          <Select value={formData.moneda} onValueChange={(value) => setFormData(prev => ({ ...prev, moneda: value }))}>
             <SelectTrigger>
-              <SelectValue placeholder="Moneda" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="BOB">Bolivianos</SelectItem>
@@ -539,30 +455,26 @@ const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBanc
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="saldoLibros">Saldo en Libros</Label>
-          <Input
-            id="saldoLibros"
-            type="number"
-            step="0.01"
-            value={formData.saldoLibros}
-            onChange={(e) => setFormData(prev => ({ ...prev, saldoLibros: parseFloat(e.target.value) || 0 }))}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="nombre">Nombre de la Cuenta</Label>
+        <Input
+          id="nombre"
+          value={formData.nombre}
+          onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+          placeholder="Nombre descriptivo"
+          required
+        />
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="saldoEstado">Saldo Estado Bancario</Label>
-          <Input
-            id="saldoEstado"
-            type="number"
-            step="0.01"
-            value={formData.saldoEstado}
-            onChange={(e) => setFormData(prev => ({ ...prev, saldoEstado: parseFloat(e.target.value) || 0 }))}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="saldo">Saldo Inicial</Label>
+        <Input
+          id="saldo"
+          type="number"
+          step="0.01"
+          value={formData.saldo}
+          onChange={(e) => setFormData(prev => ({ ...prev, saldo: parseFloat(e.target.value) || 0 }))}
+        />
       </div>
 
       <div className="flex justify-end gap-2">
@@ -570,7 +482,7 @@ const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBanc
           Cancelar
         </Button>
         <Button type="submit">
-          Guardar Cuenta
+          Crear Cuenta
         </Button>
       </div>
     </form>
@@ -578,20 +490,19 @@ const NewAccountForm = ({ onSave, onCancel }: { onSave: (cuenta: Omit<CuentaBanc
 };
 
 // Componente para formulario de nuevo movimiento
-const NewMovementForm = ({ cuentaId, onSave, onCancel }: { 
-  cuentaId: string, 
-  onSave: (movimiento: Omit<MovimientoBancario, 'id'>) => void, 
+const NewMovementForm = ({ cuenta, onSave, onCancel }: { 
+  cuenta: CuentaBancaria,
+  onSave: (movimiento: any) => void, 
   onCancel: () => void 
 }) => {
-  const [formData, setFormData] = useState<Omit<MovimientoBancario, 'id'>>({
-    cuentaId,
+  const [formData, setFormData] = useState({
+    cuentaId: cuenta.id,
+    tipo: 'ingreso',
     fecha: new Date().toISOString().slice(0, 10),
-    concepto: '',
-    referencia: '',
-    tipo: 'deposito',
+    descripcion: '',
     monto: 0,
-    saldo: 0,
-    conciliado: false
+    beneficiario: '',
+    numeroComprobante: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -601,6 +512,19 @@ const NewMovementForm = ({ cuentaId, onSave, onCancel }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Tipo de Movimiento</Label>
+        <Select value={formData.tipo} onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ingreso">Ingreso</SelectItem>
+            <SelectItem value="egreso">Egreso</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="fecha">Fecha</Label>
@@ -614,46 +538,6 @@ const NewMovementForm = ({ cuentaId, onSave, onCancel }: {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tipo">Tipo de Movimiento</Label>
-          <Select onValueChange={(value: 'deposito' | 'retiro' | 'transferencia' | 'comision' | 'interes') => setFormData(prev => ({ ...prev, tipo: value }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="deposito">Depósito</SelectItem>
-              <SelectItem value="retiro">Retiro</SelectItem>
-              <SelectItem value="transferencia">Transferencia</SelectItem>
-              <SelectItem value="comision">Comisión</SelectItem>
-              <SelectItem value="interes">Interés</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="concepto">Concepto</Label>
-        <Input
-          id="concepto"
-          value={formData.concepto}
-          onChange={(e) => setFormData(prev => ({ ...prev, concepto: e.target.value }))}
-          placeholder="Descripción del movimiento"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="referencia">Referencia</Label>
-        <Input
-          id="referencia"
-          value={formData.referencia}
-          onChange={(e) => setFormData(prev => ({ ...prev, referencia: e.target.value }))}
-          placeholder="Número de cheque, transferencia, etc."
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
           <Label htmlFor="monto">Monto</Label>
           <Input
             id="monto"
@@ -664,18 +548,37 @@ const NewMovementForm = ({ cuentaId, onSave, onCancel }: {
             required
           />
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="saldo">Saldo Posterior</Label>
-          <Input
-            id="saldo"
-            type="number"
-            step="0.01"
-            value={formData.saldo}
-            onChange={(e) => setFormData(prev => ({ ...prev, saldo: parseFloat(e.target.value) || 0 }))}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="descripcion">Descripción</Label>
+        <Input
+          id="descripcion"
+          value={formData.descripcion}
+          onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+          placeholder="Concepto del movimiento"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="beneficiario">Beneficiario</Label>
+        <Input
+          id="beneficiario"
+          value={formData.beneficiario}
+          onChange={(e) => setFormData(prev => ({ ...prev, beneficiario: e.target.value }))}
+          placeholder="Nombre del beneficiario"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="numeroComprobante">Número de Comprobante</Label>
+        <Input
+          id="numeroComprobante"
+          value={formData.numeroComprobante}
+          onChange={(e) => setFormData(prev => ({ ...prev, numeroComprobante: e.target.value }))}
+          placeholder="Número de referencia"
+        />
       </div>
 
       <div className="flex justify-end gap-2">

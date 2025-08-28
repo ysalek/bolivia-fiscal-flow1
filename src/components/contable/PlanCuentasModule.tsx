@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Search, Edit, Trash2, FolderTree } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { inicializarPlanCuentas } from "@/utils/planCuentasInicial";
+import { useSupabasePlanCuentas } from "@/hooks/useSupabasePlanCuentas";
 
 interface Cuenta {
   codigo: string;
@@ -22,7 +23,6 @@ interface Cuenta {
 }
 
 const PlanCuentasModule = () => {
-  const [cuentas, setCuentas] = useState<Cuenta[]>([]);
   const [showNewCuenta, setShowNewCuenta] = useState(false);
   const [showEditCuenta, setShowEditCuenta] = useState(false);
   const [editingCuenta, setEditingCuenta] = useState<Cuenta | null>(null);
@@ -37,19 +37,14 @@ const PlanCuentasModule = () => {
     naturaleza: "deudora" as const
   });
   const { toast } = useToast();
-
-  // Cargar el plan de cuentas desde localStorage al inicializar
-  useEffect(() => {
-    const cuentasInicializadas = inicializarPlanCuentas();
-    setCuentas(cuentasInicializadas);
-  }, []);
-
-  // Guardar cambios en localStorage cada vez que se actualicen las cuentas
-  useEffect(() => {
-    if (cuentas.length > 0) {
-      localStorage.setItem('planCuentas', JSON.stringify(cuentas));
-    }
-  }, [cuentas]);
+  const {
+    planCuentas: cuentas,
+    loading,
+    createCuenta,
+    updateCuenta,
+    deleteCuenta,
+    refetch
+  } = useSupabasePlanCuentas();
 
   const getTipoColor = (tipo: string) => {
     const colors = {
