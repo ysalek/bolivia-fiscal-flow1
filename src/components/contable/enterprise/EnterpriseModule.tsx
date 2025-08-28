@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Building2, Target, TrendingUp, Users, Calendar, FileBarChart, Zap, Globe } from 'lucide-react';
+import { Building2, Target, TrendingUp, Users, Calendar, FileBarChart, Zap, Globe, Shield, Wifi } from 'lucide-react';
 import PresupuestosEmpresariales from '../presupuestos/PresupuestosEmpresariales';
 import CentrosCostoModule from '../costos/CentrosCostoModule';
 import AnalisisRentabilidad from '../rentabilidad/AnalisisRentabilidad';
 import FlujoCaja from '../finanzas/FlujoCaja';
 import IntegrationHub from '../integration/IntegrationHub';
+import CumplimientoNormativo2025 from '../cumplimiento/CumplimientoNormativo2025';
+import SIATIntegrationModule from '../siat/SIATIntegrationModule';
+import NormativaValidator2025 from '../normativa/NormativaValidator2025';
 
 const EnterpriseModule = () => {
   const [kpiPeriodo, setKpiPeriodo] = useState('mensual');
@@ -167,7 +170,7 @@ const EnterpriseModule = () => {
       </Card>
 
       <Tabs defaultValue="presupuestos" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="presupuestos" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Presupuestos
@@ -187,6 +190,18 @@ const EnterpriseModule = () => {
           <TabsTrigger value="integraciones" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Integraciones
+          </TabsTrigger>
+          <TabsTrigger value="cumplimiento" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Cumplimiento 2025
+          </TabsTrigger>
+          <TabsTrigger value="siat" className="flex items-center gap-2">
+            <Wifi className="w-4 h-4" />
+            SIAT
+          </TabsTrigger>
+          <TabsTrigger value="validator" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Validador
           </TabsTrigger>
         </TabsList>
 
@@ -208,6 +223,18 @@ const EnterpriseModule = () => {
 
         <TabsContent value="integraciones">
           <IntegrationHub />
+        </TabsContent>
+
+        <TabsContent value="cumplimiento">
+          <CumplimientoNormativo2025 />
+        </TabsContent>
+
+        <TabsContent value="siat">
+          <SIATIntegrationModule />
+        </TabsContent>
+
+        <TabsContent value="validator">
+          <NormativaValidator2025 />
         </TabsContent>
       </Tabs>
 
