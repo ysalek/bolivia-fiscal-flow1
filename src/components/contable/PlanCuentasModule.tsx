@@ -25,7 +25,7 @@ interface Cuenta {
 const PlanCuentasModule = () => {
   const [showNewCuenta, setShowNewCuenta] = useState(false);
   const [showEditCuenta, setShowEditCuenta] = useState(false);
-  const [editingCuenta, setEditingCuenta] = useState<Cuenta | null>(null);
+  const [editingCuenta, setEditingCuenta] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTipo, setFilterTipo] = useState("todos");
   const [newCuenta, setNewCuenta] = useState({
@@ -46,121 +46,144 @@ const PlanCuentasModule = () => {
     refetch
   } = useSupabasePlanCuentas();
 
-  const getTipoColor = (tipo: string) => {
-    const colors = {
-      'activo': 'bg-green-100 text-green-800',
-      'pasivo': 'bg-red-100 text-red-800', 
-      'patrimonio': 'bg-blue-100 text-blue-800',
-      'ingresos': 'bg-purple-100 text-purple-800',
-      'gastos': 'bg-orange-100 text-orange-800'
-    };
-    return colors[tipo as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const handleSaveCuenta = () => {
+  const guardarCuenta = async () => {
     if (!newCuenta.codigo || !newCuenta.nombre) {
       toast({
         title: "Error",
-        description: "Código y nombre son obligatorios.",
+        description: "Debe completar el código y nombre de la cuenta",
         variant: "destructive"
       });
       return;
     }
 
-    // Verificar que el código no exista
-    if (cuentas.find(c => c.codigo === newCuenta.codigo)) {
+    try {
+      const cuentaData: any = {
+        codigo: newCuenta.codigo,
+        nombre: newCuenta.nombre,
+        tipo: newCuenta.tipo,
+        naturaleza: newCuenta.naturaleza,
+        nivel: newCuenta.nivel || 1,
+        cuenta_padre: newCuenta.padre || null,
+        saldo: 0,
+        activa: true
+      };
+      
+      await createCuenta(cuentaData);
+      
+      toast({
+        title: "Cuenta creada",
+        description: `Cuenta ${newCuenta.codigo} - ${newCuenta.nombre}`,
+      });
+      
+      setShowNewCuenta(false);
+      setNewCuenta({
+        codigo: "",
+        nombre: "",
+        tipo: "activo" as const,
+        nivel: 1,
+        padre: "",
+        naturaleza: "deudora" as const
+      });
+      refetch();
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Ya existe una cuenta con ese código.",
+        description: "No se pudo crear la cuenta",
         variant: "destructive"
       });
-      return;
     }
-
-    const nuevaCuenta: Cuenta = {
-      ...newCuenta,
-      saldo: 0,
-      activa: true
-    };
-
-    setCuentas(prev => [...prev, nuevaCuenta]);
-
-    toast({
-      title: "Cuenta creada",
-      description: `Cuenta ${newCuenta.codigo} - ${newCuenta.nombre} ha sido creada.`,
-    });
-
-    setShowNewCuenta(false);
-    setNewCuenta({
-      codigo: "",
-      nombre: "",
-      tipo: "activo",
-      nivel: 1,
-      padre: "",
-      naturaleza: "deudora"
-    });
   };
 
-  const handleEditCuenta = (cuenta: Cuenta) => {
-    setEditingCuenta(cuenta);
-    setShowEditCuenta(true);
-  };
-
-  const handleUpdateCuenta = () => {
+  const editarCuenta = async () => {
     if (!editingCuenta) return;
-
-    setCuentas(prev => 
-      prev.map(c => 
-        c.codigo === editingCuenta.codigo ? editingCuenta : c
-      )
-    );
-
-    toast({
-      title: "Cuenta actualizada",
-      description: `Cuenta ${editingCuenta.codigo} ha sido actualizada.`,
-    });
-
-    setShowEditCuenta(false);
-    setEditingCuenta(null);
-  };
-
-  const handleDeleteCuenta = (codigo: string) => {
-    // Verificar si hay cuentas hijas
-    const cuentasHijas = cuentas.filter(c => c.padre === codigo);
-    if (cuentasHijas.length > 0) {
+    
+    try {
+      const cuentaData: any = {
+        codigo: editingCuenta.codigo,
+        nombre: editingCuenta.nombre,
+        tipo: editingCuenta.tipo,
+        naturaleza: editingCuenta.naturaleza,
+        nivel: editingCuenta.nivel || 1,
+        cuenta_padre: editingCuenta.cuenta_padre || null,
+        activa: editingCuenta.activa
+      };
+      
+      await updateCuenta(editingCuenta.id!, cuentaData);
+      
       toast({
-        title: "No se puede eliminar",
-        description: "Esta cuenta tiene subcuentas asociadas.",
+        title: "Cuenta actualizada",
+        description: `Cuenta ${editingCuenta.codigo} actualizada`,
+      });
+      
+      setShowEditCuenta(false);
+      setEditingCuenta(null);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la cuenta",
         variant: "destructive"
       });
-      return;
-    }
-
-    if (confirm("¿Está seguro de eliminar esta cuenta?")) {
-      setCuentas(prev => prev.filter(c => c.codigo !== codigo));
-      toast({
-        title: "Cuenta eliminada",
-        description: "La cuenta ha sido eliminada correctamente.",
-      });
     }
   };
 
-  const filteredCuentas = cuentas.filter(cuenta => {
-    const matchesSearch = cuenta.codigo.includes(searchTerm) || 
+  const eliminarCuenta = async (codigo: string) => {
+    const cuenta = cuentas.find(c => c.codigo === codigo);
+    if (!cuenta) return;
+
+    if (confirm(`¿Está seguro de eliminar la cuenta ${codigo} - ${cuenta.nombre}?`)) {
+      try {
+        await deleteCuenta(cuenta.id!);
+        
+        toast({
+          title: "Cuenta eliminada",
+          description: `Cuenta ${codigo} eliminada exitosamente`,
+        });
+        
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar la cuenta",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const cuentasAgrupadas = cuentas.reduce((acc, cuenta) => {
+    if (!acc[cuenta.tipo]) {
+      acc[cuenta.tipo] = [];
+    }
+    acc[cuenta.tipo].push(cuenta);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  const cuentasFiltradas = cuentas.filter(cuenta => {
+    const matchesSearch = cuenta.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          cuenta.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTipo = filterTipo === "todos" || cuenta.tipo === filterTipo;
-    return matchesSearch && matchesTipo;
+    const matchesFilter = filterTipo === "todos" || cuenta.tipo === filterTipo;
+    return matchesSearch && matchesFilter;
   });
+
+  const tiposCuenta = ["activo", "pasivo", "patrimonio", "ingresos", "gastos"];
+
+  if (loading) {
+    return <div className="flex items-center justify-center p-8">Cargando plan de cuentas...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Plan de Cuentas</h2>
-          <p className="text-slate-600">Gestión del catálogo de cuentas contables</p>
+        <div className="flex items-center gap-3">
+          <FolderTree className="w-6 h-6 text-primary" />
+          <div>
+            <h2 className="text-2xl font-bold">Plan de Cuentas</h2>
+            <p className="text-slate-600">
+              Gestión del catálogo de cuentas contables
+            </p>
+          </div>
         </div>
-        
         <Dialog open={showNewCuenta} onOpenChange={setShowNewCuenta}>
           <DialogTrigger asChild>
             <Button>
@@ -175,8 +198,7 @@ const PlanCuentasModule = () => {
                 Crear una nueva cuenta en el plan de cuentas
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="codigo">Código</Label>
@@ -184,24 +206,17 @@ const PlanCuentasModule = () => {
                     id="codigo"
                     value={newCuenta.codigo}
                     onChange={(e) => setNewCuenta(prev => ({ ...prev, codigo: e.target.value }))}
-                    placeholder="Ej: 1111"
+                    placeholder="1111"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="nivel">Nivel</Label>
-                  <Select 
-                    value={newCuenta.nivel.toString()} 
-                    onValueChange={(value) => setNewCuenta(prev => ({ ...prev, nivel: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1,2,3,4,5].map(n => (
-                        <SelectItem key={n} value={n.toString()}>Nivel {n}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="nivel"
+                    type="number"
+                    value={newCuenta.nivel}
+                    onChange={(e) => setNewCuenta(prev => ({ ...prev, nivel: parseInt(e.target.value) || 1 }))}
+                  />
                 </div>
               </div>
 
@@ -211,7 +226,7 @@ const PlanCuentasModule = () => {
                   id="nombre"
                   value={newCuenta.nombre}
                   onChange={(e) => setNewCuenta(prev => ({ ...prev, nombre: e.target.value }))}
-                  placeholder="Nombre descriptivo de la cuenta"
+                  placeholder="Caja General"
                 />
               </div>
 
@@ -234,6 +249,7 @@ const PlanCuentasModule = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label>Naturaleza</Label>
                   <Select 
@@ -251,217 +267,222 @@ const PlanCuentasModule = () => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="padre">Cuenta Padre (opcional)</Label>
+                <Input
+                  id="padre"
+                  value={newCuenta.padre}
+                  onChange={(e) => setNewCuenta(prev => ({ ...prev, padre: e.target.value }))}
+                  placeholder="1100"
+                />
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowNewCuenta(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSaveCuenta}>
+                <Button onClick={guardarCuenta}>
                   Crear Cuenta
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* Dialog para editar cuenta */}
-        <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Cuenta Contable</DialogTitle>
-              <DialogDescription>
-                Modificar la información de la cuenta
-              </DialogDescription>
-            </DialogHeader>
-            
-            {editingCuenta && (
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-codigo">Código</Label>
-                    <Input
-                      id="edit-codigo"
-                      value={editingCuenta.codigo}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-nivel">Nivel</Label>
-                    <Input
-                      id="edit-nivel"
-                      value={editingCuenta.nivel}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-nombre">Nombre de la Cuenta</Label>
-                  <Input
-                    id="edit-nombre"
-                    value={editingCuenta.nombre}
-                    onChange={(e) => setEditingCuenta(prev => prev ? { ...prev, nombre: e.target.value } : null)}
-                    placeholder="Nombre descriptivo de la cuenta"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tipo de Cuenta</Label>
-                    <Select 
-                      value={editingCuenta.tipo} 
-                      onValueChange={(value: any) => setEditingCuenta(prev => prev ? { ...prev, tipo: value } : null)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="activo">Activo</SelectItem>
-                        <SelectItem value="pasivo">Pasivo</SelectItem>
-                        <SelectItem value="patrimonio">Patrimonio</SelectItem>
-                        <SelectItem value="ingresos">Ingresos</SelectItem>
-                        <SelectItem value="gastos">Gastos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Naturaleza</Label>
-                    <Select 
-                      value={editingCuenta.naturaleza} 
-                      onValueChange={(value: any) => setEditingCuenta(prev => prev ? { ...prev, naturaleza: value } : null)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="deudora">Deudora</SelectItem>
-                        <SelectItem value="acreedora">Acreedora</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowEditCuenta(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleUpdateCuenta}>
-                    Guardar Cambios
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por código o nombre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterTipo} onValueChange={setFilterTipo}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
-                <SelectItem value="activo">Activos</SelectItem>
-                <SelectItem value="pasivo">Pasivos</SelectItem>
-                <SelectItem value="patrimonio">Patrimonio</SelectItem>
-                <SelectItem value="ingresos">Ingresos</SelectItem>
-                <SelectItem value="gastos">Gastos</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="flex gap-4 items-center">
+        <div className="flex-1 max-w-sm">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código o nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los tipos</SelectItem>
+            <SelectItem value="activo">Activos</SelectItem>
+            <SelectItem value="pasivo">Pasivos</SelectItem>
+            <SelectItem value="patrimonio">Patrimonio</SelectItem>
+            <SelectItem value="ingresos">Ingresos</SelectItem>
+            <SelectItem value="gastos">Gastos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Lista de Cuentas */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FolderTree className="w-6 h-6" />
-            Catálogo de Cuentas
-          </CardTitle>
+          <CardTitle>Cuentas Contables</CardTitle>
           <CardDescription>
-            Listado completo del plan de cuentas con sus saldos actuales
+            {cuentasFiltradas.length} cuentas encontradas
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Código</th>
-                  <th className="text-left p-2">Nombre</th>
-                  <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Nivel</th>
-                  <th className="text-left p-2">Naturaleza</th>
-                  <th className="text-right p-2">Saldo</th>
-                  <th className="text-center p-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCuentas.map((cuenta) => (
-                  <tr key={cuenta.codigo} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-mono text-sm">{cuenta.codigo}</td>
-                    <td className="p-2">
-                      <span style={{ paddingLeft: `${(cuenta.nivel - 1) * 20}px` }}>
-                        {cuenta.nombre}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <Badge className={getTipoColor(cuenta.tipo)}>
-                        {cuenta.tipo}
-                      </Badge>
-                    </td>
-                    <td className="p-2">{cuenta.nivel}</td>
-                    <td className="p-2">
-                      <Badge variant={cuenta.naturaleza === 'deudora' ? 'secondary' : 'outline'}>
-                        {cuenta.naturaleza}
-                      </Badge>
-                    </td>
-                    <td className="p-2 text-right font-mono">
-                      {cuenta.saldo.toLocaleString('es-BO', {
-                        style: 'currency',
-                        currency: 'BOB'
-                      })}
-                    </td>
-                    <td className="p-2">
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditCuenta(cuenta)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteCuenta(cuenta.codigo)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+          <div className="space-y-4">
+            {tiposCuenta.map(tipo => {
+              const cuentasTipo = cuentasFiltradas.filter(c => c.tipo === tipo);
+              if (cuentasTipo.length === 0) return null;
+
+              return (
+                <div key={tipo} className="space-y-2">
+                  <h3 className="font-semibold text-lg capitalize flex items-center gap-2">
+                    {tipo}
+                    <Badge variant="outline">{cuentasTipo.length}</Badge>
+                  </h3>
+                  <div className="border rounded-lg divide-y">
+                    {cuentasTipo.map(cuenta => (
+                      <div key={cuenta.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-semibold text-lg">
+                                {cuenta.codigo}
+                              </span>
+                              <span className="font-medium">{cuenta.nombre}</span>
+                              <Badge variant="outline" className="text-xs">
+                                Nivel {cuenta.nivel}
+                              </Badge>
+                              <Badge 
+                                variant={cuenta.naturaleza === 'deudora' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {cuenta.naturaleza}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>Saldo: Bs. {cuenta.saldo?.toFixed(2) || '0.00'}</span>
+                              {cuenta.cuenta_padre && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Padre: {cuenta.cuenta_padre}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingCuenta(cuenta)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => eliminarCuenta(cuenta.codigo)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog para editar cuenta */}
+      <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Cuenta</DialogTitle>
+            <DialogDescription>
+              Modificar información de la cuenta contable
+            </DialogDescription>
+          </DialogHeader>
+          {editingCuenta && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-codigo">Código</Label>
+                  <Input
+                    id="edit-codigo"
+                    value={editingCuenta.codigo}
+                    onChange={(e) => setEditingCuenta((prev: any) => ({ ...prev, codigo: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nivel">Nivel</Label>
+                  <Input
+                    id="edit-nivel"
+                    type="number"
+                    value={editingCuenta.nivel}
+                    onChange={(e) => setEditingCuenta((prev: any) => ({ ...prev, nivel: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-nombre">Nombre</Label>
+                <Input
+                  id="edit-nombre"
+                  value={editingCuenta.nombre}
+                  onChange={(e) => setEditingCuenta((prev: any) => ({ ...prev, nombre: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select 
+                    value={editingCuenta.tipo} 
+                    onValueChange={(value) => setEditingCuenta((prev: any) => ({ ...prev, tipo: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="activo">Activo</SelectItem>
+                      <SelectItem value="pasivo">Pasivo</SelectItem>
+                      <SelectItem value="patrimonio">Patrimonio</SelectItem>
+                      <SelectItem value="ingresos">Ingresos</SelectItem>
+                      <SelectItem value="gastos">Gastos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Naturaleza</Label>
+                  <Select 
+                    value={editingCuenta.naturaleza} 
+                    onValueChange={(value) => setEditingCuenta((prev: any) => ({ ...prev, naturaleza: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deudora">Deudora</SelectItem>
+                      <SelectItem value="acreedora">Acreedora</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowEditCuenta(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={editarCuenta}>
+                  Actualizar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

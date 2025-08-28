@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Users, Phone, Mail, MapPin, Check, TrendingUp, Activity, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Cliente, clientesIniciales } from "./billing/BillingData";
+import { useSupabaseClientes } from "@/hooks/useSupabaseClientes";
 import ClienteForm from "./clients/ClienteForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 const ClientesModule = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const {
     clientes,
@@ -44,6 +46,7 @@ const ClientesModule = () => {
       
       setShowForm(false);
       setEditingCliente(null);
+      refetch();
     } catch (error) {
       toast({
         title: "Error",
@@ -53,44 +56,52 @@ const ClientesModule = () => {
     }
   };
 
-  const handleEditCliente = (cliente: Cliente) => {
+  const handleEditCliente = (cliente: any) => {
     setEditingCliente(cliente);
     setShowForm(true);
   };
 
-  const handleDeleteCliente = (clienteId: string) => {
+  const handleDeleteCliente = async (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
 
     if (confirm(`¿Está seguro de eliminar el cliente ${cliente.nombre}?`)) {
-      const nuevosClientes = clientes.map(c => 
-        c.id === clienteId ? { ...c, activo: false } : c
-      );
-      setClientes(nuevosClientes);
-      localStorage.setItem('clientes', JSON.stringify(nuevosClientes));
-      
-      toast({
-        title: "Cliente desactivado",
-        description: `${cliente.nombre} ha sido desactivado.`,
-      });
+      try {
+        await eliminarCliente(clienteId);
+        toast({
+          title: "Cliente eliminado",
+          description: `${cliente.nombre} ha sido eliminado exitosamente.`,
+        });
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el cliente",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleReactivateCliente = (clienteId: string) => {
+  const handleReactivateCliente = async (clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
 
     if (confirm(`¿Está seguro de reactivar el cliente ${cliente.nombre}?`)) {
-      const nuevosClientes = clientes.map(c => 
-        c.id === clienteId ? { ...c, activo: true } : c
-      );
-      setClientes(nuevosClientes);
-      localStorage.setItem('clientes', JSON.stringify(nuevosClientes));
-      
-      toast({
-        title: "Cliente reactivado",
-        description: `${cliente.nombre} ha sido reactivado exitosamente.`,
-      });
+      try {
+        await actualizarCliente(clienteId, { activo: true });
+        toast({
+          title: "Cliente reactivado",
+          description: `${cliente.nombre} ha sido reactivado exitosamente.`,
+        });
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo reactivar el cliente",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -240,7 +251,7 @@ const ClientesModule = () => {
                         </div>
                         
                         <div className="text-xs text-muted-foreground pt-2">
-                        Registrado el: {cliente.fechaCreacion}
+                        Registrado el: {new Date(cliente.created_at || '').toLocaleDateString('es-BO')}
                         </div>
                     </div>
                     

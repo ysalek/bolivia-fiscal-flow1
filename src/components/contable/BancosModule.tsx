@@ -29,7 +29,6 @@ const BancosModule = () => {
     loading,
     createCuentaBancaria,
     updateCuentaBancaria,
-    deleteCuentaBancaria,
     createMovimientoBancario,
     refetch
   } = useSupabaseBancos();
@@ -314,7 +313,7 @@ const BancosModule = () => {
                         <Button
                           size="sm"
                           variant={selectedCuenta?.id === cuenta.id ? "default" : "outline"}
-                          onClick={() => setSelectedCuenta(cuenta)}
+                          onClick={() => setSelectedCuenta(cuenta as any)}
                         >
                           {selectedCuenta?.id === cuenta.id ? "Seleccionada" : "Seleccionar"}
                         </Button>
