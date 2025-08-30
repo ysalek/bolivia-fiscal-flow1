@@ -1,20 +1,46 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calculator, TestTube, Shield, BookOpen } from "lucide-react";
+import InventoryAccountingTests from "../testing/InventoryAccountingTests";
+import InventoryNormativaTests from "../testing/InventoryNormativaTests";
+import InventoryValidator from "../validation/InventoryValidator";
 
 const MethodologyTab = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="w-5 h-5" />
-          Metodología de Promedio Ponderado
-        </CardTitle>
-        <CardDescription>
-          Explicación del método de valuación y registro contable
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="space-y-6">
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Metodología
+          </TabsTrigger>
+          <TabsTrigger value="accounting" className="flex items-center gap-2">
+            <TestTube className="w-4 h-4" />
+            Tests Contables
+          </TabsTrigger>
+          <TabsTrigger value="normativa" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Normativa Bolivia
+          </TabsTrigger>
+          <TabsTrigger value="validation" className="flex items-center gap-2">
+            <Calculator className="w-4 h-4" />
+            Validación
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="w-5 h-5" />
+                Metodología de Promedio Ponderado
+              </CardTitle>
+              <CardDescription>
+                Explicación del método de valuación y registro contable según normativa boliviana
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
         <div>
           <h4 className="font-semibold mb-2">¿Qué es el Promedio Ponderado?</h4>
           <p className="text-sm text-gray-600 mb-4">
@@ -83,17 +109,43 @@ const MethodologyTab = () => {
           </div>
         </div>
 
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <h4 className="font-semibold mb-2 text-yellow-800">Ventajas del Promedio Ponderado</h4>
-          <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Suaviza las fluctuaciones de precios</li>
-            <li>• Método aceptado por normativas contables</li>
-            <li>• Refleja el costo real promedio del inventario</li>
-            <li>• Integración automática con registros contables</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2 text-yellow-800">Ventajas del Promedio Ponderado</h4>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li>• Suaviza las fluctuaciones de precios</li>
+                <li>• Método aceptado por normativas contables bolivianas</li>
+                <li>• Refleja el costo real promedio del inventario</li>
+                <li>• Integración automática con registros contables</li>
+                <li>• Cumple con principios del SIN Bolivia</li>
+              </ul>
+            </div>
+
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h4 className="font-semibold mb-2 text-red-800">⚠️ Normativa Boliviana Crítica</h4>
+              <div className="space-y-2 text-sm text-red-700">
+                <p><strong>COMPRAS:</strong> Van al ACTIVO Inventarios (1141), NO a gastos</p>
+                <p><strong>VENTAS:</strong> Solo van al Costo de Ventas (5111) para cálculo de utilidad</p>
+                <p><strong>PÉRDIDAS:</strong> Van a cuenta específica (5322), NO distorsionan utilidad</p>
+                <p><strong>ECUACIÓN:</strong> Inventario Final = Inicial + Compras - Costo Ventas</p>
+              </div>
+            </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="accounting" className="space-y-4">
+          <InventoryAccountingTests />
+        </TabsContent>
+
+        <TabsContent value="normativa" className="space-y-4">
+          <InventoryNormativaTests />
+        </TabsContent>
+
+        <TabsContent value="validation" className="space-y-4">
+          <InventoryValidator />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

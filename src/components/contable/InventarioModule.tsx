@@ -9,6 +9,7 @@ import {
 } from "./inventory/InventoryData";
 import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useInventarioBolivia } from "@/hooks/useInventarioBoliva";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section, ChartContainer } from "./dashboard/EnhancedLayout";
@@ -32,6 +33,7 @@ const InventarioModule = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { generarAsientoInventario } = useContabilidadIntegration();
+  const { procesarMovimientoInventario, validarIntegridadContable } = useInventarioBolivia();
   const { toast } = useToast();
 
   // Cargar y sincronizar productos del módulo de productos
@@ -90,72 +92,86 @@ const InventarioModule = () => {
     };
   }, []);
 
-  const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoActualizado: ProductoInventario) => {
+  const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoOriginal: ProductoInventario) => {
     try {
-      console.log("Procesando movimiento de inventario:", nuevoMovimiento);
-      console.log("Producto a actualizar:", productoActualizado);
-
-      // Generar el asiento contable
-      const asientoContable = generarAsientoInventario(nuevoMovimiento);
+      console.log("🇧🇴 Procesando movimiento según normativa boliviana:", nuevoMovimiento);
       
-      if (!asientoContable) {
+      // Usar el hook especializado para Bolivia que incluye todas las validaciones normativas
+      const resultado = procesarMovimientoInventario(nuevoMovimiento, productoOriginal);
+      
+      if (!resultado.exito) {
+        console.error("❌ Movimiento rechazado:", resultado.mensaje);
+        return;
+      }
+
+      const { productoActualizado, asientoGenerado } = resultado;
+      
+      if (!productoActualizado || !asientoGenerado) {
         toast({
-          title: "Error contable",
-          description: "No se pudo generar el asiento contable. El movimiento no fue procesado.",
+          title: "Error interno",
+          description: "No se pudo completar el procesamiento del movimiento",
           variant: "destructive"
         });
         return;
       }
 
-      // Si el asiento se generó correctamente, actualizar el estado
+      // Actualizar lista de movimientos
       setMovimientos(prev => {
         const nuevosMovimientos = [nuevoMovimiento, ...prev];
-        console.log("Movimientos actualizados:", nuevosMovimientos.length);
+        console.log("📝 Movimientos actualizados:", nuevosMovimientos.length);
         return nuevosMovimientos;
       });
 
+      // Actualizar productos en estado local
       setProductos(prev => {
         const productosActualizados = prev.map(p => 
           p.id === productoActualizado.id ? productoActualizado : p
         );
         
-        // Sincronizar cambios con el módulo de productos
+        // Sincronizar con localStorage del módulo de productos
         const productosLocalStorage = localStorage.getItem('productos');
         if (productosLocalStorage) {
           const productos: Producto[] = JSON.parse(productosLocalStorage);
           const productosActualizadosLS = productos.map(p => 
             p.id === productoActualizado.id 
-              ? { ...p, stockActual: productoActualizado.stockActual, fechaActualizacion: new Date().toISOString().slice(0, 10) }
+              ? { 
+                  ...p, 
+                  stockActual: productoActualizado.stockActual,
+                  costoUnitario: productoActualizado.costoUnitario,
+                  fechaActualizacion: new Date().toISOString().slice(0, 10) 
+                }
               : p
           );
           localStorage.setItem('productos', JSON.stringify(productosActualizadosLS));
+          console.log("🔄 Productos sincronizados con localStorage");
         }
         
-        console.log("Productos actualizados:", productosActualizados.find(p => p.id === productoActualizado.id));
         return productosActualizados;
       });
 
-      console.log("Asiento contable generado:", asientoContable);
-      
-      toast({
-        title: "Movimiento registrado",
-        description: `${nuevoMovimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} de inventario registrada exitosamente con asiento contable N° ${asientoContable.numero}`,
-      });
-
-      // Verificar alertas de stock
-      if (productoActualizado.stockActual <= productoActualizado.stockMinimo && productoActualizado.stockActual > 0) {
-        toast({
-          title: "Alerta de stock",
-          description: `El producto ${productoActualizado.nombre} tiene stock bajo (${productoActualizado.stockActual} unidades)`,
-          variant: "destructive"
-        });
+      // Validar integridad contable después del movimiento
+      const integridad = validarIntegridadContable();
+      if (integridad && !integridad.cumpleNormativa) {
+        console.warn("⚠️ Alerta de integridad contable detectada");
       }
 
-    } catch (error) {
-      console.error("Error al procesar movimiento:", error);
       toast({
-        title: "Error",
-        description: "Ocurrió un error al procesar el movimiento de inventario",
+        title: "✅ Movimiento Registrado",
+        description: `${nuevoMovimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'} procesada según normativa boliviana. Asiento: ${asientoGenerado.numero}`,
+      });
+
+      console.log("✅ Movimiento completado exitosamente:", {
+        movimiento: nuevoMovimiento.id,
+        asiento: asientoGenerado.numero,
+        nuevoStock: productoActualizado.stockActual,
+        nuevoCosto: productoActualizado.costoPromedioPonderado
+      });
+
+    } catch (error) {
+      console.error("💥 Error crítico al procesar movimiento:", error);
+      toast({
+        title: "Error Crítico",
+        description: "Error grave en el procesamiento. Contacte al administrador.",
         variant: "destructive"
       });
     }

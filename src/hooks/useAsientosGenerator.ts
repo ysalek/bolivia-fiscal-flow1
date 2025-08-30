@@ -14,10 +14,11 @@ export const useAsientosGenerator = () => {
       const cuentas: CuentaAsiento[] = [];
       const fecha = new Date().toISOString().slice(0, 10);
       
-      console.log("Generando asiento para movimiento:", movimiento);
+      console.log("Generando asiento para movimiento (normativa boliviana):", movimiento);
       
       if (movimiento.tipo === 'entrada') {
-        // Entrada de inventario - SIEMPRE aumenta el inventario
+        // ENTRADA DE INVENTARIO según normativa boliviana
+        // Las entradas siempre incrementan el activo inventario
         cuentas.push({
           codigo: "1141",
           nombre: "Inventarios",
@@ -25,18 +26,37 @@ export const useAsientosGenerator = () => {
           haber: 0
         });
         
-        // Determinar la cuenta de contrapartida según el motivo
+        // Determinar la cuenta de contrapartida según el motivo específico
         if (movimiento.motivo?.toLowerCase().includes('anulación') || 
+            movimiento.motivo?.toLowerCase().includes('devolución') ||
             movimiento.motivo?.toLowerCase().includes('devolucion')) {
-          // Al devolver mercadería, se reduce el costo de ventas (reversión)
+          // DEVOLUCIÓN DE VENTA - Se revierte el costo registrado previamente
           cuentas.push({
             codigo: "5111",
             nombre: "Costo de Productos Vendidos",
             debe: 0,
             haber: movimiento.valorMovimiento
           });
+        } else if (movimiento.motivo?.toLowerCase().includes('compra') ||
+                   movimiento.motivo?.toLowerCase().includes('proveedor') ||
+                   movimiento.motivo?.toLowerCase().includes('adquisición')) {
+          // COMPRA NORMAL - Incrementa pasivo por pagar
+          cuentas.push({
+            codigo: "2111",
+            nombre: "Cuentas por Pagar",
+            debe: 0,
+            haber: movimiento.valorMovimiento
+          });
+        } else if (movimiento.motivo?.toLowerCase().includes('ajuste positivo')) {
+          // AJUSTE POSITIVO - Se registra como ganancia por diferencia de inventario
+          cuentas.push({
+            codigo: "4211",
+            nombre: "Otros Ingresos",
+            debe: 0,
+            haber: movimiento.valorMovimiento
+          });
         } else {
-          // Compra o ingreso normal
+          // Por defecto, se considera compra
           cuentas.push({
             codigo: "2111",
             nombre: "Cuentas por Pagar",
@@ -45,18 +65,60 @@ export const useAsientosGenerator = () => {
           });
         }
       } else if (movimiento.tipo === 'salida') {
-        // Salida de inventario - SOLO registrar costo si es por VENTA
+        // SALIDA DE INVENTARIO - Análisis crítico según normativa boliviana
+        
+        // SIEMPRE se reduce el inventario en cualquier salida
+        cuentas.push({
+          codigo: "1141",
+          nombre: "Inventarios",
+          debe: 0,
+          haber: movimiento.valorMovimiento
+        });
+        
+        // La cuenta de contrapartida es CRÍTICA según la normativa
         if (movimiento.motivo?.toLowerCase().includes('venta') || 
-            movimiento.motivo?.toLowerCase().includes('factura')) {
-          // Es una venta - registrar costo de ventas
+            movimiento.motivo?.toLowerCase().includes('factura') ||
+            movimiento.motivo?.toLowerCase().includes('vendido')) {
+          // VENTA REAL - Va al costo de ventas para calcular utilidad bruta
           cuentas.push({
             codigo: "5111",
             nombre: "Costo de Productos Vendidos",
             debe: movimiento.valorMovimiento,
             haber: 0
           });
+        } else if (movimiento.motivo?.toLowerCase().includes('pérdida') ||
+                   movimiento.motivo?.toLowerCase().includes('perdida') ||
+                   movimiento.motivo?.toLowerCase().includes('deterioro') ||
+                   movimiento.motivo?.toLowerCase().includes('robo') ||
+                   movimiento.motivo?.toLowerCase().includes('vencimiento')) {
+          // PÉRDIDA/DETERIORO - Va a pérdidas, NO al costo de ventas
+          cuentas.push({
+            codigo: "5322",
+            nombre: "Pérdidas y Faltantes de Inventario",
+            debe: movimiento.valorMovimiento,
+            haber: 0
+          });
+        } else if (movimiento.motivo?.toLowerCase().includes('consumo interno') ||
+                   movimiento.motivo?.toLowerCase().includes('uso interno') ||
+                   movimiento.motivo?.toLowerCase().includes('muestra')) {
+          // USO INTERNO - Se registra como gasto operativo
+          cuentas.push({
+            codigo: "5211",
+            nombre: "Gastos Operativos",
+            debe: movimiento.valorMovimiento,
+            haber: 0
+          });
+        } else if (movimiento.motivo?.toLowerCase().includes('ajuste negativo')) {
+          // AJUSTE NEGATIVO por diferencia de inventario
+          cuentas.push({
+            codigo: "5322",
+            nombre: "Pérdidas y Faltantes de Inventario",
+            debe: movimiento.valorMovimiento,
+            haber: 0
+          });
         } else {
-          // Es otro tipo de salida (ajuste, pérdida, etc.) - usar cuenta de pérdidas
+          // POR DEFECTO - Si no es claramente una venta, va a pérdidas
+          console.warn("Motivo de salida no específico, registrando como pérdida:", movimiento.motivo);
           cuentas.push({
             codigo: "5322",
             nombre: "Pérdidas y Faltantes de Inventario",
@@ -64,14 +126,6 @@ export const useAsientosGenerator = () => {
             haber: 0
           });
         }
-        
-        // Siempre se reduce el inventario en salidas
-        cuentas.push({
-          codigo: "1141",
-          nombre: "Inventarios",
-          debe: 0,
-          haber: movimiento.valorMovimiento
-        });
       }
 
       const totalDebe = cuentas.reduce((sum, cuenta) => sum + cuenta.debe, 0);
