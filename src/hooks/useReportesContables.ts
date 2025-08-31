@@ -341,9 +341,12 @@ export const useReportesContables = () => {
               }
             });
             
-            cuenta.nombre = "Costo de Ventas (Solo productos vendidos)";
-            gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: costoVentasReal });
-            gastos.total += costoVentasReal;
+            // Solo agregar si hay ventas reales registradas
+            if (costoVentasReal > 0) {
+              cuenta.nombre = "Costo de Ventas (Solo productos vendidos)";
+              gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: costoVentasReal });
+              gastos.total += costoVentasReal;
+            }
           } else if (cuenta.codigo === '5121') {
             // Las compras NO van al Estado de Resultados, van a inventario
             // Solo incluir si hay una diferencia contable específica
