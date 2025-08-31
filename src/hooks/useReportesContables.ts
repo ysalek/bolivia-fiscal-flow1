@@ -206,19 +206,34 @@ export const useReportesContables = () => {
     const ingresos = { total: 0 };
     const gastos = { total: 0 };
 
-    // PRIMERO: Calcular siempre el inventario físico real
+    // PRIMERO: Calcular INVENTARIO según normativa boliviana
     const productos = JSON.parse(localStorage.getItem('productos') || '[]');
     let valorInventarioFisico = 0;
+    let valorInventarioContable = 0;
     
+    // Calcular valor físico del inventario (stock actual * costo unitario)
     productos.forEach((producto: any) => {
-      const stock = producto.stock || 0;
+      const stockActual = producto.stockActual || 0;
       const costoUnitario = producto.costoUnitario || 0;
-      valorInventarioFisico += stock * costoUnitario;
+      valorInventarioFisico += stockActual * costoUnitario;
     });
     
-    // Asegurar que siempre aparezca la cuenta de inventario con el valor real
-    const saldoInventario = Math.max(0, valorInventarioFisico);
+    // Buscar saldo contable de inventarios (cuenta 1141)
+    const cuentaInventario = details.find(cuenta => cuenta.codigo === '1141');
+    if (cuentaInventario) {
+      valorInventarioContable = cuentaInventario.saldoDeudor - cuentaInventario.saldoAcreedor;
+    }
+    
+    // Según normativa boliviana, usar el valor físico real o contable (el que sea mayor)
+    const saldoInventario = Math.max(valorInventarioFisico, valorInventarioContable);
     let inventarioAgregado = false;
+    
+    console.log('📊 INVENTARIO BALANCE GENERAL:', {
+      valorInventarioFisico,
+      valorInventarioContable,
+      saldoInventarioFinal: saldoInventario,
+      productos: productos.length
+    });
 
     details.forEach(cuenta => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;

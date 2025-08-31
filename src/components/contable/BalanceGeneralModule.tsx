@@ -182,17 +182,29 @@ const BalanceGeneralModule = () => {
                       <TableHead className="text-right">Saldo (Bs.)</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {activos.cuentas.map((cuenta) => (
-                      <TableRow key={cuenta.codigo}>
-                        <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
-                        <TableCell>{cuenta.nombre}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {cuenta.saldo.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
+                   <TableBody>
+                     {activos.cuentas.map((cuenta) => (
+                       <TableRow key={cuenta.codigo}>
+                         <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
+                         <TableCell>
+                           {cuenta.nombre}
+                           {cuenta.codigo === '1141' && (
+                             <div className="text-xs text-muted-foreground mt-1">
+                               📦 Inventario físico según normativa boliviana
+                             </div>
+                           )}
+                         </TableCell>
+                         <TableCell className="text-right font-semibold">
+                           {cuenta.saldo.toFixed(2)}
+                           {cuenta.codigo === '1141' && cuenta.saldo === 0 && (
+                             <div className="text-xs text-amber-600 mt-1">
+                               ⚠️ Sin inventario valorizado
+                             </div>
+                           )}
+                         </TableCell>
+                       </TableRow>
+                     ))}
+                   </TableBody>
                   <TableFooter>
                     <TableRow className="bg-blue-50">
                       <TableCell colSpan={2} className="font-bold">TOTAL ACTIVOS</TableCell>
