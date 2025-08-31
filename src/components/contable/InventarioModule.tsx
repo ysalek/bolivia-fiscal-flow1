@@ -9,7 +9,7 @@ import {
 } from "./inventory/InventoryData";
 import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { useInventarioBolivia } from "@/hooks/useInventarioBoliva";
+import { useInventarioBolivia } from "@/hooks/useInventarioBolivia";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section, ChartContainer } from "./dashboard/EnhancedLayout";
