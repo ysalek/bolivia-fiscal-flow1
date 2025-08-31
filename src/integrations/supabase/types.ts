@@ -357,7 +357,7 @@ export type Database = {
           subtotal: number | null
           total: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -373,7 +373,7 @@ export type Database = {
           subtotal?: number | null
           total?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -389,7 +389,7 @@ export type Database = {
           subtotal?: number | null
           total?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -979,7 +979,7 @@ export type Database = {
           subtotal: number | null
           total: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           cliente_id?: string | null
@@ -1000,7 +1000,7 @@ export type Database = {
           subtotal?: number | null
           total?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           cliente_id?: string | null
@@ -1021,7 +1021,7 @@ export type Database = {
           subtotal?: number | null
           total?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -1032,6 +1032,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_access_log: {
+        Row: {
+          id: string
+          ip_address: unknown | null
+          operation: string
+          record_id: string | null
+          risk_score: number | null
+          sensitive_fields: Json | null
+          session_id: string | null
+          table_name: string
+          timestamp: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: unknown | null
+          operation: string
+          record_id?: string | null
+          risk_score?: number | null
+          sensitive_fields?: Json | null
+          session_id?: string | null
+          table_name: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: unknown | null
+          operation?: string
+          record_id?: string | null
+          risk_score?: number | null
+          sensitive_fields?: Json | null
+          session_id?: string | null
+          table_name?: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       items_compras: {
         Row: {
@@ -1887,13 +1929,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      financial_security_dashboard: {
+        Row: {
+          access_date: string | null
+          average_risk_score: number | null
+          high_risk_accesses: number | null
+          low_risk_accesses: number | null
+          medium_risk_accesses: number | null
+          operations_performed: string | null
+          tables_accessed: string | null
+          total_accesses: number | null
+          unique_users_accessing: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      mask_sensitive_financial_data: {
+        Args: { data: string; mask_type?: string }
+        Returns: string
+      }
+      validate_financial_access: {
+        Args: {
+          data_owner_id: string
+          operation_type: string
+          requesting_user_id: string
         }
         Returns: boolean
       }
