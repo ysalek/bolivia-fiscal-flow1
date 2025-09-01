@@ -30,6 +30,8 @@ const InventarioModule = () => {
     open: false,
     tipo: 'entrada'
   });
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { generarAsientoInventario } = useContabilidadIntegration();
@@ -175,9 +177,17 @@ const InventarioModule = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setImporting(true);
+    setImportProgress({ current: 0, total: 0 });
+
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
+            toast({
+                title: "Procesando archivo",
+                description: "Leyendo datos del archivo Excel...",
+            });
+
             const data = e.target?.result;
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
@@ -196,6 +206,14 @@ const InventarioModule = () => {
             const productosExistentesCodigos = new Set(productos.map(p => p.codigo));
             const productosNuevos: ProductoInventario[] = [];
             const productosOmitidos: string[] = [];
+
+            setImportProgress({ current: 0, total: json.length });
+
+            // Procesar datos del Excel
+            toast({
+                title: "Validando productos",
+                description: `Procesando ${json.length} productos del archivo...`,
+            });
 
             json.forEach((row, index) => {
                 const codigo = String(row.codigo);
@@ -227,40 +245,59 @@ const InventarioModule = () => {
                 productosExistentesCodigos.add(codigo);
             });
 
-            // Crear productos en Supabase
-            const productosCreados = await Promise.all(
-                productosNuevos.map(async (productoInventario) => {
-                    try {
-                        return await crearProducto({
-                            codigo: productoInventario.codigo,
-                            nombre: productoInventario.nombre,
-                            descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
-                            categoria_id: productoInventario.categoria,
-                            unidad_medida: 'PZA',
-                            precio_venta: productoInventario.precioVenta,
-                            precio_compra: productoInventario.costoUnitario,
-                            costo_unitario: productoInventario.costoUnitario,
-                            stock_actual: productoInventario.stockActual,
-                            stock_minimo: productoInventario.stockMinimo,
-                            codigo_sin: '00000000',
-                            activo: true,
-                            imagen_url: undefined
-                        });
-                    } catch (error) {
-                        console.error(`Error creando producto ${productoInventario.codigo}:`, error);
-                        return null;
-                    }
-                })
-            );
+            setImportProgress({ current: 0, total: productosNuevos.length });
+
+            // Crear productos en Supabase uno por uno para mostrar progreso
+            const productosCreados: any[] = [];
+            
+            toast({
+                title: "Guardando en base de datos",
+                description: `Importando ${productosNuevos.length} productos nuevos...`,
+            });
+
+            for (let i = 0; i < productosNuevos.length; i++) {
+                const productoInventario = productosNuevos[i];
+                setImportProgress({ current: i + 1, total: productosNuevos.length });
+                
+                try {
+                    const resultado = await crearProducto({
+                        codigo: productoInventario.codigo,
+                        nombre: productoInventario.nombre,
+                        descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
+                        categoria_id: productoInventario.categoria,
+                        unidad_medida: 'PZA',
+                        precio_venta: productoInventario.precioVenta,
+                        precio_compra: productoInventario.costoUnitario,
+                        costo_unitario: productoInventario.costoUnitario,
+                        stock_actual: productoInventario.stockActual,
+                        stock_minimo: productoInventario.stockMinimo,
+                        codigo_sin: '00000000',
+                        activo: true,
+                        imagen_url: undefined
+                    });
+                    productosCreados.push(resultado);
+                } catch (error) {
+                    console.error(`Error creando producto ${productoInventario.codigo}:`, error);
+                    productosCreados.push(null);
+                }
+
+                // Mostrar progreso cada 10 productos o en el último
+                if ((i + 1) % 10 === 0 || i === productosNuevos.length - 1) {
+                    toast({
+                        title: "Importando productos",
+                        description: `${i + 1}/${productosNuevos.length} productos procesados...`,
+                    });
+                }
+            }
 
             const productosExitosos = productosCreados.filter(p => p !== null);
 
-            let description = `${productosExitosos.length} productos nuevos importados y guardados en la base de datos.`;
+            let description = `✅ ${productosExitosos.length} productos nuevos importados y guardados en la base de datos.`;
             if (productosOmitidos.length > 0) {
-                description += ` ${productosOmitidos.length} productos omitidos porque su código ya existía.`;
+                description += ` ⚠️ ${productosOmitidos.length} productos omitidos porque su código ya existía.`;
             }
             if (productosCreados.length !== productosExitosos.length) {
-                description += ` ${productosCreados.length - productosExitosos.length} productos fallaron al importar.`;
+                description += ` ❌ ${productosCreados.length - productosExitosos.length} productos fallaron al importar.`;
             }
 
             toast({
@@ -279,6 +316,8 @@ const InventarioModule = () => {
                 variant: "destructive",
             });
         } finally {
+            setImporting(false);
+            setImportProgress({ current: 0, total: 0 });
             if (event.target) {
                 event.target.value = '';
             }
@@ -307,9 +346,13 @@ const InventarioModule = () => {
               <FileDown className="w-4 h-4 mr-2" />
               Formato Excel
             </Button>
-            <Button variant="outline" onClick={handleImportClick}>
+            <Button 
+              variant="outline" 
+              onClick={handleImportClick}
+              disabled={importing}
+            >
               <FileUp className="w-4 h-4 mr-2" />
-              Importar Datos
+              {importing ? `Importando... (${importProgress.current}/${importProgress.total})` : 'Importar Datos'}
             </Button>
             <Button
               className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
