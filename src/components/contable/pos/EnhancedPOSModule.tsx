@@ -34,6 +34,7 @@ import {
   ScanLine
 } from "lucide-react";
 import { Producto } from "../products/ProductsData";
+import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 
 interface ItemVenta {
   id: string;
@@ -72,7 +73,7 @@ interface Venta {
 }
 
 const EnhancedPOSModule = () => {
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const { productos: productosSupabase } = useSupabaseProductos();
   const [carrito, setCarrito] = useState<ItemVenta[]>([]);
   const [busquedaProducto, setBusquedaProducto] = useState("");
   const [cliente, setCliente] = useState<Cliente | null>(null);
@@ -88,15 +89,29 @@ const EnhancedPOSModule = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Convertir productos de Supabase al formato del POS
+  const productos: Producto[] = productosSupabase.map(p => ({
+    id: p.id,
+    codigo: p.codigo,
+    nombre: p.nombre,
+    descripcion: p.descripcion || '',
+    categoria: p.categoria_id || 'General',
+    unidadMedida: p.unidad_medida,
+    precioVenta: p.precio_venta,
+    precioCompra: p.precio_compra,
+    costoUnitario: p.costo_unitario,
+    stockActual: p.stock_actual,
+    stockMinimo: p.stock_minimo,
+    codigoSIN: p.codigo_sin || '00000000',
+    activo: p.activo,
+    fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+    fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10)
+  }));
+
   // Cargar datos al inicio
   useEffect(() => {
-    const productosGuardados = localStorage.getItem('productos');
     const ventasGuardadas = localStorage.getItem('ventas');
     const clientesGuardados = localStorage.getItem('clientes');
-    
-    if (productosGuardados) {
-      setProductos(JSON.parse(productosGuardados));
-    }
     
     if (ventasGuardadas) {
       const todasVentas = JSON.parse(ventasGuardadas);
@@ -108,7 +123,7 @@ const EnhancedPOSModule = () => {
       const clientes = JSON.parse(clientesGuardados);
       setClientesPredefinidos([...clientesPredefinidos, ...clientes]);
     }
-  }, []);
+  }, [productosSupabase]);
 
   // Auto-focus en búsqueda
   useEffect(() => {
@@ -317,21 +332,8 @@ const EnhancedPOSModule = () => {
       return;
     }
 
-    // Actualizar stock de productos
-    const productosActualizados = productos.map(producto => {
-      const itemCarrito = carrito.find(item => item.producto.id === producto.id);
-      if (itemCarrito) {
-        return {
-          ...producto,
-          stockActual: producto.stockActual - itemCarrito.cantidad,
-          fechaActualizacion: new Date().toISOString().slice(0, 10)
-        };
-      }
-      return producto;
-    });
-
-    localStorage.setItem('productos', JSON.stringify(productosActualizados));
-    setProductos(productosActualizados);
+    // Los productos se actualizan automáticamente en Supabase mediante useSupabaseProductos
+    // La actualización del stock se maneja através del sistema de facturación integrado
 
     // Generar venta
     const venta: Venta = {

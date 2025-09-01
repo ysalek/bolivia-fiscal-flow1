@@ -4,11 +4,11 @@ import { Plus, BarChart, FileText, DollarSign, Users, Package, TrendingUp, Activ
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidacionSIN } from "./billing/BillingData";
-import { Producto, productosIniciales } from "./products/ProductsData";
 import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
 import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 import InvoiceSummary from "./billing/InvoiceSummary";
 import InvoiceList from "./billing/InvoiceList";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -18,13 +18,13 @@ import DeclaracionIVA from "./DeclaracionIVA";
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciales);
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [showAccountingHistory, setShowAccountingHistory] = useState(false);
   const [showDeclaracionIVA, setShowDeclaracionIVA] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Factura | null>(null);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const { toast } = useToast();
+  const { productos } = useSupabaseProductos();
   const { 
     generarAsientoVenta, 
     generarAsientoInventario, 
@@ -39,11 +39,6 @@ const FacturacionModule = () => {
     const facturasGuardadas = localStorage.getItem('facturas');
     if (facturasGuardadas) {
       setFacturas(JSON.parse(facturasGuardadas));
-    }
-
-    const productosGuardados = localStorage.getItem('productos');
-    if (productosGuardados) {
-      setProductos(JSON.parse(productosGuardados));
     }
 
     const clientesGuardados = localStorage.getItem('clientes');
@@ -81,7 +76,7 @@ const FacturacionModule = () => {
         // 1. Procesar inventario y generar asiento de costo de ventas
         facturaValidada.items.forEach(item => {
           const producto = productos.find(p => p.id === item.productoId);
-          if (producto && producto.costoUnitario > 0) {
+          if (producto && producto.costo_unitario > 0) {
             // CRÍTICO: Actualizar stock del producto ANTES de crear el movimiento
             const stockActualizado = actualizarStockProducto(item.productoId, item.cantidad, 'salida');
             
@@ -94,14 +89,7 @@ const FacturacionModule = () => {
               return; // Detener el proceso si falla la actualización de stock
             }
 
-            // Actualizar también el estado local de productos
-            setProductos(prevProductos => 
-              prevProductos.map(p => 
-                p.id === item.productoId 
-                  ? { ...p, stockActual: p.stockActual - item.cantidad }
-                  : p
-              )
-            );
+            // Los productos se actualizan automáticamente en Supabase mediante useSupabaseProductos
 
             const movimientoInventario: MovimientoInventario = {
               id: `${Date.now().toString()}-${item.productoId}`,
@@ -110,14 +98,14 @@ const FacturacionModule = () => {
               productoId: item.productoId,
               producto: item.descripcion,
               cantidad: item.cantidad,
-              costoUnitario: producto.costoUnitario,
-              costoPromedioPonderado: producto.costoUnitario,
+              costoUnitario: producto.costo_unitario,
+              costoPromedioPonderado: producto.costo_unitario,
               motivo: 'Venta',
               documento: `Factura N° ${facturaValidada.numero}`,
               usuario: 'Sistema',
-              stockAnterior: producto.stockActual,
-              stockNuevo: producto.stockActual - item.cantidad,
-              valorMovimiento: item.cantidad * producto.costoUnitario,
+              stockAnterior: producto.stock_actual,
+              stockNuevo: producto.stock_actual - item.cantidad,
+              valorMovimiento: item.cantidad * producto.costo_unitario,
             };
 
             // Generar asiento contable del movimiento de inventario
@@ -211,7 +199,23 @@ const FacturacionModule = () => {
     return (
       <InvoiceForm
         clientes={clientes}
-        productos={productos}
+        productos={productos.map(p => ({
+          id: p.id,
+          codigo: p.codigo,
+          nombre: p.nombre,
+          descripcion: p.descripcion || '',
+          categoria: p.categoria_id || 'General',
+          unidadMedida: p.unidad_medida,
+          precioVenta: p.precio_venta,
+          precioCompra: p.precio_compra,
+          costoUnitario: p.costo_unitario,
+          stockActual: p.stock_actual,
+          stockMinimo: p.stock_minimo,
+          codigoSIN: p.codigo_sin || '00000000',
+          activo: p.activo,
+          fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+          fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10)
+        }))}
         facturas={facturas}
         onSave={handleSaveInvoice}
         onCancel={() => setShowNewInvoice(false)}
