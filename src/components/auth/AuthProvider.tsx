@@ -18,7 +18,10 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  /**
+   * Permite iniciar sesión usando un email o un nombre de usuario.
+   */
+  login: (emailOrUsuario: string, password: string) => Promise<boolean>;
   register: (data: {
     nombre: string;
     email: string;
@@ -115,8 +118,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  /**
+   * Inicia sesión usando email o usuario. Si el valor proporcionado no es un
+   * email válido, se busca el correo correspondiente en Supabase.
+   */
+  const login = async (emailOrUsuario: string, password: string) => {
     try {
+      let email = emailOrUsuario;
+
+      // Verificar si el input parece un email
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsuario);
+      if (!isEmail) {
+        // Buscar el email asociado al usuario
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('usuario', emailOrUsuario)
+          .maybeSingle();
+
+        if (error || !data?.email) {
+          console.warn('Usuario no encontrado:', error?.message);
+          return false;
+        }
+        email = data.email;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         console.warn('Login fallido:', error.message);
