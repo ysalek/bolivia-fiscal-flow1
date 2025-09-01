@@ -251,13 +251,12 @@ const ConfiguracionModule = () => {
       </div>
 
       <Tabs defaultValue="empresa" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           <TabsTrigger value="fiscal">Configuración Fiscal</TabsTrigger>
           <TabsTrigger value="sin">Integración SIN</TabsTrigger>
           <TabsTrigger value="sistema">Sistema</TabsTrigger>
           <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
-          <TabsTrigger value="backup">Backup</TabsTrigger>
         </TabsList>
 
         {/* Datos de la Empresa */}
@@ -771,55 +770,6 @@ const ConfiguracionModule = () => {
         {/* Gestión de Usuarios */}
         <TabsContent value="usuarios" className="space-y-4">
           <UserProductionManager />
-        </TabsContent>
-
-        {/* Backup y Restauración */}
-        <TabsContent value="backup" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Backup y Restauración
-              </CardTitle>
-              <CardDescription>
-                Gestión de respaldos y restauración de datos del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button onClick={crearBackup} className="h-20 flex flex-col items-center justify-center">
-                  <Download className="w-6 h-6 mb-2" />
-                  <span>Crear Backup</span>
-                  <span className="text-xs text-slate-500">Exportar datos completos</span>
-                </Button>
-                
-                <Button onClick={handleRestoreClick} variant="outline" className="h-20 flex flex-col items-center justify-center">
-                  <Upload className="w-6 h-6 mb-2" />
-                  <span>Restaurar Backup</span>
-                  <span className="text-xs text-slate-500">Importar datos desde archivo</span>
-                </Button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange}
-                  className="hidden" 
-                  accept="application/json"
-                />
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Información sobre Backups</h4>
-                <div className="text-sm text-slate-600 space-y-2">
-                   <p>
-                    <strong>Crear Backup:</strong> Genera un archivo JSON con todos los datos importantes de la aplicación (asientos, productos, facturas, clientes, configuración, etc.). Guarde este archivo en un lugar seguro.
-                  </p>
-                  <p>
-                    <strong>Restaurar Backup:</strong> Permite importar un archivo de backup previamente guardado. Esta acción sobreescribirá todos los datos actuales con los del archivo de respaldo. Se recomienda crear un backup de los datos actuales antes de restaurar.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -10,6 +10,7 @@ import { Download, Upload, Database, Shield, AlertTriangle, CheckCircle } from "
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBackup } from "@/hooks/useBackup";
+import SystemResetButton from "./SystemResetButton";
 
 const BackupModule = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -484,16 +485,9 @@ const BackupModule = () => {
 
                 {/* Reiniciar Sistema */}
                 <div className="pt-4 border-t">
-                  <Button 
-                    onClick={resetSystemToVirginState}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    Reiniciar Sistema Completamente (ELIMINAR TODO)
-                  </Button>
+                  <SystemResetButton />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Elimina TODOS los datos operativos incluido el inventario completo. Plan de Cuentas mantenido con saldos en CERO.
+                    Elimina TODOS los datos de la base de datos. Esta acción NO se puede deshacer.
                   </p>
                 </div>
               </CardContent>

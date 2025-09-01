@@ -22,7 +22,6 @@ import MethodologyTab from "./inventory/MethodologyTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
 import { Producto } from "./products/ProductsData";
 import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap } from "lucide-react";
-import SystemResetButton from "./SystemResetButton";
 
 const InventarioModule = () => {
   const [filtroCategoria, setFiltroCategoria] = useState("all");
@@ -304,7 +303,6 @@ const InventarioModule = () => {
         }}
         actions={
           <div className="flex gap-2">
-            <SystemResetButton />
             <Button variant="outline" onClick={handleDownloadFormat}>
               <FileDown className="w-4 h-4 mr-2" />
               Formato Excel
