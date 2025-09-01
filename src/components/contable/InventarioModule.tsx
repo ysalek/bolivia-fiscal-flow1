@@ -11,6 +11,7 @@ import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { useInventarioBolivia } from "@/hooks/useInventarioBolivia";
 import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
+import { useSupabaseMovimientos } from "@/hooks/useSupabaseMovimientos";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section, ChartContainer } from "./dashboard/EnhancedLayout";
@@ -21,9 +22,9 @@ import MethodologyTab from "./inventory/MethodologyTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
 import { Producto } from "./products/ProductsData";
 import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap } from "lucide-react";
+import SystemResetButton from "./SystemResetButton";
 
 const InventarioModule = () => {
-  const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
   const [filtroCategoria, setFiltroCategoria] = useState("all");
   const [busqueda, setBusqueda] = useState("");
   const [showMovementDialog, setShowMovementDialog] = useState<{ open: boolean; tipo: 'entrada' | 'salida' }>({
@@ -34,8 +35,12 @@ const InventarioModule = () => {
 
   const { generarAsientoInventario } = useContabilidadIntegration();
   const { procesarMovimientoInventario, validarIntegridadContable } = useInventarioBolivia();
-  const { productos, loading, crearProducto, actualizarStockProducto, refetch } = useSupabaseProductos();
+  const { productos, loading: loadingProductos, crearProducto, actualizarStockProducto, refetch: refetchProductos } = useSupabaseProductos();
+  const { getMovimientosInventario, loading: loadingMovimientos, refetch: refetchMovimientos } = useSupabaseMovimientos();
   const { toast } = useToast();
+
+  // Obtener movimientos desde Supabase
+  const movimientos = getMovimientosInventario();
 
   // Convertir productos de Supabase a formato de inventario
   const productosInventario: ProductoInventario[] = productos.map(producto => ({
@@ -90,12 +95,8 @@ const InventarioModule = () => {
         }
       }
 
-      // Actualizar lista de movimientos
-      setMovimientos(prev => {
-        const nuevosMovimientos = [nuevoMovimiento, ...prev];
-        console.log("📝 Movimientos actualizados:", nuevosMovimientos.length);
-        return nuevosMovimientos;
-      });
+      // Actualizar lista de movimientos (se actualizará automáticamente desde Supabase)
+      await refetchMovimientos();
 
       // Validar integridad contable después del movimiento
       const integridad = validarIntegridadContable();
@@ -269,7 +270,7 @@ const InventarioModule = () => {
             });
 
             // Recargar datos de Supabase
-            await refetch();
+            await refetchProductos();
 
         } catch (error) {
             console.error("Error al importar el archivo:", error);
@@ -303,6 +304,7 @@ const InventarioModule = () => {
         }}
         actions={
           <div className="flex gap-2">
+            <SystemResetButton />
             <Button variant="outline" onClick={handleDownloadFormat}>
               <FileDown className="w-4 h-4 mr-2" />
               Formato Excel
