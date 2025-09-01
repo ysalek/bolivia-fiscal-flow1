@@ -79,7 +79,7 @@ export const useAsientosGenerator = () => {
         if (movimiento.motivo?.toLowerCase().includes('venta') || 
             movimiento.motivo?.toLowerCase().includes('factura') ||
             movimiento.motivo?.toLowerCase().includes('vendido')) {
-          // VENTA REAL - Va al costo de ventas para calcular utilidad bruta
+          // VENTA REAL - Va al costo de ventas para Estado de Resultados
           cuentas.push({
             codigo: "5111",
             nombre: "Costo de Productos Vendidos",
@@ -157,14 +157,14 @@ export const useAsientosGenerator = () => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     
-    // El total de la factura ya incluye IVA
+    // El total de la factura ya incluye IVA según normativa boliviana
     const totalConIVA = factura.total;
     
-    // Calcular venta sin IVA (dividiendo entre 1.13)
-    const ventaSinIVA = totalConIVA / 1.13;
+    // Calcular venta sin IVA (87% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+    const ventaSinIVA = Number((totalConIVA / 1.13).toFixed(2));
     
-    // El IVA es la diferencia
-    const ivaVenta = totalConIVA - ventaSinIVA;
+    // IVA Débito Fiscal (13% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+    const ivaVenta = Number((totalConIVA - ventaSinIVA).toFixed(2));
 
     cuentas.push({
       codigo: "1131",
@@ -206,14 +206,14 @@ export const useAsientosGenerator = () => {
     const cuentas: CuentaAsiento[] = [];
     const fecha = new Date().toISOString().slice(0, 10);
     
-    // CORREGIDO: Las compras se capitalizan en INVENTARIO, no van directo a gastos
+    // CORREGIDO según normativa boliviana: Las compras se capitalizan en INVENTARIO
     const totalCompra = compra.total;
     
-    // Base sin IVA (87% del total) 
-    const comprasValor = totalCompra / 1.13;
+    // Base sin IVA (87% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+    const comprasValor = Number((totalCompra / 1.13).toFixed(2));
     
-    // IVA Crédito Fiscal (13% del total)
-    const ivaCreditoFiscal = totalCompra - comprasValor;
+    // IVA Crédito Fiscal (13% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+    const ivaCreditoFiscal = Number((totalCompra - comprasValor).toFixed(2));
 
     // CAMBIO CRÍTICO: Las compras van a INVENTARIO (1141), no a gastos (5121)
     cuentas.push({

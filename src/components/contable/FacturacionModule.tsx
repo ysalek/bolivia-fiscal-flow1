@@ -73,26 +73,25 @@ const FacturacionModule = () => {
       if (facturaValidada.estadoSIN === 'aceptado') {
         // La factura fue aceptada, proceder con la contabilidad
         
-        // 1. Procesar inventario y generar asiento de costo de ventas
-        facturaValidada.items.forEach(item => {
+        // 1. Procesar inventario según normativa boliviana
+        for (const item of facturaValidada.items) {
           const producto = productos.find(p => p.id === item.productoId);
           if (producto && producto.costo_unitario > 0) {
-            // CRÍTICO: Actualizar stock del producto ANTES de crear el movimiento
-            const stockActualizado = actualizarStockProducto(item.productoId, item.cantidad, 'salida');
+            // CRÍTICO: Actualizar stock del producto en Supabase
+            const stockActualizado = await actualizarStockProducto(item.productoId, item.cantidad, 'salida');
             
             if (!stockActualizado) {
               toast({
-                title: "Error de Stock",
-                description: `No se pudo descontar el stock del producto ${item.descripcion}`,
+                title: "Error de Stock - Normativa Boliviana",
+                description: `Stock insuficiente para ${item.descripcion}. No se puede procesar la factura.`,
                 variant: "destructive"
               });
               return; // Detener el proceso si falla la actualización de stock
             }
 
-            // Los productos se actualizan automáticamente en Supabase mediante useSupabaseProductos
-
+            // Generar movimiento de inventario con motivo específico para contabilidad
             const movimientoInventario: MovimientoInventario = {
-              id: `${Date.now().toString()}-${item.productoId}`,
+              id: `FAC-${facturaValidada.numero}-${item.productoId}`,
               fecha: facturaValidada.fecha,
               tipo: 'salida',
               productoId: item.productoId,
@@ -118,7 +117,7 @@ const FacturacionModule = () => {
             
             console.log(`✅ Stock descontado: ${item.descripcion} - Cantidad: ${item.cantidad}`);
           }
-        });
+        }
 
         // 2. Generar asiento contable de venta
         generarAsientoVenta(facturaValidada);

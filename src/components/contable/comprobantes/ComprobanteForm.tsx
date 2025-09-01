@@ -224,9 +224,9 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
         // Egreso - determinar si es con factura o sin factura
         if (conFactura) {
           // Con factura: incluir crédito fiscal del 13%
-          // Para 2800: base = 2800/1.13 = 2477.88, IVA = 2477.88*0.13 = 322.12
-          const baseImponible = formData.monto / 1.13; // Monto sin IVA (87%)
-          const creditoFiscal = formData.monto - baseImponible; // 13% de IVA
+          // CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+          const baseImponible = Number((formData.monto / 1.13).toFixed(2)); // Monto sin IVA (87%)
+          const creditoFiscal = Number((formData.monto - baseImponible).toFixed(2)); // 13% de IVA exacto
           
           // Débito a gastos (sin IVA) - usar cuenta seleccionada o por defecto
           const codigoCuentaGasto = formData.cuentaGasto || "5191";
