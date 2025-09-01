@@ -40,7 +40,7 @@ export interface ContabilidadIntegrationHook {
   getAsientos: () => AsientoContable[];
   getLibroMayor: () => { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } };
   getTrialBalanceData: () => { details: TrialBalanceDetail[], totals: TrialBalanceTotals };
-  actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => boolean;
+  actualizarStockProducto: (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => Promise<boolean>;
   obtenerProductos: () => Producto[];
   validarTransaccion: (asiento: AsientoContable) => boolean;
   obtenerBalanceGeneral: () => { activos: number; pasivos: number; patrimonio: number };

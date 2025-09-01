@@ -10,6 +10,7 @@ import {
 import InventoryMovementDialog from "./inventory/InventoryMovementDialog";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { useInventarioBolivia } from "@/hooks/useInventarioBolivia";
+import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section, ChartContainer } from "./dashboard/EnhancedLayout";
@@ -22,7 +23,6 @@ import { Producto } from "./products/ProductsData";
 import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap } from "lucide-react";
 
 const InventarioModule = () => {
-  const [productos, setProductos] = useState<ProductoInventario[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>(movimientosIniciales);
   const [filtroCategoria, setFiltroCategoria] = useState("all");
   const [busqueda, setBusqueda] = useState("");
@@ -34,65 +34,27 @@ const InventarioModule = () => {
 
   const { generarAsientoInventario } = useContabilidadIntegration();
   const { procesarMovimientoInventario, validarIntegridadContable } = useInventarioBolivia();
+  const { productos, loading, crearProducto, actualizarStockProducto, refetch } = useSupabaseProductos();
   const { toast } = useToast();
 
-  // Cargar y sincronizar productos del módulo de productos
-  useEffect(() => {
-    const cargarProductos = () => {
-      // Primero cargar productos desde localStorage (del módulo de productos)
-      const productosGuardados = localStorage.getItem('productos');
-      
-      console.log("Cargando productos para inventario...");
-      
-      if (productosGuardados) {
-        const productos: Producto[] = JSON.parse(productosGuardados);
-        console.log("Productos encontrados en localStorage:", productos.length);
-        
-        // Convertir productos del módulo de productos a formato de inventario
-        const productosInventario: ProductoInventario[] = productos
-          .filter(p => p.activo) // Solo productos activos
-          .map(producto => ({
-            id: producto.id,
-            codigo: producto.codigo,
-            nombre: producto.nombre,
-            categoria: producto.categoria,
-            stockActual: producto.stockActual || 0,
-            stockMinimo: producto.stockMinimo || 5,
-            stockMaximo: (producto.stockMinimo || 5) * 10, // Calculamos stockMaximo como 10x el mínimo
-            costoUnitario: producto.costoUnitario || 0,
-            costoPromedioPonderado: producto.costoUnitario || 0,
-            precioVenta: producto.precioVenta || 0,
-            ubicacion: 'Almacén Principal',
-            fechaUltimoMovimiento: producto.fechaActualizacion,
-            valorTotalInventario: (producto.stockActual || 0) * (producto.costoUnitario || 0)
-          }));
-          
-        console.log("Productos convertidos para inventario:", productosInventario.length);
-        setProductos(productosInventario);
-      } else {
-        console.log("No hay productos guardados, usando datos iniciales");
-        // Si no hay productos guardados, usar los datos iniciales
-        setProductos(productosIniciales);
-      }
-    };
+  // Convertir productos de Supabase a formato de inventario
+  const productosInventario: ProductoInventario[] = productos.map(producto => ({
+    id: producto.id,
+    codigo: producto.codigo,
+    nombre: producto.nombre,
+    categoria: producto.categoria_id || 'General',
+    stockActual: producto.stock_actual || 0,
+    stockMinimo: producto.stock_minimo || 5,
+    stockMaximo: (producto.stock_minimo || 5) * 10,
+    costoUnitario: producto.costo_unitario || 0,
+    costoPromedioPonderado: producto.costo_unitario || 0,
+    precioVenta: producto.precio_venta || 0,
+    ubicacion: 'Almacén Principal',
+    fechaUltimoMovimiento: producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+    valorTotalInventario: (producto.stock_actual || 0) * (producto.costo_unitario || 0)
+  }));
 
-    cargarProductos();
-    
-    // Escuchar cambios en localStorage para sincronizar automáticamente
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'productos') {
-        cargarProductos();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
-  const handleMovimiento = (nuevoMovimiento: MovimientoInventario, productoOriginal: ProductoInventario) => {
+  const handleMovimiento = async (nuevoMovimiento: MovimientoInventario, productoOriginal: ProductoInventario) => {
     try {
       console.log("🇧🇴 Procesando movimiento según normativa boliviana:", nuevoMovimiento);
       
@@ -115,38 +77,24 @@ const InventarioModule = () => {
         return;
       }
 
+      // Excluir tipos 'ajuste' para actualizarStockProducto
+      if (nuevoMovimiento.tipo !== 'ajuste') {
+        const stockExitoso = await actualizarStockProducto(
+          productoOriginal.id, 
+          nuevoMovimiento.cantidad, 
+          nuevoMovimiento.tipo
+        );
+
+        if (!stockExitoso) {
+          return; // El error ya se maneja en actualizarStockProducto
+        }
+      }
+
       // Actualizar lista de movimientos
       setMovimientos(prev => {
         const nuevosMovimientos = [nuevoMovimiento, ...prev];
         console.log("📝 Movimientos actualizados:", nuevosMovimientos.length);
         return nuevosMovimientos;
-      });
-
-      // Actualizar productos en estado local
-      setProductos(prev => {
-        const productosActualizados = prev.map(p => 
-          p.id === productoActualizado.id ? productoActualizado : p
-        );
-        
-        // Sincronizar con localStorage del módulo de productos
-        const productosLocalStorage = localStorage.getItem('productos');
-        if (productosLocalStorage) {
-          const productos: Producto[] = JSON.parse(productosLocalStorage);
-          const productosActualizadosLS = productos.map(p => 
-            p.id === productoActualizado.id 
-              ? { 
-                  ...p, 
-                  stockActual: productoActualizado.stockActual,
-                  costoUnitario: productoActualizado.costoUnitario,
-                  fechaActualizacion: new Date().toISOString().slice(0, 10) 
-                }
-              : p
-          );
-          localStorage.setItem('productos', JSON.stringify(productosActualizadosLS));
-          console.log("🔄 Productos sincronizados con localStorage");
-        }
-        
-        return productosActualizados;
       });
 
       // Validar integridad contable después del movimiento
@@ -223,12 +171,12 @@ const InventarioModule = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         try {
             const data = e.target?.result;
             const workbook = XLSX.read(data, { type: 'array' });
@@ -279,43 +227,49 @@ const InventarioModule = () => {
                 productosExistentesCodigos.add(codigo);
             });
 
-            // Actualizar estado local
-            setProductos(prev => [...prev, ...productosNuevos]);
+            // Crear productos en Supabase
+            const productosCreados = await Promise.all(
+                productosNuevos.map(async (productoInventario) => {
+                    try {
+                        return await crearProducto({
+                            codigo: productoInventario.codigo,
+                            nombre: productoInventario.nombre,
+                            descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
+                            categoria_id: productoInventario.categoria,
+                            unidad_medida: 'PZA',
+                            precio_venta: productoInventario.precioVenta,
+                            precio_compra: productoInventario.costoUnitario,
+                            costo_unitario: productoInventario.costoUnitario,
+                            stock_actual: productoInventario.stockActual,
+                            stock_minimo: productoInventario.stockMinimo,
+                            codigo_sin: '00000000',
+                            activo: true,
+                            imagen_url: undefined
+                        });
+                    } catch (error) {
+                        console.error(`Error creando producto ${productoInventario.codigo}:`, error);
+                        return null;
+                    }
+                })
+            );
 
-            // CRÍTICO: Persistir productos en localStorage en formato del módulo de productos
-            const productosExistentesEnStorage: Producto[] = JSON.parse(localStorage.getItem('productos') || '[]');
-            const productosParaGuardar: Producto[] = productosNuevos.map(productoInventario => ({
-                id: productoInventario.id,
-                codigo: productoInventario.codigo,
-                nombre: productoInventario.nombre,
-                descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
-                categoria: productoInventario.categoria,
-                unidadMedida: 'PZA',
-                precioVenta: productoInventario.precioVenta,
-                precioCompra: productoInventario.costoUnitario,
-                costoUnitario: productoInventario.costoUnitario,
-                stockActual: productoInventario.stockActual,
-                stockMinimo: productoInventario.stockMinimo,
-                codigoSIN: '00000000', // Código genérico para productos importados
-                activo: true,
-                fechaCreacion: new Date().toISOString().slice(0, 10),
-                fechaActualizacion: new Date().toISOString().slice(0, 10),
-                imagenUrl: undefined
-            }));
+            const productosExitosos = productosCreados.filter(p => p !== null);
 
-            // Combinar productos existentes con los nuevos
-            const todoLosProductos = [...productosExistentesEnStorage, ...productosParaGuardar];
-            localStorage.setItem('productos', JSON.stringify(todoLosProductos));
-
-            let description = `${productosNuevos.length} productos nuevos importados y guardados permanentemente.`;
+            let description = `${productosExitosos.length} productos nuevos importados y guardados en la base de datos.`;
             if (productosOmitidos.length > 0) {
                 description += ` ${productosOmitidos.length} productos omitidos porque su código ya existía.`;
+            }
+            if (productosCreados.length !== productosExitosos.length) {
+                description += ` ${productosCreados.length - productosExitosos.length} productos fallaron al importar.`;
             }
 
             toast({
                 title: "Importación completada",
                 description: description,
             });
+
+            // Recargar datos de Supabase
+            await refetch();
 
         } catch (error) {
             console.error("Error al importar el archivo:", error);
@@ -333,8 +287,8 @@ const InventarioModule = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const productosConAlertas = productos.filter(p => getStockStatus(p) === "low").length;
-  const valorTotalInventario = productos.reduce((total, p) => total + p.valorTotalInventario, 0);
+  const productosConAlertas = productosInventario.filter(p => getStockStatus(p) === "low").length;
+  const valorTotalInventario = productosInventario.reduce((total, p) => total + p.valorTotalInventario, 0);
   const movimientosHoy = movimientos.filter(m => m.fecha === new Date().toISOString().slice(0, 10)).length;
 
   return (
@@ -344,7 +298,7 @@ const InventarioModule = () => {
         title="Control de Inventario Avanzado"
         subtitle="Sistema integrado de gestión de inventario con valuación por promedio ponderado e integración contable automática"
         badge={{
-          text: `${productos.length} Productos Activos`,
+          text: `${productosInventario.length} Productos Activos`,
           variant: "default"
         }}
         actions={
@@ -391,7 +345,7 @@ const InventarioModule = () => {
         <MetricGrid columns={4}>
           <EnhancedMetricCard
             title="Productos en Stock"
-            value={productos.length}
+            value={productosInventario.length}
             subtitle="Total productos activos"
             icon={Package}
             variant="default"
@@ -405,7 +359,7 @@ const InventarioModule = () => {
             icon={BarChart3}
             variant={valorTotalInventario > 50000 ? "success" : "warning"}
             trend={valorTotalInventario > 50000 ? "up" : "neutral"}
-            trendValue={`${productos.filter(p => p.stockActual > 0).length} con stock`}
+            trendValue={`${productosInventario.filter(p => p.stockActual > 0).length} con stock`}
           />
           <EnhancedMetricCard
             title="Alertas de Stock"
@@ -459,7 +413,7 @@ const InventarioModule = () => {
 
         <TabsContent value="productos" className="space-y-4">
           <ProductListTab 
-            productos={productos}
+            productos={productosInventario}
             busqueda={busqueda}
             setBusqueda={setBusqueda}
             filtroCategoria={filtroCategoria}
@@ -473,7 +427,7 @@ const InventarioModule = () => {
 
         <TabsContent value="alertas" className="space-y-4">
           <AlertsTab 
-            productos={productos}
+            productos={productosInventario}
             onShowMovementDialog={(tipo) => setShowMovementDialog({ open: true, tipo })}
           />
         </TabsContent>
@@ -489,7 +443,7 @@ const InventarioModule = () => {
         open={showMovementDialog.open}
         onOpenChange={(open) => setShowMovementDialog(prev => ({ ...prev, open }))}
         tipo={showMovementDialog.tipo}
-        productos={productos}
+        productos={productosInventario}
         onMovimiento={handleMovimiento}
       />
     </div>
