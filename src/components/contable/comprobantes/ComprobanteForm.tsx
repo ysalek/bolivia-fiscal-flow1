@@ -434,14 +434,19 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
               {conFactura && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
-                    <strong>Nota:</strong> El monto ingresado se considera que incluye el 13% de IVA. 
-                    Se generará automáticamente el asiento contable con:
+                    <strong>Nota:</strong> El monto ingresado incluye el 13% de IVA según normativa boliviana. 
+                    Cálculo: Base Gravable = Monto Total ÷ 1.13
                   </p>
                   <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                    <li>• Gasto (sin IVA): Bs. {(formData.monto / 1.13).toFixed(2)} (87%)</li>
-                    <li>• IVA Crédito Fiscal (13%): Bs. {(formData.monto - (formData.monto / 1.13)).toFixed(2)}</li>
-                    <li>• Total a pagar: Bs. {formData.monto.toFixed(2)}</li>
+                    <li>• <strong>Base Gravable (Gasto sin IVA):</strong> Bs. {(formData.monto / 1.13).toFixed(2)}</li>
+                    <li>• <strong>IVA Crédito Fiscal (13% s/base):</strong> Bs. {(formData.monto - (formData.monto / 1.13)).toFixed(2)}</li>
+                    <li>• <strong>Total a pagar:</strong> Bs. {formData.monto.toFixed(2)}</li>
                   </ul>
+                  <div className="mt-2 p-2 bg-blue-100 rounded">
+                    <p className="text-xs text-blue-600">
+                      ✓ Verificación: {(formData.monto / 1.13).toFixed(2)} + {(formData.monto - (formData.monto / 1.13)).toFixed(2)} = {formData.monto.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
