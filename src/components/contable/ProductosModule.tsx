@@ -6,87 +6,82 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, TrendingUp, Activity, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Producto, productosIniciales } from "./products/ProductsData";
+import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 const ProductosModule = () => {
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const { productos: productosSupabase, categorias, loading, refetch } = useSupabaseProductos();
   const [showForm, setShowForm] = useState(false);
-  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+  const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  // Cargar datos desde localStorage
-  useEffect(() => {
-    const productosGuardados = localStorage.getItem('productos');
-    if (productosGuardados) {
-      setProductos(JSON.parse(productosGuardados));
-    }
-  }, []);
+  // Obtener el nombre de la categoría por ID
+  const obtenerNombreCategoria = (categoriaId: string | null) => {
+    if (!categoriaId) return 'General';
+    const categoria = categorias.find(c => c.id === categoriaId);
+    return categoria?.nombre || 'General';
+  };
 
-  const handleSaveProducto = (producto: Producto) => {
-    let nuevosProductos;
-    
-    if (editingProducto) {
-      // Editar producto existente
-      nuevosProductos = productos.map(p => p.id === producto.id ? producto : p);
-      toast({
-        title: "Producto actualizado",
-        description: `${producto.nombre} ha sido actualizado exitosamente.`,
-      });
-    } else {
-      // Crear nuevo producto
-      nuevosProductos = [producto, ...productos];
-      toast({
-        title: "Producto creado",
-        description: `${producto.nombre} ha sido agregado exitosamente.`,
-      });
-    }
-    
-    setProductos(nuevosProductos);
-    localStorage.setItem('productos', JSON.stringify(nuevosProductos));
+  // Convertir productos de Supabase al formato esperado
+  const productos = productosSupabase.map(p => ({
+    id: p.id,
+    codigo: p.codigo,
+    nombre: p.nombre,
+    descripcion: p.descripcion || '',
+    categoria: obtenerNombreCategoria(p.categoria_id),
+    unidadMedida: p.unidad_medida,
+    precioVenta: p.precio_venta,
+    precioCompra: p.precio_compra,
+    costoUnitario: p.costo_unitario,
+    stockActual: p.stock_actual,
+    stockMinimo: p.stock_minimo,
+    codigoSIN: p.codigo_sin || '00000000',
+    activo: p.activo,
+    fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+    fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+    imagenUrl: p.imagen_url
+  }));
+
+  const handleSaveProducto = async () => {
+    // Después de guardar, recargar los datos
+    await refetch();
     setShowForm(false);
     setEditingProducto(null);
   };
 
-  const handleEditProducto = (producto: Producto) => {
-    setEditingProducto(producto);
+  const handleEditProducto = (producto: any) => {
+    // Convertir producto al formato de Supabase para edición
+    const productoSupabase = productosSupabase.find(p => p.id === producto.id);
+    setEditingProducto(productoSupabase);
     setShowForm(true);
   };
 
-  const handleDeleteProducto = (productoId: string) => {
+  const handleDeleteProducto = async (productoId: string) => {
     const producto = productos.find(p => p.id === productoId);
     if (!producto) return;
 
-    if (confirm(`¿Está seguro de eliminar el producto ${producto.nombre}?`)) {
-      const nuevosProductos = productos.map(p => 
-        p.id === productoId ? { ...p, activo: false } : p
-      );
-      setProductos(nuevosProductos);
-      localStorage.setItem('productos', JSON.stringify(nuevosProductos));
-      
+    if (confirm(`¿Está seguro de desactivar el producto ${producto.nombre}?`)) {
+      // Aquí deberíamos actualizar en Supabase, pero por ahora mostraremos mensaje
       toast({
-        title: "Producto desactivado",
-        description: `${producto.nombre} ha sido desactivado.`,
+        title: "Funcionalidad en desarrollo",
+        description: "La activación/desactivación de productos se implementará pronto",
+        variant: "destructive"
       });
     }
   };
 
-  const handleReactivateProducto = (productoId: string) => {
+  const handleReactivateProducto = async (productoId: string) => {
     const producto = productos.find(p => p.id === productoId);
     if (!producto) return;
 
     if (confirm(`¿Está seguro de reactivar el producto ${producto.nombre}?`)) {
-      const nuevosProductos = productos.map(p => 
-        p.id === productoId ? { ...p, activo: true } : p
-      );
-      setProductos(nuevosProductos);
-      localStorage.setItem('productos', JSON.stringify(nuevosProductos));
-      
+      // Aquí deberíamos actualizar en Supabase, pero por ahora mostraremos mensaje
       toast({
-        title: "Producto reactivado",
-        description: `${producto.nombre} ha sido reactivado exitosamente.`,
+        title: "Funcionalidad en desarrollo", 
+        description: "La activación/desactivación de productos se implementará pronto",
+        variant: "destructive"
       });
     }
   };
@@ -101,11 +96,23 @@ const ProductosModule = () => {
   const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo && p.activo).length;
   const valorInventario = productos.reduce((sum, p) => sum + ((p.stockActual || 0) * (p.costoUnitario || 0)), 0);
 
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="text-center py-8">
+          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Cargando productos...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showForm) {
     return (
       <ProductoForm
         producto={editingProducto}
         productos={productos}
+        categorias={categorias}
         onSave={handleSaveProducto}
         onCancel={() => {
           setShowForm(false);
