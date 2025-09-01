@@ -36,7 +36,7 @@ const InventarioModule = () => {
 
   const { generarAsientoInventario } = useContabilidadIntegration();
   const { procesarMovimientoInventario, validarIntegridadContable } = useInventarioBolivia();
-  const { productos, loading: loadingProductos, crearProducto, actualizarStockProducto, refetch: refetchProductos } = useSupabaseProductos();
+  const { productos, categorias, loading: loadingProductos, crearProducto, crearCategoria, actualizarStockProducto, refetch: refetchProductos } = useSupabaseProductos();
   const { getMovimientosInventario, loading: loadingMovimientos, refetch: refetchMovimientos } = useSupabaseMovimientos();
   const { toast } = useToast();
 
@@ -247,6 +247,38 @@ const InventarioModule = () => {
 
             setImportProgress({ current: 0, total: productosNuevos.length });
 
+            // Crear categorías necesarias primero
+            const categoriasUnicas = [...new Set(productosNuevos.map(p => p.categoria))];
+            const categoriasMap = new Map<string, string>();
+            
+            toast({
+                title: "Creando categorías",
+                description: `Procesando ${categoriasUnicas.length} categorías...`,
+            });
+
+            for (const nombreCategoria of categoriasUnicas) {
+                try {
+                    // Buscar si la categoría ya existe
+                    const categoriaExistente = categorias.find(c => c.nombre.toLowerCase() === nombreCategoria.toLowerCase());
+                    
+                    if (categoriaExistente) {
+                        categoriasMap.set(nombreCategoria, categoriaExistente.id);
+                    } else {
+                        // Crear nueva categoría
+                        const nuevaCategoria = await crearCategoria({
+                            nombre: nombreCategoria,
+                            descripcion: `Categoría creada automáticamente durante importación de productos`,
+                            activo: true
+                        });
+                        categoriasMap.set(nombreCategoria, nuevaCategoria.id);
+                    }
+                } catch (error) {
+                    console.error(`Error procesando categoría ${nombreCategoria}:`, error);
+                    // Si falla, usar null para crear sin categoría
+                    categoriasMap.set(nombreCategoria, null);
+                }
+            }
+
             // Crear productos en Supabase uno por uno para mostrar progreso
             const productosCreados: any[] = [];
             
@@ -260,11 +292,13 @@ const InventarioModule = () => {
                 setImportProgress({ current: i + 1, total: productosNuevos.length });
                 
                 try {
+                    const categoriaId = categoriasMap.get(productoInventario.categoria);
+                    
                     const resultado = await crearProducto({
                         codigo: productoInventario.codigo,
                         nombre: productoInventario.nombre,
                         descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
-                        categoria_id: productoInventario.categoria,
+                        categoria_id: categoriaId || null, // Usar null si no se pudo crear la categoría
                         unidad_medida: 'PZA',
                         precio_venta: productoInventario.precioVenta,
                         precio_compra: productoInventario.costoUnitario,
