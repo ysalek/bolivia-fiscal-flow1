@@ -224,8 +224,9 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
         // Egreso - determinar si es con factura o sin factura
         if (conFactura) {
           // Con factura: incluir crédito fiscal del 13%
-          const baseImponible = formData.monto / 1.13; // Monto sin IVA
-          const creditoFiscal = baseImponible * 0.13; // 13% de IVA
+          // Para 2800: base = 2800/1.13 = 2477.88, IVA = 2477.88*0.13 = 322.12
+          const baseImponible = formData.monto / 1.13; // Monto sin IVA (87%)
+          const creditoFiscal = formData.monto - baseImponible; // 13% de IVA
           
           // Débito a gastos (sin IVA) - usar cuenta seleccionada o por defecto
           const codigoCuentaGasto = formData.cuentaGasto || "5191";
@@ -437,8 +438,8 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                     Se generará automáticamente el asiento contable con:
                   </p>
                   <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                    <li>• Gasto (sin IVA): Bs. {(formData.monto / 1.13).toFixed(2)}</li>
-                    <li>• IVA Crédito Fiscal (13%): Bs. {((formData.monto / 1.13) * 0.13).toFixed(2)}</li>
+                    <li>• Gasto (sin IVA): Bs. {(formData.monto / 1.13).toFixed(2)} (87%)</li>
+                    <li>• IVA Crédito Fiscal (13%): Bs. {(formData.monto - (formData.monto / 1.13)).toFixed(2)}</li>
                     <li>• Total a pagar: Bs. {formData.monto.toFixed(2)}</li>
                   </ul>
                 </div>
