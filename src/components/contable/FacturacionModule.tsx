@@ -60,7 +60,7 @@ const FacturacionModule = () => {
   const handleSaveInvoice = async (nuevaFactura: Factura) => {
     setShowNewInvoice(false);
     
-    const processingToast = toast({
+    toast({
       title: "Procesando factura...",
       description: "Enviando al SIN para validación. Esto puede tardar unos segundos.",
     });
@@ -68,7 +68,10 @@ const FacturacionModule = () => {
     try {
       const facturaValidada = await simularValidacionSIN(nuevaFactura);
       
-      processingToast.update({ id: processingToast.id, title: "Respuesta del SIN recibida" });
+      toast({
+        title: "Respuesta del SIN recibida",
+        description: "Procesando integración contable...",
+      });
 
       if (facturaValidada.estadoSIN === 'aceptado') {
         // La factura fue aceptada, proceder con la contabilidad
@@ -148,7 +151,6 @@ const FacturacionModule = () => {
       }
       
     } catch (error) {
-      processingToast.update({ id: processingToast.id, title: "Error de Conexión" });
       console.error("Error al procesar la factura:", error);
       toast({
         title: "Error de Conexión",
