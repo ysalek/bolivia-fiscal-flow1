@@ -279,9 +279,35 @@ const InventarioModule = () => {
                 productosExistentesCodigos.add(codigo);
             });
 
+            // Actualizar estado local
             setProductos(prev => [...prev, ...productosNuevos]);
 
-            let description = `${productosNuevos.length} productos nuevos importados.`;
+            // CRÍTICO: Persistir productos en localStorage en formato del módulo de productos
+            const productosExistentesEnStorage: Producto[] = JSON.parse(localStorage.getItem('productos') || '[]');
+            const productosParaGuardar: Producto[] = productosNuevos.map(productoInventario => ({
+                id: productoInventario.id,
+                codigo: productoInventario.codigo,
+                nombre: productoInventario.nombre,
+                descripcion: `Producto importado desde Excel - ${productoInventario.nombre}`,
+                categoria: productoInventario.categoria,
+                unidadMedida: 'PZA',
+                precioVenta: productoInventario.precioVenta,
+                precioCompra: productoInventario.costoUnitario,
+                costoUnitario: productoInventario.costoUnitario,
+                stockActual: productoInventario.stockActual,
+                stockMinimo: productoInventario.stockMinimo,
+                codigoSIN: '00000000', // Código genérico para productos importados
+                activo: true,
+                fechaCreacion: new Date().toISOString().slice(0, 10),
+                fechaActualizacion: new Date().toISOString().slice(0, 10),
+                imagenUrl: undefined
+            }));
+
+            // Combinar productos existentes con los nuevos
+            const todoLosProductos = [...productosExistentesEnStorage, ...productosParaGuardar];
+            localStorage.setItem('productos', JSON.stringify(todoLosProductos));
+
+            let description = `${productosNuevos.length} productos nuevos importados y guardados permanentemente.`;
             if (productosOmitidos.length > 0) {
                 description += ` ${productosOmitidos.length} productos omitidos porque su código ya existía.`;
             }
