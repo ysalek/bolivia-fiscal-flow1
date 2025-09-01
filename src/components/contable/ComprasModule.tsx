@@ -6,6 +6,7 @@ import { Plus, PackageCheck, Clock, Banknote, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Compra, Proveedor, comprasIniciales, proveedoresIniciales } from "./purchases/PurchasesData";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 import { Producto, productosIniciales } from "./products/ProductsData";
 import CompraForm from "./purchases/CompraForm";
 import PurchasesList from "./purchases/PurchasesList";
@@ -14,10 +15,29 @@ import ProveedoresList from "./purchases/ProveedoresList";
 const ComprasModule = () => {
   const [compras, setCompras] = useState<Compra[]>(comprasIniciales);
   const [proveedores, setProveedores] = useState<Proveedor[]>(proveedoresIniciales);
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [showNewCompraForm, setShowNewCompraForm] = useState(false);
   const { toast } = useToast();
   const { generarAsientoCompra, actualizarStockProducto, generarAsientoPagoCompra } = useContabilidadIntegration();
+  const { productos: productosSupabase } = useSupabaseProductos();
+
+  // Convertir productos de Supabase al formato esperado
+  const productos: Producto[] = productosSupabase.map(p => ({
+    id: p.id,
+    codigo: p.codigo,
+    nombre: p.nombre,
+    descripcion: p.descripcion || '',
+    categoria: p.categoria_id || 'General',
+    unidadMedida: p.unidad_medida,
+    precioVenta: p.precio_venta,
+    precioCompra: p.precio_compra,
+    costoUnitario: p.costo_unitario,
+    stockActual: p.stock_actual,
+    stockMinimo: p.stock_minimo,
+    codigoSIN: p.codigo_sin || '00000000',
+    activo: p.activo,
+    fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+    fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10)
+  }));
 
   useEffect(() => {
     const comprasGuardadas = localStorage.getItem('compras');
@@ -25,9 +45,6 @@ const ComprasModule = () => {
     
     const proveedoresGuardados = localStorage.getItem('proveedores');
     if (proveedoresGuardados) setProveedores(JSON.parse(proveedoresGuardados));
-
-    const productosGuardados = localStorage.getItem('productos');
-    if (productosGuardados) setProductos(JSON.parse(productosGuardados));
   }, []);
 
   const handleSaveCompra = (nuevaCompra: Compra) => {

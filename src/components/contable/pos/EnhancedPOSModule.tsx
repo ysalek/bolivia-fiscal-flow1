@@ -73,7 +73,7 @@ interface Venta {
 }
 
 const EnhancedPOSModule = () => {
-  const { productos: productosSupabase } = useSupabaseProductos();
+  const { productos: productosSupabase, categorias } = useSupabaseProductos();
   const [carrito, setCarrito] = useState<ItemVenta[]>([]);
   const [busquedaProducto, setBusquedaProducto] = useState("");
   const [cliente, setCliente] = useState<Cliente | null>(null);
@@ -89,13 +89,20 @@ const EnhancedPOSModule = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Función para obtener el nombre de la categoría por ID
+  const obtenerNombreCategoria = (categoriaId: string | null) => {
+    if (!categoriaId) return 'General';
+    const categoria = categorias.find(c => c.id === categoriaId);
+    return categoria?.nombre || 'General';
+  };
+
   // Convertir productos de Supabase al formato del POS
   const productos: Producto[] = productosSupabase.map(p => ({
     id: p.id,
     codigo: p.codigo,
     nombre: p.nombre,
     descripcion: p.descripcion || '',
-    categoria: p.categoria_id || 'General',
+    categoria: obtenerNombreCategoria(p.categoria_id),
     unidadMedida: p.unidad_medida,
     precioVenta: p.precio_venta,
     precioCompra: p.precio_compra,
@@ -148,7 +155,7 @@ const EnhancedPOSModule = () => {
 
   // Categorías de productos para navegación rápida
   const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
-  const categorias = [...new Set(productos.map(p => p.categoria || 'Sin categoría'))];
+  const categoriasDisponibles = [...new Set(productos.map(p => p.categoria || 'Sin categoría'))];
   const productosFiltrados = productos.filter(p => 
     p.activo &&
     (!selectedCategoria || (p.categoria || 'Sin categoría') === selectedCategoria) &&
@@ -481,7 +488,7 @@ const EnhancedPOSModule = () => {
 
                   <TabsContent value="categorias" className="mt-4">
                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                      {categorias.map((categoria) => (
+                      {categoriasDisponibles.map((categoria) => (
                         <Button
                           key={categoria}
                           variant="outline"
