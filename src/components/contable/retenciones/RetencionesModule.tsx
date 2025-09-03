@@ -8,7 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, FileText, AlertTriangle, Receipt, Download } from "lucide-react";
+import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calculator, FileText, AlertTriangle, Receipt, Download, Plus, CheckCircle, Banknote } from "lucide-react";
+import { AsientoContable } from '../diary/DiaryData';
+import * as XLSX from 'xlsx';
 
 interface Retencion {
   id: string;

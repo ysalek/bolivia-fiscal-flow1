@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, Banknote, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AsientoContable } from '../diary/DiaryData';
 
 interface MovimientoBancario {
   id: string;
@@ -32,10 +35,205 @@ interface MovimientoContable {
 
 const ConciliacionBancaria = () => {
   const { toast } = useToast();
+  const { guardarAsiento } = useContabilidadIntegration();
   const [selectedBank, setSelectedBank] = useState('');
-  const [fechaCorte, setFechaCorte] = useState('');
+  const [fechaCorte, setFechaCorte] = useState(new Date().toISOString().slice(0, 10));
   const [saldoLibros, setSaldoLibros] = useState(0);
   const [saldoBanco, setSaldoBanco] = useState(0);
+  const [diferencias, setDiferencias] = useState<any[]>([]);
+  const [ajustesContables, setAjustesContables] = useState<any[]>([]);
+  const [showAjusteDialog, setShowAjusteDialog] = useState(false);
+  const [ajusteSeleccionado, setAjusteSeleccionado] = useState<any>(null);
+
+  useEffect(() => {
+    cargarDatosBancarios();
+  }, [selectedBank, fechaCorte]);
+
+  const cargarDatosBancarios = () => {
+    // Cargar movimientos bancarios y contables para conciliar
+    const cuentasBancarias = JSON.parse(localStorage.getItem('cuentasBancarias') || '[]');
+    const movimientosBancarios = JSON.parse(localStorage.getItem('movimientosBancarios') || '[]');
+    const asientos = JSON.parse(localStorage.getItem('asientosContables') || '[]');
+    
+    if (selectedBank && fechaCorte) {
+      // Calcular saldo en libros (asientos contables)
+      const saldoEnLibros = calcularSaldoLibros(asientos, selectedBank, fechaCorte);
+      setSaldoLibros(saldoEnLibros);
+      
+      // Obtener saldo banco del último movimiento
+      const movimientosBanco = movimientosBancarios.filter((m: any) => 
+        m.cuenta_bancaria_id === selectedBank && m.fecha <= fechaCorte
+      );
+      const ultimoMovimiento = movimientosBanco[movimientosBanco.length - 1];
+      setSaldoBanco(ultimoMovimiento?.saldo_actual || 0);
+      
+      // Identificar diferencias
+      identificarDiferencias(movimientosBanco, asientos);
+    }
+  };
+
+  const calcularSaldoLibros = (asientos: any[], cuentaBancaria: string, fechaCorte: string) => {
+    let saldo = 0;
+    asientos.forEach(asiento => {
+      if (asiento.fecha <= fechaCorte && asiento.estado === 'registrado') {
+        asiento.cuentas.forEach((cuenta: any) => {
+          // Buscar movimientos de la cuenta bancaria específica (ej: 1111, 1112, etc.)
+          if (cuenta.codigo.startsWith('111') && cuenta.nombre.includes('Banco')) {
+            saldo += cuenta.debe - cuenta.haber;
+          }
+        });
+      }
+    });
+    return saldo;
+  };
+
+  const identificarDiferencias = (movimientosBanco: any[], asientos: any[]) => {
+    const diferenciasEncontradas: any[] = [];
+    const ajustesRequeridos: any[] = [];
+    
+    // Cheques en tránsito (registrados en libros pero no en banco)
+    const chequesTransito = asientos.filter(a => 
+      a.concepto.includes('Cheque') && 
+      !movimientosBanco.some(m => m.numero_comprobante === a.referencia)
+    );
+    
+    chequesTransito.forEach(cheque => {
+      diferenciasEncontradas.push({
+        tipo: 'cheque_transito',
+        descripcion: `Cheque en tránsito: ${cheque.referencia}`,
+        monto: cheque.debe || cheque.haber,
+        fecha: cheque.fecha,
+        requiereAjuste: false
+      });
+    });
+
+    // Depósitos en tránsito (en banco pero no en libros)
+    const depositosTransito = movimientosBanco.filter(m => 
+      m.tipo === 'deposito' && 
+      !asientos.some(a => a.referencia === m.numero_comprobante)
+    );
+    
+    depositosTransito.forEach(deposito => {
+      diferenciasEncontradas.push({
+        tipo: 'deposito_transito',
+        descripcion: `Depósito en tránsito: ${deposito.numero_comprobante}`,
+        monto: deposito.monto,
+        fecha: deposito.fecha,
+        requiereAjuste: true,
+        datosOriginales: deposito
+      });
+      
+      ajustesRequeridos.push({
+        tipo: 'deposito_no_registrado',
+        descripcion: `Registrar depósito: ${deposito.descripcion}`,
+        monto: deposito.monto,
+        fecha: deposito.fecha,
+        referencia: deposito.numero_comprobante,
+        cuentasBanco: deposito
+      });
+    });
+
+    // Cargos bancarios (comisiones, intereses)
+    const cargosBancarios = movimientosBanco.filter(m => 
+      m.tipo === 'cargo' && 
+      !asientos.some(a => a.referencia === m.numero_comprobante)
+    );
+    
+    cargosBancarios.forEach(cargo => {
+      ajustesRequeridos.push({
+        tipo: 'cargo_bancario',
+        descripcion: `Cargo bancario: ${cargo.descripcion}`,
+        monto: Math.abs(cargo.monto),
+        fecha: cargo.fecha,
+        referencia: cargo.numero_comprobante,
+        cuentasBanco: cargo
+      });
+    });
+
+    setDiferencias(diferenciasEncontradas);
+    setAjustesContables(ajustesRequeridos);
+  };
+
+  const generarAsientoAjuste = (ajuste: any) => {
+    const numeroAsiento = `CONC-${Date.now()}`;
+    
+    let asientoAjuste: AsientoContable;
+    
+    switch (ajuste.tipo) {
+      case 'deposito_no_registrado':
+        asientoAjuste = {
+          id: numeroAsiento,
+          numero: numeroAsiento,
+          fecha: ajuste.fecha,
+          concepto: `Conciliación bancaria - ${ajuste.descripcion}`,
+          referencia: ajuste.referencia,
+          debe: ajuste.monto,
+          haber: ajuste.monto,
+          estado: 'registrado',
+          cuentas: [
+            {
+              codigo: '1111',
+              nombre: 'Bancos Moneda Nacional',
+              debe: ajuste.monto,
+              haber: 0
+            },
+            {
+              codigo: '1121',
+              nombre: 'Cuentas por Cobrar Clientes',
+              debe: 0,
+              haber: ajuste.monto
+            }
+          ]
+        };
+        break;
+        
+      case 'cargo_bancario':
+        asientoAjuste = {
+          id: numeroAsiento,
+          numero: numeroAsiento,
+          fecha: ajuste.fecha,
+          concepto: `Conciliación bancaria - ${ajuste.descripcion}`,
+          referencia: ajuste.referencia,
+          debe: ajuste.monto,
+          haber: ajuste.monto,
+          estado: 'registrado',
+          cuentas: [
+            {
+              codigo: '5241',
+              nombre: 'Gastos Bancarios',
+              debe: ajuste.monto,
+              haber: 0
+            },
+            {
+              codigo: '1111',
+              nombre: 'Bancos Moneda Nacional',
+              debe: 0,
+              haber: ajuste.monto
+            }
+          ]
+        };
+        break;
+        
+      default:
+        return false;
+    }
+    
+    const resultado = guardarAsiento(asientoAjuste);
+    if (resultado) {
+      toast({
+        title: "Asiento de ajuste creado",
+        description: `${asientoAjuste.concepto} - Bs. ${ajuste.monto.toFixed(2)}`,
+      });
+      
+      // Remover de ajustes pendientes
+      setAjustesContables(prev => prev.filter(a => a !== ajuste));
+      
+      // Recargar datos
+      cargarDatosBancarios();
+    }
+    
+    return resultado;
+  };
 
   const [movimientosBanco] = useState<MovimientoBancario[]>([
     {
@@ -51,124 +249,74 @@ const ConciliacionBancaria = () => {
     {
       id: '2',
       fecha: '2024-01-16',
-      descripcion: 'Pago Proveedor XYZ',
-      referencia: 'CHQ001',
-      debito: 1500,
+      descripcion: 'Cheque #001234',
+      referencia: 'CHQ001234',
+      debito: 2500,
       credito: 0,
-      saldo: 23500,
+      saldo: 22500,
+      conciliado: false
+    },
+    {
+      id: '3',
+      fecha: '2024-01-17',
+      descripcion: 'Comisión mensual',
+      referencia: 'COM001',
+      debito: 50,
+      credito: 0,
+      saldo: 22450,
       conciliado: false
     }
   ]);
 
-  const [movimientosLibros] = useState<MovimientoContable[]>([
+  const [movimientosContables] = useState<MovimientoContable[]>([
     {
       id: '1',
       fecha: '2024-01-15',
-      numero: 'AS001',
-      descripcion: 'Depósito Cliente ABC',
+      numero: 'AST001',
+      descripcion: 'Cobro Cliente ABC',
       debe: 5000,
       haber: 0,
       conciliado: true
     },
     {
       id: '2',
-      fecha: '2024-01-17',
-      descripcion: 'Cheque en tránsito',
-      numero: 'AS002',
+      fecha: '2024-01-16',
+      numero: 'AST002',
+      descripcion: 'Pago Proveedor XYZ',
       debe: 0,
-      haber: 1200,
+      haber: 2500,
       conciliado: false
     }
   ]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Simular procesamiento de archivo Excel
-      toast({
-        title: "Archivo cargado",
-        description: `Extracto bancario ${file.name} procesado exitosamente`,
-      });
-    }
-  };
-
-  const realizarConciliacion = () => {
-    toast({
-      title: "Conciliación realizada",
-      description: "La conciliación bancaria se ha completado exitosamente",
-    });
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Conciliación Bancaria</h2>
-          <p className="text-muted-foreground">
-            Conciliación automática de extractos bancarios con registros contables
-          </p>
-        </div>
-        <Button onClick={realizarConciliacion} className="flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Ejecutar Conciliación
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Saldo en Libros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">Bs. 24,300.00</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Banco</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">Bs. 23,500.00</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Diferencia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">Bs. 800.00</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">% Conciliado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">85%</div>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>Importar Extracto Bancario</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5" />
+            Conciliación Bancaria Automática
+          </CardTitle>
           <CardDescription>
-            Cargue el extracto bancario en formato Excel para iniciar la conciliación automática
+            Conciliación automática con generación de asientos de ajuste según normativa boliviana
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="banco">Banco</Label>
-              <Input
+              <Label htmlFor="banco">Cuenta Bancaria</Label>
+              <select 
                 id="banco"
-                placeholder="Seleccionar banco"
-                value={selectedBank}
+                value={selectedBank} 
                 onChange={(e) => setSelectedBank(e.target.value)}
-              />
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Seleccione cuenta</option>
+                <option value="bcp001">BCP - Cuenta Corriente Bs.</option>
+                <option value="bnb001">BNB - Cuenta Ahorro Bs.</option>
+                <option value="fie001">FIE - Cuenta Corriente USD</option>
+                <option value="union001">Banco Unión - Cuenta Empresarial</option>
+              </select>
             </div>
             
             <div className="space-y-2">
@@ -182,44 +330,103 @@ const ConciliacionBancaria = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="archivo">Extracto Bancario</Label>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2" asChild>
-                  <label htmlFor="archivo" className="cursor-pointer">
-                    <Upload className="w-4 h-4" />
-                    Cargar Excel
-                  </label>
-                </Button>
-                <input
-                  id="archivo"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <FileSpreadsheet className="w-4 h-4" />
-                  Plantilla
+              <Label>Acciones</Label>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={cargarDatosBancarios} className="flex-1">
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Conciliar
                 </Button>
               </div>
             </div>
           </div>
+
+          {/* Resumen de Conciliación */}
+          {selectedBank && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">Bs. {saldoLibros.toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">Saldo en Libros</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">Bs. {saldoBanco.toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">Saldo Banco</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${Math.abs(saldoLibros - saldoBanco) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                  Bs. {(saldoLibros - saldoBanco).toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground">Diferencia</div>
+              </div>
+              <div className="text-center">
+                <Badge variant={Math.abs(saldoLibros - saldoBanco) < 0.01 ? "default" : "destructive"}>
+                  {Math.abs(saldoLibros - saldoBanco) < 0.01 ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Conciliado
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      Descuadre
+                    </>
+                  )}
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* Ajustes Contables Pendientes */}
+          {ajustesContables.length > 0 && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-700">
+                  <Calculator className="w-5 h-5" />
+                  Ajustes Contables Requeridos ({ajustesContables.length})
+                </CardTitle>
+                <CardDescription>
+                  Movimientos bancarios que requieren asientos de ajuste
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {ajustesContables.map((ajuste, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                      <div className="flex-1">
+                        <div className="font-medium">{ajuste.descripcion}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {ajuste.fecha} • Bs. {ajuste.monto.toFixed(2)} • Ref: {ajuste.referencia}
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => generarAsientoAjuste(ajuste)}
+                        className="ml-3"
+                      >
+                        <Banknote className="w-4 h-4 mr-1" />
+                        Crear Asiento
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
 
       <Tabs defaultValue="movimientos-banco" className="space-y-4">
         <TabsList>
           <TabsTrigger value="movimientos-banco">Movimientos Banco</TabsTrigger>
-          <TabsTrigger value="movimientos-libros">Movimientos Libros</TabsTrigger>
-          <TabsTrigger value="partidas-conciliacion">Partidas de Conciliación</TabsTrigger>
+          <TabsTrigger value="movimientos-contables">Movimientos Contables</TabsTrigger>
+          <TabsTrigger value="diferencias">Diferencias Identificadas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="movimientos-banco">
+        <TabsContent value="movimientos-banco" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Movimientos del Banco</CardTitle>
               <CardDescription>
-                Movimientos importados del extracto bancario
+                Extracto bancario importado o capturado manualmente
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -240,27 +447,19 @@ const ConciliacionBancaria = () => {
                     <TableRow key={mov.id}>
                       <TableCell>{mov.fecha}</TableCell>
                       <TableCell>{mov.descripcion}</TableCell>
-                      <TableCell>{mov.referencia}</TableCell>
+                      <TableCell className="font-mono text-sm">{mov.referencia}</TableCell>
                       <TableCell className="text-right">
-                        {mov.debito > 0 ? `Bs. ${mov.debito.toFixed(2)}` : '-'}
+                        {mov.debito > 0 && `Bs. ${mov.debito.toFixed(2)}`}
                       </TableCell>
                       <TableCell className="text-right">
-                        {mov.credito > 0 ? `Bs. ${mov.credito.toFixed(2)}` : '-'}
+                        {mov.credito > 0 && `Bs. ${mov.credito.toFixed(2)}`}
                       </TableCell>
-                      <TableCell className="text-right">Bs. {mov.saldo.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        Bs. {mov.saldo.toFixed(2)}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={mov.conciliado ? "default" : "secondary"}>
-                          {mov.conciliado ? (
-                            <>
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Conciliado
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Pendiente
-                            </>
-                          )}
+                          {mov.conciliado ? "Conciliado" : "Pendiente"}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -271,12 +470,12 @@ const ConciliacionBancaria = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="movimientos-libros">
+        <TabsContent value="movimientos-contables" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Movimientos en Libros</CardTitle>
+              <CardTitle>Movimientos Contables</CardTitle>
               <CardDescription>
-                Registros contables de la cuenta bancaria
+                Asientos contables relacionados con la cuenta bancaria
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -284,7 +483,7 @@ const ConciliacionBancaria = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Fecha</TableHead>
-                    <TableHead>Número</TableHead>
+                    <TableHead>Asiento</TableHead>
                     <TableHead>Descripción</TableHead>
                     <TableHead className="text-right">Debe</TableHead>
                     <TableHead className="text-right">Haber</TableHead>
@@ -292,30 +491,20 @@ const ConciliacionBancaria = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movimientosLibros.map((mov) => (
+                  {movimientosContables.map((mov) => (
                     <TableRow key={mov.id}>
                       <TableCell>{mov.fecha}</TableCell>
-                      <TableCell>{mov.numero}</TableCell>
+                      <TableCell className="font-mono text-sm">{mov.numero}</TableCell>
                       <TableCell>{mov.descripcion}</TableCell>
                       <TableCell className="text-right">
-                        {mov.debe > 0 ? `Bs. ${mov.debe.toFixed(2)}` : '-'}
+                        {mov.debe > 0 && `Bs. ${mov.debe.toFixed(2)}`}
                       </TableCell>
                       <TableCell className="text-right">
-                        {mov.haber > 0 ? `Bs. ${mov.haber.toFixed(2)}` : '-'}
+                        {mov.haber > 0 && `Bs. ${mov.haber.toFixed(2)}`}
                       </TableCell>
                       <TableCell>
                         <Badge variant={mov.conciliado ? "default" : "secondary"}>
-                          {mov.conciliado ? (
-                            <>
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Conciliado
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Pendiente
-                            </>
-                          )}
+                          {mov.conciliado ? "Conciliado" : "Pendiente"}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -326,50 +515,60 @@ const ConciliacionBancaria = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="partidas-conciliacion">
+        <TabsContent value="diferencias" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Partidas de Conciliación</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                Diferencias Identificadas ({diferencias.length})
+              </CardTitle>
               <CardDescription>
-                Ajustes necesarios para cuadrar los saldos
+                Partidas conciliatorias entre banco y libros contables
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Partidas que Aumentan el Saldo</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Depósitos en tránsito</span>
-                        <span className="font-semibold">Bs. 2,000.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Notas de crédito no registradas</span>
-                        <span className="font-semibold">Bs. 300.00</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Partidas que Disminuyen el Saldo</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Cheques pendientes</span>
-                        <span className="font-semibold">Bs. 1,200.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Comisiones bancarias</span>
-                        <span className="font-semibold">Bs. 300.00</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {diferencias.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead>Requiere Ajuste</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {diferencias.map((diff, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Badge variant={diff.requiereAjuste ? "destructive" : "secondary"}>
+                            {diff.tipo.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{diff.descripcion}</TableCell>
+                        <TableCell>{diff.fecha}</TableCell>
+                        <TableCell className="text-right">Bs. {diff.monto.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {diff.requiereAjuste ? (
+                            <Badge variant="destructive">Sí</Badge>
+                          ) : (
+                            <Badge variant="secondary">No</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">¡Cuenta Conciliada!</h3>
+                  <p className="text-muted-foreground">
+                    No se encontraron diferencias entre los registros bancarios y contables.
+                  </p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
