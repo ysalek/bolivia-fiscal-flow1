@@ -330,12 +330,12 @@ const NominaModule = () => {
     const planilla = planillas.find(p => p.id === planillaId);
     if (!planilla) return;
 
-    // Generar asiento contable
+    // Generar asiento contable integrado según normativa boliviana
     const asiento = {
       id: Date.now().toString(),
       numero: `NOM-${planilla.periodo}`,
       fecha: new Date().toISOString().slice(0, 10),
-      concepto: `Planilla de sueldos ${planilla.periodo}`,
+      concepto: `Registro de planilla de sueldos y cargas sociales ${planilla.periodo}`,
       referencia: `Planilla-${planilla.id}`,
       debe: planilla.totalIngresos + planilla.totalAportesPatronales,
       haber: planilla.totalIngresos + planilla.totalAportesPatronales,
@@ -348,8 +348,8 @@ const NominaModule = () => {
           haber: 0
         },
         {
-          codigo: "5112",
-          nombre: "Cargas Sociales",
+          codigo: "5112", 
+          nombre: "Cargas Sociales Patronales",
           debe: planilla.totalAportesPatronales,
           haber: 0
         },
@@ -361,20 +361,20 @@ const NominaModule = () => {
         },
         {
           codigo: "2112",
-          nombre: "Retenciones por Pagar",
+          nombre: "Retenciones Laborales por Pagar (AFP, Solidario)",
           debe: 0,
           haber: planilla.totalDescuentos
         },
         {
           codigo: "2113",
-          nombre: "Aportes Patronales por Pagar",
+          nombre: "Aportes Patronales por Pagar (Caja Salud, Riesgo, Vivienda)",
           debe: 0,
           haber: planilla.totalAportesPatronales
         }
       ]
     };
 
-    guardarAsiento(asiento);
+    const success = guardarAsiento(asiento);
 
     const planillasActualizadas = planillas.map(p => 
       p.id === planillaId ? { 
