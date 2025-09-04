@@ -132,6 +132,38 @@ export const useSupabaseProductos = () => {
     }
   };
 
+  // Actualizar producto
+  const actualizarProducto = async (productoId: string, productoData: Partial<ProductoSupabase>) => {
+    try {
+      const { data, error } = await supabase
+        .from('productos')
+        .update(productoData)
+        .eq('id', productoId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProductos(prev => 
+        prev.map(p => p.id === productoId ? { ...p, ...data } : p)
+      );
+      
+      toast({
+        title: "Producto actualizado",
+        description: "Los cambios se han guardado exitosamente",
+      });
+
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Error al actualizar producto",
+        description: error.message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   // Actualizar stock de producto
   const actualizarStockProducto = async (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => {
     try {
@@ -216,6 +248,7 @@ export const useSupabaseProductos = () => {
     loading,
     crearCategoria,
     crearProducto,
+    actualizarProducto,
     actualizarStockProducto,
     generarCodigoProducto,
     refetch: fetchData

@@ -19,7 +19,7 @@ interface ProductoFormProps {
 }
 
 const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: ProductoFormProps) => {
-  const { crearProducto, generarCodigoProducto } = useSupabaseProductos();
+  const { crearProducto, actualizarProducto, generarCodigoProducto } = useSupabaseProductos();
   const [formData, setFormData] = useState({
     codigo: "",
     nombre: "",
@@ -32,7 +32,8 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
     stock_actual: 0,
     stock_minimo: 0,
     codigo_sin: "",
-    imagen_url: ""
+    imagen_url: "",
+    activo: true
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [saving, setSaving] = useState(false);
@@ -52,7 +53,8 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         stock_actual: producto.stock_actual,
         stock_minimo: producto.stock_minimo,
         codigo_sin: producto.codigo_sin || "",
-        imagen_url: producto.imagen_url || ""
+        imagen_url: producto.imagen_url || "",
+        activo: producto.activo
       });
     } else {
       // Generar código automático para nuevo producto
@@ -111,17 +113,14 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         stock_minimo: formData.stock_minimo,
         codigo_sin: formData.codigo_sin.trim() || "00000000",
         imagen_url: formData.imagen_url || undefined,
-        activo: true
+        activo: formData.activo
       };
 
       if (producto) {
-        // TODO: Implementar actualización en Supabase
-        toast({
-          title: "Funcionalidad en desarrollo",
-          description: "La edición de productos se implementará pronto",
-          variant: "destructive"
-        });
+        // Actualizar producto existente
+        await actualizarProducto(producto.id, productoData);
       } else {
+        // Crear nuevo producto
         await crearProducto(productoData);
       }
       
@@ -336,6 +335,22 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               </div>
             )}
           </div>
+
+          {/* Estado del producto (solo para edición) */}
+          {producto && (
+            <div className="space-y-2">
+              <Label>Estado del Producto</Label>
+              <Select value={formData.activo ? 'true' : 'false'} onValueChange={(value) => handleInputChange("activo", value === 'true')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Activo</SelectItem>
+                  <SelectItem value="false">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Descripción */}

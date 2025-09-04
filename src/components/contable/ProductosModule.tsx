@@ -59,31 +59,21 @@ const ProductosModule = () => {
   };
 
   const handleDeleteProducto = async (productoId: string) => {
-    const producto = productos.find(p => p.id === productoId);
-    if (!producto) return;
-
-    if (confirm(`¿Está seguro de desactivar el producto ${producto.nombre}?`)) {
-      // Aquí deberíamos actualizar en Supabase, pero por ahora mostraremos mensaje
-      toast({
-        title: "Funcionalidad en desarrollo",
-        description: "La activación/desactivación de productos se implementará pronto",
-        variant: "destructive"
-      });
-    }
+    // Esta funcionalidad requiere implementar la función de actualización
+    toast({
+      title: "Información",
+      description: "Para desactivar productos, usa el botón de editar y cambia el estado",
+      variant: "default"
+    });
   };
 
   const handleReactivateProducto = async (productoId: string) => {
-    const producto = productos.find(p => p.id === productoId);
-    if (!producto) return;
-
-    if (confirm(`¿Está seguro de reactivar el producto ${producto.nombre}?`)) {
-      // Aquí deberíamos actualizar en Supabase, pero por ahora mostraremos mensaje
-      toast({
-        title: "Funcionalidad en desarrollo", 
-        description: "La activación/desactivación de productos se implementará pronto",
-        variant: "destructive"
-      });
-    }
+    // Esta funcionalidad requiere implementar la función de actualización
+    toast({
+      title: "Información", 
+      description: "Para reactivar productos, usa el botón de editar y cambia el estado",
+      variant: "default"
+    });
   };
 
   const productosFiltrados = productos.filter(producto =>
