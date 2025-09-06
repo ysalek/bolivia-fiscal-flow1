@@ -7,7 +7,8 @@ import AppSidebar from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Bell } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Bell, User, LogOut, Settings } from 'lucide-react';
 import NotificationCenter from '@/components/contable/notifications/NotificationCenter';
 
 // Lazy load components
@@ -53,8 +54,46 @@ const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearc
 const EmpleadosModule = lazy(() => import('@/components/contable/empleados/EmpleadosModule'));
 
 const Index = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user, logout } = useAuth();
   const [openNotifications, setOpenNotifications] = useState(false);
+
+  const UserProfileMenu = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+          <User className="w-4 h-4" />
+          <span className="hidden md:inline text-sm">{user?.nombre}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user?.nombre}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.empresa}</p>
+            <p className="text-xs leading-none text-primary font-medium">Rol: {user?.rol}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => {
+          const url = `/?view=configuracion`;
+          window.history.pushState({}, '', url);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Configuración</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={logout}
+          className="text-red-600 focus:text-red-600"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Cerrar Sesión</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   
   // Obtener el view desde la URL y actualizar cuando cambie
   const [currentView, setCurrentView] = React.useState(() => {
@@ -299,6 +338,9 @@ const Index = () => {
               <Button variant="ghost" size="sm" onClick={() => setOpenNotifications(true)} aria-label="Abrir notificaciones">
                 <Bell className="w-4 h-4" />
               </Button>
+              
+              {/* User Info and Logout */}
+              <UserProfileMenu />
             </div>
           </header>
 
