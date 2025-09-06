@@ -41,17 +41,38 @@ export const useSupabaseProductos = () => {
     try {
       setLoading(true);
       
+      // Verificar autenticación antes de cargar datos
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔍 Verificando usuario para productos:', user ? user.id : 'NO AUTENTICADO');
+      
+      if (!user) {
+        console.warn('⚠️ No hay usuario autenticado para cargar productos');
+        setProductos([]);
+        setCategorias([]);
+        return;
+      }
+      
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').order('codigo'),
         supabase.from('categorias_productos').select('*').order('nombre')
       ]);
 
-      if (productosRes.error) throw productosRes.error;
-      if (categoriasRes.error) throw categoriasRes.error;
+      if (productosRes.error) {
+        console.error('❌ Error cargando productos:', productosRes.error);
+        throw productosRes.error;
+      }
+      if (categoriasRes.error) {
+        console.error('❌ Error cargando categorías:', categoriasRes.error);
+        throw categoriasRes.error;
+      }
+
+      console.log('📦 Productos cargados:', productosRes.data?.length || 0);
+      console.log('🏷️ Categorías cargadas:', categoriasRes.data?.length || 0);
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
     } catch (error: any) {
+      console.error('❌ Error general en fetchData:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
@@ -135,6 +156,14 @@ export const useSupabaseProductos = () => {
   // Actualizar producto
   const actualizarProducto = async (productoId: string, productoData: Partial<ProductoSupabase>) => {
     try {
+      console.log('🔄 Actualizando producto:', productoId, productoData);
+      
+      // Verificar usuario autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
       const { data, error } = await supabase
         .from('productos')
         .update(productoData)
@@ -142,8 +171,13 @@ export const useSupabaseProductos = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error actualizando producto:', error);
+        throw error;
+      }
 
+      console.log('✅ Producto actualizado exitosamente:', data);
+      
       setProductos(prev => 
         prev.map(p => p.id === productoId ? { ...p, ...data } : p)
       );
@@ -155,6 +189,7 @@ export const useSupabaseProductos = () => {
 
       return data;
     } catch (error: any) {
+      console.error('❌ Error completo en actualizarProducto:', error);
       toast({
         title: "Error al actualizar producto",
         description: error.message,

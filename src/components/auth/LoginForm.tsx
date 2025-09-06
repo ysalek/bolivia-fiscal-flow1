@@ -48,12 +48,17 @@ const LoginForm = () => {
     setError('');
     
     try {
+      console.log('🚀 Iniciando acceso directo con ysalek@gmail.com...');
       // Intentar login con credenciales conocidas
       const success = await login('ysalek@gmail.com', '123456');
       if (!success) {
         setError('Error de autenticación. Contacte al administrador.');
+        console.error('❌ Login falló');
+      } else {
+        console.log('✅ Login exitoso');
       }
     } catch (error) {
+      console.error('❌ Error durante el login:', error);
       setError('Error al conectar. Verifique su conexión.');
     } finally {
       setIsLoading(false);

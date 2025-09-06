@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
+import { AuthDebugInfo } from "@/components/debug/AuthDebugInfo";
 
 const ProductosModule = () => {
   const { productos: productosSupabase, categorias, loading, refetch } = useSupabaseProductos();
@@ -114,6 +115,9 @@ const ProductosModule = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Debug Info - Solo visible cuando hay problemas */}
+      <AuthDebugInfo />
+
       {/* Enhanced Header */}
       <EnhancedHeader
         title="Catálogo de Productos Avanzado"

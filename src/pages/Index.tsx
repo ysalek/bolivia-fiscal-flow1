@@ -83,6 +83,14 @@ const Index = () => {
           <Settings className="mr-2 h-4 w-4" />
           <span>Configuración</span>
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => {
+          console.log('🔄 Reiniciando sesión...');
+          await logout();
+          window.location.reload();
+        }}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Reiniciar Sesión</span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={logout}

@@ -80,32 +80,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Inicialización segura: listener primero, luego getSession
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, !!session);
       setIsAuthenticated(!!session);
-      setUser((prev) => prev); // mantener mientras actualizamos perfil
-
+      
       if (session?.user) {
-        setTimeout(async () => {
-          try {
-            const mapped = await buildUserFromSupabase(session.user);
-            setUser(mapped);
-          } catch (e) {
-            console.error('No se pudo construir el usuario desde Supabase:', e);
-          }
-        }, 0);
+        try {
+          const mapped = await buildUserFromSupabase(session.user);
+          setUser(mapped);
+          console.log('Usuario mapeado correctamente:', mapped.email);
+        } catch (e) {
+          console.error('No se pudo construir el usuario desde Supabase:', e);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session check:', !!session);
       setIsAuthenticated(!!session);
       if (session?.user) {
         try {
           const mapped = await buildUserFromSupabase(session.user);
           setUser(mapped);
+          console.log('Usuario inicial mapeado:', mapped.email);
         } catch (e) {
           console.error('Error inicializando usuario:', e);
+          setUser(null);
         }
       }
     });
@@ -117,14 +120,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('🔐 Intentando login con:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        console.warn('Login fallido:', error.message);
+        console.warn('❌ Login fallido:', error.message);
         return false;
       }
+      console.log('✅ Login exitoso, sesión establecida');
+      console.log('👤 Usuario ID:', data.user?.id);
       return true;
     } catch (e) {
-      console.error('Error en login:', e);
+      console.error('❌ Error en login:', e);
       return false;
     }
   };
