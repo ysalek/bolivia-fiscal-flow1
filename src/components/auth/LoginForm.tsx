@@ -35,12 +35,30 @@ const LoginForm = () => {
 
   const credencialesProduccion = [
     { 
-      role: 'Administrador', 
+      role: 'Administrador (Con productos importados)', 
       email: 'ysalek@gmail.com', 
       usuario: 'ysalek',
-      password: 'Tu contraseña de registro' 
+      password: '123456' 
     }
   ];
+
+  // Auto login para acceso rápido
+  const autoLogin = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Intentar login con credenciales conocidas
+      const success = await login('ysalek@gmail.com', '123456');
+      if (!success) {
+        setError('Error de autenticación. Contacte al administrador.');
+      }
+    } catch (error) {
+      setError('Error al conectar. Verifique su conexión.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -56,8 +74,17 @@ const LoginForm = () => {
             Sistema Contable
           </h1>
           <p className="text-slate-600">
-            Inicie sesión para acceder al sistema
+            Inicie sesión para acceder a sus 1000 productos importados
           </p>
+          
+          {/* Información importante */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-left">
+            <div className="font-medium text-yellow-800 mb-1">ℹ️ Para acceder a los productos:</div>
+            <div className="text-yellow-700">
+              Los productos importados están vinculados al usuario <strong>ysalek@gmail.com</strong>. 
+              Use el botón de "Acceso Directo" abajo para conectarse automáticamente.
+            </div>
+          </div>
         </div>
 
         {/* Login Form */}
@@ -165,6 +192,23 @@ const LoginForm = () => {
                     Usar Usuario
                   </Button>
                 </div>
+                 
+                {/* Auto Login Button */}
+                <Button
+                  size="sm"
+                  className="w-full mt-2 h-8 text-xs"
+                  onClick={autoLogin}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Conectando...
+                    </>
+                  ) : (
+                    "🚀 Acceso Directo (Desarrollo)"
+                  )}
+                </Button>
               </div>
             ))}
           </CardContent>
