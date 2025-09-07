@@ -42,14 +42,23 @@ export const useSupabaseProductos = () => {
       setLoading(true);
       
       // Verificar autenticación antes de cargar datos
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔍 Verificando usuario para productos:', user ? user.id : 'NO AUTENTICADO');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 Hook productos - Verificando usuario:', user ? user.id : 'NO AUTENTICADO');
+      console.log('🔍 Hook productos - Error usuario:', userError);
       
       if (!user) {
-        console.warn('⚠️ No hay usuario autenticado para cargar productos');
-        setProductos([]);
-        setCategorias([]);
-        return;
+        console.warn('⚠️ Hook productos - No hay usuario autenticado');
+        
+        // Intentar obtener sesión actual
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('🔍 Hook productos - Verificando sesión:', !!session, sessionError);
+        
+        if (!session) {
+          setProductos([]);
+          setCategorias([]);
+          setLoading(false);
+          return;
+        }
       }
       
       const [productosRes, categoriasRes] = await Promise.all([
@@ -275,6 +284,21 @@ export const useSupabaseProductos = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Escuchar cambios en la autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Hook productos - cambio de auth:', event, !!session);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log('✅ Hook productos - recargando datos después de auth');
+        await fetchData();
+      } else if (event === 'SIGNED_OUT') {
+        console.log('🚪 Hook productos - usuario deslogueado, limpiando datos');
+        setProductos([]);
+        setCategorias([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return {

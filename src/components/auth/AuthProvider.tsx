@@ -81,33 +81,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Inicialización segura: listener primero, luego getSession
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, !!session);
+      console.log('🔐 AuthProvider - Auth state change:', event, !!session);
+      console.log('🔐 AuthProvider - Session user:', session?.user?.id);
+      
       setIsAuthenticated(!!session);
       
       if (session?.user) {
         try {
           const mapped = await buildUserFromSupabase(session.user);
           setUser(mapped);
-          console.log('Usuario mapeado correctamente:', mapped.email);
+          console.log('✅ AuthProvider - Usuario mapeado:', mapped.email, mapped.id);
         } catch (e) {
-          console.error('No se pudo construir el usuario desde Supabase:', e);
+          console.error('❌ AuthProvider - Error construyendo usuario:', e);
           setUser(null);
         }
       } else {
+        console.log('🚪 AuthProvider - No hay sesión, limpiando usuario');
         setUser(null);
       }
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session check:', !!session);
+    // Verificar sesión inicial
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      console.log('🔐 AuthProvider - Sesión inicial:', !!session, error);
+      if (session?.user) {
+        console.log('🔐 AuthProvider - Usuario en sesión inicial:', session.user.id);
+      }
+      
       setIsAuthenticated(!!session);
       if (session?.user) {
         try {
           const mapped = await buildUserFromSupabase(session.user);
           setUser(mapped);
-          console.log('Usuario inicial mapeado:', mapped.email);
+          console.log('✅ AuthProvider - Usuario inicial mapeado:', mapped.email);
         } catch (e) {
-          console.error('Error inicializando usuario:', e);
+          console.error('❌ AuthProvider - Error inicializando usuario:', e);
           setUser(null);
         }
       }
