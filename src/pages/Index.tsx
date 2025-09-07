@@ -93,7 +93,15 @@ const Index = () => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={logout}
+          onClick={async () => {
+            try {
+              console.log('🚪 Iniciando logout...');
+              await logout();
+              console.log('✅ Logout completado');
+            } catch (error) {
+              console.error('❌ Error en logout:', error);
+            }
+          }}
           className="text-red-600 focus:text-red-600"
         >
           <LogOut className="mr-2 h-4 w-4" />

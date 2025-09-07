@@ -115,9 +115,6 @@ const ProductosModule = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Debug Info - Solo visible cuando hay problemas */}
-      <AuthDebugInfo />
-
       {/* Enhanced Header */}
       <EnhancedHeader
         title="Catálogo de Productos Avanzado"
