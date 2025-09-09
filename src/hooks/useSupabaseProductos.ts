@@ -36,9 +36,16 @@ export const useSupabaseProductos = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  console.log('🔍 Hook productos - Estado actual:', { 
+    productosLength: productos.length, 
+    categoriasLength: categorias.length, 
+    loading 
+  });
+
   // Cargar productos y categorías
   const fetchData = async () => {
     try {
+      console.log('🔄 INICIO fetchData - Estado loading:', true);
       setLoading(true);
       
       // Verificar autenticación antes de cargar datos
@@ -54,6 +61,7 @@ export const useSupabaseProductos = () => {
         console.log('🔍 Hook productos - Verificando sesión:', !!session, sessionError);
         
         if (!session) {
+          console.log('❌ Hook productos - Sin sesión, limpiando datos y cambiando loading a false');
           setProductos([]);
           setCategorias([]);
           setLoading(false);
@@ -61,10 +69,23 @@ export const useSupabaseProductos = () => {
         }
       }
       
+      console.log('📡 Hook productos - Iniciando queries a Supabase...');
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').order('codigo'),
         supabase.from('categorias_productos').select('*').order('nombre')
       ]);
+
+      console.log('📡 Hook productos - Respuesta productos:', {
+        error: productosRes.error,
+        dataLength: productosRes.data?.length,
+        status: productosRes.status
+      });
+
+      console.log('📡 Hook productos - Respuesta categorías:', {
+        error: categoriasRes.error,
+        dataLength: categoriasRes.data?.length,
+        status: categoriasRes.status
+      });
 
       if (productosRes.error) {
         console.error('❌ Error cargando productos:', productosRes.error);
@@ -75,19 +96,23 @@ export const useSupabaseProductos = () => {
         throw categoriasRes.error;
       }
 
-      console.log('📦 Productos cargados:', productosRes.data?.length || 0);
-      console.log('🏷️ Categorías cargadas:', categoriasRes.data?.length || 0);
+      console.log('📦 Productos cargados exitosamente:', productosRes.data?.length || 0);
+      console.log('🏷️ Categorías cargadas exitosamente:', categoriasRes.data?.length || 0);
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
+      
+      console.log('✅ Hook productos - Datos actualizados, cambiando loading a false');
     } catch (error: any) {
       console.error('❌ Error general en fetchData:', error);
+      console.log('❌ Hook productos - Error capturado, cambiando loading a false');
       toast({
         title: "Error al cargar datos",
         description: error.message,
         variant: "destructive"
       });
     } finally {
+      console.log('🏁 FINAL fetchData - Cambiando loading a false');
       setLoading(false);
     }
   };
@@ -299,6 +324,7 @@ export const useSupabaseProductos = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 Hook productos - useEffect inicial ejecutándose');
     fetchData();
     
     // Escuchar cambios en la autenticación
@@ -311,10 +337,14 @@ export const useSupabaseProductos = () => {
         console.log('🚪 Hook productos - usuario deslogueado, limpiando datos');
         setProductos([]);
         setCategorias([]);
+        setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🧹 Hook productos - limpiando suscripción auth');
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {
@@ -326,6 +356,9 @@ export const useSupabaseProductos = () => {
     actualizarProducto,
     actualizarStockProducto,
     generarCodigoProducto,
-    refetch: fetchData
+    refetch: () => {
+      console.log('🔄 Hook productos - refetch solicitado');
+      return fetchData();
+    }
   };
 };
