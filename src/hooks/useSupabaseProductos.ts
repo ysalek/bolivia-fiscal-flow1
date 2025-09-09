@@ -130,28 +130,37 @@ export const useSupabaseProductos = () => {
   // Crear producto
   const crearProducto = async (productoData: Omit<ProductoSupabase, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
+      console.log('🆕 HOOK - Iniciando creación de producto:', productoData);
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 HOOK - Usuario para crear:', { userId: user?.id, error: userError });
+      
+      if (!user) {
+        console.error('❌ HOOK - Usuario no autenticado para crear');
+        throw new Error('Usuario no autenticado');
+      }
 
+      const dataWithUser = {
+        ...productoData,
+        user_id: user.id
+      };
+      
+      console.log('📤 HOOK - Datos a insertar:', dataWithUser);
+      
       const { data, error } = await supabase
         .from('productos')
-        .insert([{
-          ...productoData,
-          user_id: user.id
-        }])
+        .insert([dataWithUser])
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('📥 HOOK - Respuesta crear:', { data, error });
 
-      setProductos(prev => [...prev, data]);
-      
-      toast({
-        title: "Producto creado",
-        description: "El producto se ha registrado exitosamente",
-      });
+      if (error) {
+        console.error('❌ HOOK - Error crear:', error);
+        throw error;
+      }
 
-      return data;
+      console.log('✅ HOOK - Producto creado exitosamente:', data);
     } catch (error: any) {
       toast({
         title: "Error al crear producto",
@@ -165,27 +174,34 @@ export const useSupabaseProductos = () => {
   // Actualizar producto
   const actualizarProducto = async (productoId: string, productoData: Partial<ProductoSupabase>) => {
     try {
-      console.log('🔄 Actualizando producto:', productoId, productoData);
+      console.log('🔄 HOOK - Iniciando actualización de producto:', { productoId, productoData });
       
       // Verificar usuario autenticado
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 HOOK - Usuario actual:', { userId: user?.id, error: userError });
+      
       if (!user) {
+        console.error('❌ HOOK - Usuario no autenticado');
         throw new Error('Usuario no autenticado');
       }
       
+      console.log('📤 HOOK - Ejecutando UPDATE en Supabase...');
       const { data, error } = await supabase
         .from('productos')
         .update(productoData)
         .eq('id', productoId)
+        .eq('user_id', user.id) // Agregar verificación explícita del user_id
         .select()
         .single();
 
+      console.log('📥 HOOK - Respuesta de Supabase:', { data, error });
+
       if (error) {
-        console.error('❌ Error actualizando producto:', error);
+        console.error('❌ HOOK - Error de Supabase:', error);
         throw error;
       }
 
-      console.log('✅ Producto actualizado exitosamente:', data);
+      console.log('✅ HOOK - Producto actualizado exitosamente:', data);
       
       setProductos(prev => 
         prev.map(p => p.id === productoId ? { ...p, ...data } : p)

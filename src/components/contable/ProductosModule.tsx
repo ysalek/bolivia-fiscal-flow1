@@ -46,17 +46,34 @@ const ProductosModule = () => {
   }));
 
   const handleSaveProducto = async () => {
-    // Después de guardar, recargar los datos
-    await refetch();
-    setShowForm(false);
-    setEditingProducto(null);
+    console.log('💾 ProductosModule - handleSaveProducto ejecutado');
+    console.log('💾 ProductosModule - Estado actual:', { 
+      editingProducto: editingProducto?.id, 
+      showForm 
+    });
+    
+    try {
+      // Después de guardar, recargar los datos
+      await refetch();
+      console.log('✅ ProductosModule - Datos recargados exitosamente');
+      setShowForm(false);
+      setEditingProducto(null);
+      console.log('✅ ProductosModule - Formulario cerrado');
+    } catch (error) {
+      console.error('❌ ProductosModule - Error en handleSaveProducto:', error);
+    }
   };
 
   const handleEditProducto = (producto: any) => {
+    console.log('✏️ ProductosModule - handleEditProducto ejecutado:', producto.id);
+    
     // Convertir producto al formato de Supabase para edición
     const productoSupabase = productosSupabase.find(p => p.id === producto.id);
+    console.log('📋 ProductosModule - Producto encontrado:', productoSupabase);
+    
     setEditingProducto(productoSupabase);
     setShowForm(true);
+    console.log('✅ ProductosModule - Formulario abierto para edición');
   };
 
   const handleDeleteProducto = async (productoId: string) => {
@@ -124,13 +141,39 @@ const ProductosModule = () => {
           variant: "default"
         }}
         actions={
-          <Button 
-            className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
-            onClick={() => setShowForm(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Producto
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                console.log('🧪 Iniciando prueba de edición...');
+                const primerProducto = productos[0];
+                if (primerProducto) {
+                  console.log('🧪 Editando primer producto:', primerProducto);
+                  handleEditProducto(primerProducto);
+                } else {
+                  toast({
+                    title: "No hay productos",
+                    description: "Crea un producto primero para poder editarlo",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              🧪 Prueba Edición
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
+              onClick={() => {
+                console.log('➕ Creando nuevo producto...');
+                setEditingProducto(null);
+                setShowForm(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Producto
+            </Button>
+          </div>
         }
       />
 
