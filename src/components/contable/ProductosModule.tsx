@@ -110,16 +110,6 @@ const ProductosModule = () => {
         <div className="text-center py-8">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>Cargando productos...</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Productos: {productosSupabase.length} | Loading: {loading.toString()}
-          </p>
-          <Button 
-            variant="outline" 
-            onClick={refetch}
-            className="mt-4"
-          >
-            🔄 Forzar Recarga
-          </Button>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,32 +36,19 @@ export const useSupabaseProductos = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  console.log('🔍 Hook productos - Estado actual:', { 
-    productosLength: productos.length, 
-    categoriasLength: categorias.length, 
-    loading 
-  });
-
   // Cargar productos y categorías
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      console.log('🔄 INICIO fetchData - Estado loading:', true);
       setLoading(true);
       
       // Verificar autenticación antes de cargar datos
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('🔍 Hook productos - Verificando usuario:', user ? user.id : 'NO AUTENTICADO');
-      console.log('🔍 Hook productos - Error usuario:', userError);
       
-      if (!user) {
-        console.warn('⚠️ Hook productos - No hay usuario autenticado');
-        
+      if (!user || userError) {
         // Intentar obtener sesión actual
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('🔍 Hook productos - Verificando sesión:', !!session, sessionError);
         
-        if (!session) {
-          console.log('❌ Hook productos - Sin sesión, limpiando datos y cambiando loading a false');
+        if (!session || sessionError) {
           setProductos([]);
           setCategorias([]);
           setLoading(false);
@@ -69,53 +56,31 @@ export const useSupabaseProductos = () => {
         }
       }
       
-      console.log('📡 Hook productos - Iniciando queries a Supabase...');
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').order('codigo'),
         supabase.from('categorias_productos').select('*').order('nombre')
       ]);
 
-      console.log('📡 Hook productos - Respuesta productos:', {
-        error: productosRes.error,
-        dataLength: productosRes.data?.length,
-        status: productosRes.status
-      });
-
-      console.log('📡 Hook productos - Respuesta categorías:', {
-        error: categoriasRes.error,
-        dataLength: categoriasRes.data?.length,
-        status: categoriasRes.status
-      });
-
       if (productosRes.error) {
-        console.error('❌ Error cargando productos:', productosRes.error);
         throw productosRes.error;
       }
       if (categoriasRes.error) {
-        console.error('❌ Error cargando categorías:', categoriasRes.error);
         throw categoriasRes.error;
       }
 
-      console.log('📦 Productos cargados exitosamente:', productosRes.data?.length || 0);
-      console.log('🏷️ Categorías cargadas exitosamente:', categoriasRes.data?.length || 0);
-
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
-      
-      console.log('✅ Hook productos - Datos actualizados, cambiando loading a false');
     } catch (error: any) {
-      console.error('❌ Error general en fetchData:', error);
-      console.log('❌ Hook productos - Error capturado, cambiando loading a false');
+      console.error('❌ Error cargando datos:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
         variant: "destructive"
       });
     } finally {
-      console.log('🏁 FINAL fetchData - Cambiando loading a false');
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProductoSupabase, 'id' | 'created_at' | 'updated_at'>) => {
@@ -324,28 +289,21 @@ export const useSupabaseProductos = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 Hook productos - useEffect inicial ejecutándose');
     fetchData();
     
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Hook productos - cambio de auth:', event, !!session);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log('✅ Hook productos - recargando datos después de auth');
         await fetchData();
       } else if (event === 'SIGNED_OUT') {
-        console.log('🚪 Hook productos - usuario deslogueado, limpiando datos');
         setProductos([]);
         setCategorias([]);
         setLoading(false);
       }
     });
 
-    return () => {
-      console.log('🧹 Hook productos - limpiando suscripción auth');
-      subscription.unsubscribe();
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [fetchData]);
 
   return {
     productos,
@@ -356,9 +314,6 @@ export const useSupabaseProductos = () => {
     actualizarProducto,
     actualizarStockProducto,
     generarCodigoProducto,
-    refetch: () => {
-      console.log('🔄 Hook productos - refetch solicitado');
-      return fetchData();
-    }
+    refetch: fetchData
   };
 };
