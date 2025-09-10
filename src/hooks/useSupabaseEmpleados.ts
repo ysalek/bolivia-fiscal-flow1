@@ -33,9 +33,19 @@ export const useSupabaseEmpleados = () => {
   const fetchEmpleados = async () => {
     try {
       setLoading(true);
+
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setEmpleados([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('empleados')
         .select('*')
+        .eq('user_id', user.id) // SECURITY FIX: Filtro explícito por usuario
         .order('numero_empleado');
 
       if (error) throw error;
@@ -89,10 +99,15 @@ export const useSupabaseEmpleados = () => {
   // Actualizar empleado
   const actualizarEmpleado = async (id: string, empleadoData: Partial<EmpleadoSupabase>) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { data, error } = await supabase
         .from('empleados')
         .update(empleadoData)
         .eq('id', id)
+        .eq('user_id', user.id) // SECURITY FIX: Verificar propiedad del empleado
         .select()
         .single();
 
@@ -121,10 +136,15 @@ export const useSupabaseEmpleados = () => {
   // Eliminar empleado
   const eliminarEmpleado = async (id: string) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { error } = await supabase
         .from('empleados')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // SECURITY FIX: Verificar propiedad del empleado
 
       if (error) throw error;
 

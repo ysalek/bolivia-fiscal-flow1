@@ -23,9 +23,19 @@ export const useSupabaseClientes = () => {
   const fetchClientes = async () => {
     try {
       setLoading(true);
+      
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setClientes([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('clientes')
         .select('*')
+        .eq('user_id', user.id) // SECURITY FIX: Filtro explícito por usuario
         .order('nombre');
 
       if (error) throw error;
@@ -79,10 +89,15 @@ export const useSupabaseClientes = () => {
   // Actualizar cliente
   const actualizarCliente = async (id: string, clienteData: Partial<ClienteSupabase>) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { data, error } = await supabase
         .from('clientes')
         .update(clienteData)
         .eq('id', id)
+        .eq('user_id', user.id) // SECURITY FIX: Verificar propiedad del cliente
         .select()
         .single();
 
@@ -111,10 +126,15 @@ export const useSupabaseClientes = () => {
   // Eliminar cliente
   const eliminarCliente = async (id: string) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { error } = await supabase
         .from('clientes')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // SECURITY FIX: Verificar propiedad del cliente
 
       if (error) throw error;
 

@@ -29,6 +29,14 @@ export const useSupabaseMovimientos = () => {
     try {
       setLoading(true);
       
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setMovimientos([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('movimientos_inventario')
         .select(`
@@ -38,6 +46,7 @@ export const useSupabaseMovimientos = () => {
             nombre
           )
         `)
+        .eq('user_id', user.id) // SECURITY FIX: Filtro explícito por usuario
         .order('fecha', { ascending: false })
         .order('created_at', { ascending: false });
 

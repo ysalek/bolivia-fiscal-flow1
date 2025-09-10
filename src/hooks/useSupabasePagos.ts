@@ -22,6 +22,13 @@ export const useSupabasePagos = () => {
 
   const fetchPagos = async () => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setPagos([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('pagos')
         .select(`
@@ -29,6 +36,7 @@ export const useSupabasePagos = () => {
           facturas(numero, total),
           compras(numero, total)
         `)
+        .eq('user_id', user.id) // SECURITY FIX: Filtro explícito por usuario
         .order('fecha', { ascending: false });
 
       if (error) throw error;
@@ -76,10 +84,15 @@ export const useSupabasePagos = () => {
 
   const updatePago = async (id: string, updates: Partial<Pago>) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { data, error } = await supabase
         .from('pagos')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id) // SECURITY FIX: Verificar propiedad del pago
         .select()
         .single();
 
@@ -108,10 +121,15 @@ export const useSupabasePagos = () => {
 
   const deletePago = async (id: string) => {
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
       const { error } = await supabase
         .from('pagos')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // SECURITY FIX: Verificar propiedad del pago
 
       if (error) throw error;
       
