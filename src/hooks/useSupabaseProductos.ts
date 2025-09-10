@@ -57,8 +57,8 @@ export const useSupabaseProductos = () => {
       }
       
       const [productosRes, categoriasRes] = await Promise.all([
-        supabase.from('productos').select('*').order('codigo'),
-        supabase.from('categorias_productos').select('*').order('nombre')
+        supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
+        supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
       if (productosRes.error) {
