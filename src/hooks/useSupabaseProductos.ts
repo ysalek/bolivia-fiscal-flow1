@@ -36,8 +36,8 @@ export const useSupabaseProductos = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Cargar productos y categorías
-  const fetchData = useCallback(async () => {
+  // Cargar productos y categorías - función simplificada
+  const fetchData = async () => {
     try {
       setLoading(true);
       
@@ -80,7 +80,7 @@ export const useSupabaseProductos = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  };
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProductoSupabase, 'id' | 'created_at' | 'updated_at'>) => {
@@ -294,7 +294,7 @@ export const useSupabaseProductos = () => {
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        await fetchData();
+        fetchData();
       } else if (event === 'SIGNED_OUT') {
         setProductos([]);
         setCategorias([]);
@@ -303,7 +303,7 @@ export const useSupabaseProductos = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchData]);
+  }, []);
 
   return {
     productos,

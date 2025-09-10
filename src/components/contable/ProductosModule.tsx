@@ -143,26 +143,6 @@ const ProductosModule = () => {
         actions={
           <div className="flex gap-2">
             <Button 
-              variant="outline"
-              onClick={() => {
-                console.log('🧪 Iniciando prueba de edición...');
-                const primerProducto = productos[0];
-                if (primerProducto) {
-                  console.log('🧪 Editando primer producto:', primerProducto);
-                  handleEditProducto(primerProducto);
-                } else {
-                  toast({
-                    title: "No hay productos",
-                    description: "Crea un producto primero para poder editarlo",
-                    variant: "destructive"
-                  });
-                }
-              }}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              🧪 Prueba Edición
-            </Button>
-            <Button 
               className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
               onClick={() => {
                 console.log('➕ Creando nuevo producto...');
