@@ -12,11 +12,28 @@ import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashb
 import { AuthDebugInfo } from "@/components/debug/AuthDebugInfo";
 
 const ProductosModule = () => {
+  console.log('🚀 ProductosModule - Componente montado');
+  
   const { productos: productosSupabase, categorias, loading, refetch } = useSupabaseProductos();
+  console.log('📊 ProductosModule - Datos del hook:', { 
+    productos: productosSupabase?.length || 0, 
+    categorias: categorias?.length || 0, 
+    loading 
+  });
+  
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  // Debug effect para monitorear cambios
+  useEffect(() => {
+    console.log('🔄 ProductosModule - useEffect ejecutado, datos actualizados:', {
+      productos: productosSupabase?.length || 0,
+      categorias: categorias?.length || 0,
+      loading
+    });
+  }, [productosSupabase, categorias, loading]);
 
   // Obtener el nombre de la categoría por ID
   const obtenerNombreCategoria = (categoriaId: string | null) => {

@@ -38,11 +38,14 @@ export const useSupabaseProductos = () => {
 
   // Cargar productos y categorías - función simplificada
   const fetchData = async () => {
+    console.log('🚀 HOOK - fetchData iniciado');
     try {
       setLoading(true);
+      console.log('⏳ HOOK - setLoading(true) ejecutado');
       
       // Obtener usuario autenticado
       const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 HOOK - Respuesta de auth.getUser():', { user: user?.id, error: userError });
       
       if (!user) {
         console.log('❌ No hay usuario autenticado');
@@ -299,20 +302,27 @@ export const useSupabaseProductos = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 HOOK - useEffect ejecutado en useSupabaseProductos');
     fetchData();
     
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 HOOK - Auth state change:', event, session?.user?.id);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log('✅ HOOK - Ejecutando fetchData por cambio de auth');
         fetchData();
       } else if (event === 'SIGNED_OUT') {
+        console.log('🚪 HOOK - Usuario deslogueado, limpiando datos');
         setProductos([]);
         setCategorias([]);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🧹 HOOK - Cleanup: desuscribiendo de auth changes');
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {
