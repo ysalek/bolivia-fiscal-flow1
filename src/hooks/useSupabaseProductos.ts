@@ -41,25 +41,31 @@ export const useSupabaseProductos = () => {
     try {
       setLoading(true);
       
-      // Verificar autenticación antes de cargar datos
+      // Obtener usuario autenticado
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (!user || userError) {
-        // Intentar obtener sesión actual
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (!session || sessionError) {
-          setProductos([]);
-          setCategorias([]);
-          setLoading(false);
-          return;
-        }
+      if (!user) {
+        console.log('❌ No hay usuario autenticado');
+        setProductos([]);
+        setCategorias([]);
+        setLoading(false);
+        return;
       }
+
+      if (userError) {
+        console.error('❌ Error de autenticación:', userError);
+        throw userError;
+      }
+
+      console.log('👤 Usuario autenticado:', user.id);
       
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
+
+      console.log('📦 Productos response:', productosRes);
+      console.log('📂 Categorías response:', categoriasRes);
 
       if (productosRes.error) {
         throw productosRes.error;
@@ -70,6 +76,10 @@ export const useSupabaseProductos = () => {
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
+      console.log('✅ Datos cargados exitosamente:', { 
+        productos: productosRes.data?.length || 0, 
+        categorias: categoriasRes.data?.length || 0 
+      });
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
       toast({
