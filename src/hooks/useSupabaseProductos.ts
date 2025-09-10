@@ -39,16 +39,19 @@ export const useSupabaseProductos = () => {
   // Cargar productos y categorías - función simplificada
   const fetchData = async () => {
     console.log('🚀 HOOK - fetchData iniciado');
+    console.log('🚀 HOOK - Estado inicial:', { loading, productos: productos.length, categorias: categorias.length });
+    
     try {
       setLoading(true);
       console.log('⏳ HOOK - setLoading(true) ejecutado');
       
       // Obtener usuario autenticado
+      console.log('🔍 HOOK - Obteniendo usuario autenticado...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       console.log('🔍 HOOK - Respuesta de auth.getUser():', { user: user?.id, error: userError });
-      
+
       if (!user) {
-        console.log('❌ No hay usuario autenticado');
+        console.log('❌ HOOK - No hay usuario autenticado');
         setProductos([]);
         setCategorias([]);
         setLoading(false);
@@ -56,19 +59,20 @@ export const useSupabaseProductos = () => {
       }
 
       if (userError) {
-        console.error('❌ Error de autenticación:', userError);
+        console.error('❌ HOOK - Error de autenticación:', userError);
         throw userError;
       }
 
-      console.log('👤 Usuario autenticado:', user.id);
+      console.log('👤 HOOK - Usuario autenticado:', user.id);
+      console.log('📤 HOOK - Ejecutando consultas a Supabase...');
       
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
-      console.log('📦 Productos response:', productosRes);
-      console.log('📂 Categorías response:', categoriasRes);
+      console.log('📦 HOOK - Productos response:', productosRes);
+      console.log('📂 HOOK - Categorías response:', categoriasRes);
 
       if (productosRes.error) {
         throw productosRes.error;
@@ -79,12 +83,12 @@ export const useSupabaseProductos = () => {
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
-      console.log('✅ Datos cargados exitosamente:', { 
+      console.log('✅ HOOK - Datos cargados exitosamente:', { 
         productos: productosRes.data?.length || 0, 
         categorias: categoriasRes.data?.length || 0 
       });
     } catch (error: any) {
-      console.error('❌ Error cargando datos:', error);
+      console.error('❌ HOOK - Error cargando datos:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
@@ -92,6 +96,7 @@ export const useSupabaseProductos = () => {
       });
     } finally {
       setLoading(false);
+      console.log('🏁 HOOK - fetchData finalizado, loading = false');
     }
   };
 
@@ -303,6 +308,7 @@ export const useSupabaseProductos = () => {
 
   useEffect(() => {
     console.log('🚀 HOOK - useEffect ejecutado en useSupabaseProductos');
+    console.log('🚀 HOOK - Iniciando fetchData...');
     fetchData();
     
     // Escuchar cambios en la autenticación
