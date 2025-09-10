@@ -83,10 +83,21 @@ const ProductosModule = () => {
 
   const handleEditProducto = (producto: any) => {
     console.log('✏️ ProductosModule - handleEditProducto ejecutado:', producto.id);
+    console.log('✏️ ProductosModule - Producto completo recibido:', producto);
     
     // Convertir producto al formato de Supabase para edición
     const productoSupabase = productosSupabase.find(p => p.id === producto.id);
-    console.log('📋 ProductosModule - Producto encontrado:', productoSupabase);
+    console.log('📋 ProductosModule - Producto de Supabase encontrado:', productoSupabase);
+    
+    if (!productoSupabase) {
+      console.error('❌ ProductosModule - No se encontró el producto en la lista de Supabase');
+      toast({
+        title: "Error", 
+        description: "No se pudo encontrar el producto para editar",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setEditingProducto(productoSupabase);
     setShowForm(true);

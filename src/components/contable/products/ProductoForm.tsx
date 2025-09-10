@@ -40,7 +40,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🚀 ProductoForm - useEffect inicializando:', { hasProducto: !!producto, productos: productos?.length });
+    
     if (producto) {
+      console.log('📝 ProductoForm - Cargando datos de producto existente:', producto);
       setFormData({
         codigo: producto.codigo,
         nombre: producto.nombre,
@@ -56,9 +59,12 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         imagen_url: producto.imagen_url || "",
         activo: producto.activo
       });
+      console.log('✅ ProductoForm - Datos cargados en el formulario');
     } else {
       // Generar código automático para nuevo producto
+      console.log('🆕 ProductoForm - Generando código nuevo para producto');
       const codigo = generarCodigoProducto();
+      console.log('🔢 ProductoForm - Código generado:', codigo);
       setFormData(prev => ({
         ...prev,
         codigo: codigo
