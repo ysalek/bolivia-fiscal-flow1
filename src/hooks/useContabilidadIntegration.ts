@@ -3,7 +3,7 @@ import { AsientoContable } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { useAsientos } from "./useAsientos";
 import { useReportesContables } from "./useReportesContables";
-import { useProductos } from "./useProductos";
+import { useProductosUnificado } from "./useProductosUnificado";
 import { useAsientosGenerator } from "./useAsientosGenerator";
 import type { 
   TrialBalanceDetail, 
@@ -13,7 +13,8 @@ import type {
   IncomeStatementData, 
   DeclaracionIVAData 
 } from "./useReportesContables";
-import type { Producto } from "@/components/contable/products/ProductsData";
+import type { Producto as ProductoLegacy } from "@/components/contable/products/ProductsData";
+import type { Producto } from "@/hooks/useProductosUnificado";
 import type { Factura } from "@/components/contable/billing/BillingData";
 import type { Compra } from "@/components/contable/purchases/PurchasesData";
 
@@ -26,7 +27,8 @@ export type {
   IncomeStatementData, 
   DeclaracionIVAData 
 } from "./useReportesContables";
-export type { Producto } from "@/components/contable/products/ProductsData";
+export type { Producto as ProductoLegacy } from "@/components/contable/products/ProductsData";
+export type { Producto } from "@/hooks/useProductosUnificado";
 export type { Compra } from "@/components/contable/purchases/PurchasesData";
 
 export interface ContabilidadIntegrationHook {
@@ -52,7 +54,7 @@ export interface ContabilidadIntegrationHook {
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
   const { getAsientos, guardarAsiento, validarTransaccion } = useAsientos();
   const reportesHook = useReportesContables();
-  const { obtenerProductos, actualizarStockProducto } = useProductos();
+  const { obtenerProductos, actualizarStockProducto } = useProductosUnificado();
   const {
     generarAsientoInventario,
     generarAsientoVenta,
@@ -71,6 +73,28 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     };
   };
 
+  // Función de compatibilidad que convierte productos al formato legacy
+  const obtenerProductosLegacy = (): ProductoLegacy[] => {
+    return obtenerProductos().map(p => ({
+      id: p.id,
+      codigo: p.codigo,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      categoria: p.categoria,
+      unidadMedida: p.unidad_medida,
+      precioVenta: p.precio_venta,
+      precioCompra: p.precio_compra,
+      costoUnitario: p.costo_unitario,
+      stockActual: p.stock_actual,
+      stockMinimo: p.stock_minimo,
+      codigoSIN: p.codigo_sin || '00000000',
+      activo: p.activo,
+      fechaCreacion: p.fechaCreacion || '',
+      fechaActualizacion: p.fechaActualizacion || '',
+      imagenUrl: p.imagen_url
+    }));
+  };
+
   return {
     generarAsientoInventario,
     generarAsientoVenta,
@@ -83,7 +107,7 @@ export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
     getLibroMayor: reportesHook.getLibroMayor,
     getTrialBalanceData: reportesHook.getTrialBalanceData,
     actualizarStockProducto,
-    obtenerProductos,
+    obtenerProductos: obtenerProductosLegacy as () => any,
     validarTransaccion,
     obtenerBalanceGeneral,
     getBalanceSheetData: reportesHook.getBalanceSheetData,

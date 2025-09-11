@@ -1,49 +1,20 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, TrendingUp, Activity, BarChart3 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
+import { useProductosUnificado } from "@/hooks/useProductosUnificado";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
-import { AuthDebugInfo } from "@/components/debug/AuthDebugInfo";
 
 const ProductosModule = () => {
-  const { productos: productosSupabase, categorias, loading, refetch } = useSupabaseProductos();
+  const { productos, categorias, loading, refetch } = useProductosUnificado();
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-
-  // Obtener el nombre de la categoría por ID
-  const obtenerNombreCategoria = (categoriaId: string | null) => {
-    if (!categoriaId) return 'General';
-    const categoria = categorias.find(c => c.id === categoriaId);
-    return categoria?.nombre || 'General';
-  };
-
-  // Convertir productos de Supabase al formato esperado
-  const productos = productosSupabase.map(p => ({
-    id: p.id,
-    codigo: p.codigo,
-    nombre: p.nombre,
-    descripcion: p.descripcion || '',
-    categoria: obtenerNombreCategoria(p.categoria_id),
-    unidadMedida: p.unidad_medida,
-    precioVenta: p.precio_venta,
-    precioCompra: p.precio_compra,
-    costoUnitario: p.costo_unitario,
-    stockActual: p.stock_actual,
-    stockMinimo: p.stock_minimo,
-    codigoSIN: p.codigo_sin || '00000000',
-    activo: p.activo,
-    fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
-    fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
-    imagenUrl: p.imagen_url
-  }));
 
   const handleSaveProducto = async () => {
     try {
@@ -56,18 +27,8 @@ const ProductosModule = () => {
   };
 
   const handleEditProducto = (producto: any) => {
-    const productoSupabase = productosSupabase.find(p => p.id === producto.id);
-    
-    if (!productoSupabase) {
-      toast({
-        title: "Error", 
-        description: "No se pudo encontrar el producto para editar",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setEditingProducto(productoSupabase);
+    // El producto ya viene en el formato correcto del hook unificado
+    setEditingProducto(producto);
     setShowForm(true);
   };
 
@@ -96,8 +57,8 @@ const ProductosModule = () => {
   );
 
   const productosActivos = productos.filter(p => p.activo).length;
-  const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo && p.activo).length;
-  const valorInventario = productos.reduce((sum, p) => sum + ((p.stockActual || 0) * (p.costoUnitario || 0)), 0);
+  const productosStockBajo = productos.filter(p => p.stock_actual <= p.stock_minimo && p.activo).length;
+  const valorInventario = productos.reduce((sum, p) => sum + ((p.stock_actual || 0) * (p.costo_unitario || 0)), 0);
 
   if (loading) {
     return (
@@ -234,15 +195,15 @@ const ProductosModule = () => {
                     <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3">
-                        {producto.imagenUrl && (
-                          <img src={producto.imagenUrl} alt={`Imagen ${producto.nombre}`} className="h-10 w-10 rounded object-cover border" />
+                        {producto.imagen_url && (
+                          <img src={producto.imagen_url} alt={`Imagen ${producto.nombre}`} className="h-10 w-10 rounded object-cover border" />
                         )}
                         <h3 className="font-semibold text-lg">{producto.nombre}</h3>
                         <Badge variant="outline">{producto.codigo}</Badge>
                         <Badge variant={producto.activo ? "default" : "secondary"}>
                             {producto.activo ? "Activo" : "Inactivo"}
                         </Badge>
-                        {(producto.stockActual || 0) <= (producto.stockMinimo || 0) && producto.activo && (
+                        {(producto.stock_actual || 0) <= (producto.stock_minimo || 0) && producto.activo && (
                             <Badge variant="destructive">Stock Bajo</Badge>
                         )}
                         </div>
@@ -256,17 +217,17 @@ const ProductosModule = () => {
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Stock Actual:</span>
-                            <p className={(producto.stockActual || 0) <= (producto.stockMinimo || 0) ? "text-red-600" : "text-muted-foreground"}>
-                            {producto.stockActual || 0} {producto.unidadMedida || 'PZA'}
+                            <p className={(producto.stock_actual || 0) <= (producto.stock_minimo || 0) ? "text-red-600" : "text-muted-foreground"}>
+                            {producto.stock_actual || 0} {producto.unidad_medida || 'PZA'}
                             </p>
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Precio Venta:</span>
-                            <p className="text-muted-foreground">Bs. {(producto.precioVenta || 0).toFixed(2)} <span className="text-xs">(IVA incl.)</span></p>
+                            <p className="text-muted-foreground">Bs. {(producto.precio_venta || 0).toFixed(2)} <span className="text-xs">(IVA incl.)</span></p>
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Costo:</span>
-                            <p className="text-muted-foreground">Bs. {(producto.costoUnitario || 0).toFixed(2)}</p>
+                            <p className="text-muted-foreground">Bs. {(producto.costo_unitario || 0).toFixed(2)}</p>
                         </div>
                         </div>
                         
