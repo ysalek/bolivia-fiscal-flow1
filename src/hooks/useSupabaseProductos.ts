@@ -34,61 +34,38 @@ export const useSupabaseProductos = () => {
   const [productos, setProductos] = useState<ProductoSupabase[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProductoSupabase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
-  // Cargar productos y categorías - función simplificada
-  const fetchData = async () => {
-    console.log('🚀 HOOK - fetchData iniciado');
-    console.log('🚀 HOOK - Estado inicial:', { loading, productos: productos.length, categorias: categorias.length });
-    
+  // Cargar productos y categorías con memoización
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('⏳ HOOK - setLoading(true) ejecutado');
       
-      // Obtener usuario autenticado
-      console.log('🔍 HOOK - Obteniendo usuario autenticado...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('🔍 HOOK - Respuesta de auth.getUser():', { user: user?.id, error: userError });
 
       if (!user) {
-        console.log('❌ HOOK - No hay usuario autenticado');
         setProductos([]);
         setCategorias([]);
-        setLoading(false);
         return;
       }
 
       if (userError) {
-        console.error('❌ HOOK - Error de autenticación:', userError);
         throw userError;
       }
-
-      console.log('👤 HOOK - Usuario autenticado:', user.id);
-      console.log('📤 HOOK - Ejecutando consultas a Supabase...');
       
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
-      console.log('📦 HOOK - Productos response:', productosRes);
-      console.log('📂 HOOK - Categorías response:', categoriasRes);
-
-      if (productosRes.error) {
-        throw productosRes.error;
-      }
-      if (categoriasRes.error) {
-        throw categoriasRes.error;
-      }
+      if (productosRes.error) throw productosRes.error;
+      if (categoriasRes.error) throw categoriasRes.error;
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
-      console.log('✅ HOOK - Datos cargados exitosamente:', { 
-        productos: productosRes.data?.length || 0, 
-        categorias: categoriasRes.data?.length || 0 
-      });
     } catch (error: any) {
-      console.error('❌ HOOK - Error cargando datos:', error);
+      console.error('Error cargando datos:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
@@ -96,9 +73,9 @@ export const useSupabaseProductos = () => {
       });
     } finally {
       setLoading(false);
-      console.log('🏁 HOOK - fetchData finalizado, loading = false');
+      setInitialized(true);
     }
-  };
+  }, [toast]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProductoSupabase, 'id' | 'created_at' | 'updated_at'>) => {
@@ -138,13 +115,9 @@ export const useSupabaseProductos = () => {
   // Crear producto
   const crearProducto = async (productoData: Omit<ProductoSupabase, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('🆕 HOOK - Iniciando creación de producto:', productoData);
-      
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('🔍 HOOK - Usuario para crear:', { userId: user?.id, error: userError });
       
       if (!user) {
-        console.error('❌ HOOK - Usuario no autenticado para crear');
         throw new Error('Usuario no autenticado');
       }
 
@@ -153,22 +126,24 @@ export const useSupabaseProductos = () => {
         user_id: user.id
       };
       
-      console.log('📤 HOOK - Datos a insertar:', dataWithUser);
-      
       const { data, error } = await supabase
         .from('productos')
         .insert([dataWithUser])
         .select()
         .single();
 
-      console.log('📥 HOOK - Respuesta crear:', { data, error });
-
       if (error) {
-        console.error('❌ HOOK - Error crear:', error);
         throw error;
       }
 
-      console.log('✅ HOOK - Producto creado exitosamente:', data);
+      setProductos(prev => [...prev, data]);
+      
+      toast({
+        title: "Producto creado",
+        description: "El producto se ha registrado exitosamente",
+      });
+
+      return data;
     } catch (error: any) {
       toast({
         title: "Error al crear producto",
@@ -182,34 +157,23 @@ export const useSupabaseProductos = () => {
   // Actualizar producto
   const actualizarProducto = async (productoId: string, productoData: Partial<ProductoSupabase>) => {
     try {
-      console.log('🔄 HOOK - Iniciando actualización de producto:', { productoId, productoData });
-      
-      // Verificar usuario autenticado
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('🔍 HOOK - Usuario actual:', { userId: user?.id, error: userError });
       
       if (!user) {
-        console.error('❌ HOOK - Usuario no autenticado');
         throw new Error('Usuario no autenticado');
       }
       
-      console.log('📤 HOOK - Ejecutando UPDATE en Supabase...');
       const { data, error } = await supabase
         .from('productos')
         .update(productoData)
         .eq('id', productoId)
-        .eq('user_id', user.id) // Agregar verificación explícita del user_id
+        .eq('user_id', user.id)
         .select()
         .single();
 
-      console.log('📥 HOOK - Respuesta de Supabase:', { data, error });
-
       if (error) {
-        console.error('❌ HOOK - Error de Supabase:', error);
         throw error;
       }
-
-      console.log('✅ HOOK - Producto actualizado exitosamente:', data);
       
       setProductos(prev => 
         prev.map(p => p.id === productoId ? { ...p, ...data } : p)
@@ -222,7 +186,6 @@ export const useSupabaseProductos = () => {
 
       return data;
     } catch (error: any) {
-      console.error('❌ Error completo en actualizarProducto:', error);
       toast({
         title: "Error al actualizar producto",
         description: error.message,
@@ -307,29 +270,27 @@ export const useSupabaseProductos = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 HOOK - useEffect ejecutado en useSupabaseProductos');
-    console.log('🚀 HOOK - Iniciando fetchData...');
-    fetchData();
-    
-    // Escuchar cambios en la autenticación
+    if (!initialized) {
+      fetchData();
+    }
+  }, [fetchData, initialized]);
+
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 HOOK - Auth state change:', event, session?.user?.id);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log('✅ HOOK - Ejecutando fetchData por cambio de auth');
         fetchData();
       } else if (event === 'SIGNED_OUT') {
-        console.log('🚪 HOOK - Usuario deslogueado, limpiando datos');
         setProductos([]);
         setCategorias([]);
         setLoading(false);
+        setInitialized(false);
       }
     });
 
     return () => {
-      console.log('🧹 HOOK - Cleanup: desuscribiendo de auth changes');
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchData]);
 
   return {
     productos,

@@ -12,28 +12,11 @@ import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashb
 import { AuthDebugInfo } from "@/components/debug/AuthDebugInfo";
 
 const ProductosModule = () => {
-  console.log('🚀 ProductosModule - Componente montado');
-  
   const { productos: productosSupabase, categorias, loading, refetch } = useSupabaseProductos();
-  console.log('📊 ProductosModule - Datos del hook:', { 
-    productos: productosSupabase?.length || 0, 
-    categorias: categorias?.length || 0, 
-    loading 
-  });
-  
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-
-  // Debug effect para monitorear cambios
-  useEffect(() => {
-    console.log('🔄 ProductosModule - useEffect ejecutado, datos actualizados:', {
-      productos: productosSupabase?.length || 0,
-      categorias: categorias?.length || 0,
-      loading
-    });
-  }, [productosSupabase, categorias, loading]);
 
   // Obtener el nombre de la categoría por ID
   const obtenerNombreCategoria = (categoriaId: string | null) => {
@@ -63,34 +46,19 @@ const ProductosModule = () => {
   }));
 
   const handleSaveProducto = async () => {
-    console.log('💾 ProductosModule - handleSaveProducto ejecutado');
-    console.log('💾 ProductosModule - Estado actual:', { 
-      editingProducto: editingProducto?.id, 
-      showForm 
-    });
-    
     try {
-      // Después de guardar, recargar los datos
       await refetch();
-      console.log('✅ ProductosModule - Datos recargados exitosamente');
       setShowForm(false);
       setEditingProducto(null);
-      console.log('✅ ProductosModule - Formulario cerrado');
     } catch (error) {
-      console.error('❌ ProductosModule - Error en handleSaveProducto:', error);
+      console.error('Error en handleSaveProducto:', error);
     }
   };
 
   const handleEditProducto = (producto: any) => {
-    console.log('✏️ ProductosModule - handleEditProducto ejecutado:', producto.id);
-    console.log('✏️ ProductosModule - Producto completo recibido:', producto);
-    
-    // Convertir producto al formato de Supabase para edición
     const productoSupabase = productosSupabase.find(p => p.id === producto.id);
-    console.log('📋 ProductosModule - Producto de Supabase encontrado:', productoSupabase);
     
     if (!productoSupabase) {
-      console.error('❌ ProductosModule - No se encontró el producto en la lista de Supabase');
       toast({
         title: "Error", 
         description: "No se pudo encontrar el producto para editar",
@@ -101,7 +69,6 @@ const ProductosModule = () => {
     
     setEditingProducto(productoSupabase);
     setShowForm(true);
-    console.log('✅ ProductosModule - Formulario abierto para edición');
   };
 
   const handleDeleteProducto = async (productoId: string) => {
@@ -173,7 +140,6 @@ const ProductosModule = () => {
             <Button 
               className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
               onClick={() => {
-                console.log('➕ Creando nuevo producto...');
                 setEditingProducto(null);
                 setShowForm(true);
               }}
