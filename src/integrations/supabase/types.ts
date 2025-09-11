@@ -1075,6 +1075,51 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_security_summary: {
+        Row: {
+          access_date: string
+          average_risk_score: number | null
+          created_at: string | null
+          high_risk_accesses: number | null
+          id: string
+          low_risk_accesses: number | null
+          medium_risk_accesses: number | null
+          operations_performed: string | null
+          tables_accessed: string | null
+          total_accesses: number | null
+          unique_users_accessing: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_date: string
+          average_risk_score?: number | null
+          created_at?: string | null
+          high_risk_accesses?: number | null
+          id?: string
+          low_risk_accesses?: number | null
+          medium_risk_accesses?: number | null
+          operations_performed?: string | null
+          tables_accessed?: string | null
+          total_accesses?: number | null
+          unique_users_accessing?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_date?: string
+          average_risk_score?: number | null
+          created_at?: string | null
+          high_risk_accesses?: number | null
+          id?: string
+          low_risk_accesses?: number | null
+          medium_risk_accesses?: number | null
+          operations_performed?: string | null
+          tables_accessed?: string | null
+          total_accesses?: number | null
+          unique_users_accessing?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       items_compras: {
         Row: {
           cantidad: number
@@ -1929,36 +1974,9 @@ export type Database = {
       }
     }
     Views: {
-      financial_security_dashboard_secure: {
-        Row: {
-          access_date: string | null
-          average_risk_score: number | null
-          high_risk_accesses: number | null
-          low_risk_accesses: number | null
-          medium_risk_accesses: number | null
-          operations_performed: string | null
-          tables_accessed: string | null
-          total_accesses: number | null
-          unique_users_accessing: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      get_financial_security_dashboard: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          access_date: string
-          average_risk_score: number
-          high_risk_accesses: number
-          low_risk_accesses: number
-          medium_risk_accesses: number
-          operations_performed: string
-          tables_accessed: string
-          total_accesses: number
-          unique_users_accessing: number
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1969,6 +1987,10 @@ export type Database = {
       mask_sensitive_financial_data: {
         Args: { data: string; mask_type?: string }
         Returns: string
+      }
+      update_financial_security_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       validate_financial_access: {
         Args: {
