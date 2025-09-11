@@ -171,10 +171,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               value={formData.codigo}
               onChange={(e) => handleInputChange("codigo", e.target.value)}
               placeholder="Código del producto"
-              className={errors.codigo ? "border-red-500" : ""}
+              className={errors.codigo ? "border-destructive" : ""}
             />
             {errors.codigo && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
+               <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {errors.codigo}
               </p>
@@ -189,10 +189,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               value={formData.nombre}
               onChange={(e) => handleInputChange("nombre", e.target.value)}
               placeholder="Nombre del producto"
-              className={errors.nombre ? "border-red-500" : ""}
+              className={errors.nombre ? "border-destructive" : ""}
             />
             {errors.nombre && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
+               <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {errors.nombre}
               </p>
@@ -203,7 +203,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
           <div className="space-y-2">
             <Label>Categoría *</Label>
             <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange("categoria_id", value)}>
-              <SelectTrigger className={errors.categoria_id ? "border-red-500" : ""}>
+              <SelectTrigger className={errors.categoria_id ? "border-destructive" : ""}>
                 <SelectValue placeholder="Seleccionar categoría" />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +215,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               </SelectContent>
             </Select>
             {errors.categoria_id && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
+               <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {errors.categoria_id}
               </p>
@@ -250,10 +250,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               placeholder="Precio de venta"
               min="0"
               step="0.01"
-              className={errors.precio_venta ? "border-red-500" : ""}
+              className={errors.precio_venta ? "border-destructive" : ""}
             />
             {errors.precio_venta && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
+               <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {errors.precio_venta}
               </p>
@@ -297,10 +297,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
               onChange={(e) => handleInputChange("stock_minimo", parseInt(e.target.value) || '')}
               placeholder="Stock mínimo"
               min="0"
-              className={errors.stock_minimo ? "border-red-500" : ""}
+              className={errors.stock_minimo ? "border-destructive" : ""}
             />
             {errors.stock_minimo && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
+              <p className="text-sm text-destructive flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {errors.stock_minimo}
               </p>

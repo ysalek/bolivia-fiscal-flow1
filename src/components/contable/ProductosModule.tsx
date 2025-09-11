@@ -33,21 +33,41 @@ const ProductosModule = () => {
   };
 
   const handleDeleteProducto = async (productoId: string) => {
-    // Esta funcionalidad requiere implementar la función de actualización
-    toast({
-      title: "Información",
-      description: "Para desactivar productos, usa el botón de editar y cambia el estado",
-      variant: "default"
-    });
+    try {
+      await actualizarProducto(productoId, { activo: false });
+      toast({
+        title: "Producto desactivado",
+        description: "El producto se ha desactivado correctamente",
+        variant: "default"
+      });
+      await refetch();
+    } catch (error) {
+      console.error('Error al desactivar producto:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo desactivar el producto",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleReactivateProducto = async (productoId: string) => {
-    // Esta funcionalidad requiere implementar la función de actualización
-    toast({
-      title: "Información", 
-      description: "Para reactivar productos, usa el botón de editar y cambia el estado",
-      variant: "default"
-    });
+    try {
+      await actualizarProducto(productoId, { activo: true });
+      toast({
+        title: "Producto reactivado",
+        description: "El producto se ha reactivado correctamente",
+        variant: "default"
+      });
+      await refetch();
+    } catch (error) {
+      console.error('Error al reactivar producto:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo reactivar el producto",
+        variant: "destructive"
+      });
+    }
   };
 
   const productosFiltrados = productos.filter(producto =>
