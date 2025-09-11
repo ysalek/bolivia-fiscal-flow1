@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProductosUnificado } from "@/hooks/useProductosUnificado";
+import { useProductosSimple } from "@/hooks/useProductosSimple";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 const ProductosModule = () => {
-  const { productos, categorias, loading, refetch } = useProductosUnificado();
+  const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductosSimple();
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -232,7 +232,7 @@ const ProductosModule = () => {
                         </div>
                         
                         <div className="text-xs text-muted-foreground pt-2">
-                        Actualizado el: {producto.fechaActualizacion}
+                        Actualizado el: {producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10)}
                         </div>
                     </div>
                     

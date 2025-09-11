@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,27 +29,15 @@ export interface Producto {
   imagen_url?: string;
   created_at?: string;
   updated_at?: string;
-  fechaCreacion?: string;
-  fechaActualizacion?: string;
-  // Alias para compatibilidad
-  unidadMedida?: string;
-  precioVenta?: number;
-  precioCompra?: number;
-  costoUnitario?: number;
-  stockActual?: number;
-  stockMinimo?: number;
-  codigoSIN?: string;
-  imagenUrl?: string;
 }
 
-export const useProductosUnificado = () => {
+export const useProductosSimple = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
-  // Función para transformar producto de Supabase al formato unificado
+  // Función para transformar producto de Supabase al formato esperado
   const transformarProducto = (producto: any, categoriasMap: Map<string, string>): Producto => {
     const nombreCategoria = categoriasMap.get(producto.categoria_id) || 'General';
     
@@ -70,39 +58,22 @@ export const useProductosUnificado = () => {
       activo: producto.activo,
       imagen_url: producto.imagen_url,
       created_at: producto.created_at,
-      updated_at: producto.updated_at,
-      fechaCreacion: producto.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
-      fechaActualizacion: producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
-      // Alias para compatibilidad
-      unidadMedida: producto.unidad_medida,
-      precioVenta: producto.precio_venta,
-      precioCompra: producto.precio_compra,
-      costoUnitario: producto.costo_unitario,
-      stockActual: producto.stock_actual,
-      stockMinimo: producto.stock_minimo,
-      codigoSIN: producto.codigo_sin || '00000000',
-      imagenUrl: producto.imagen_url
+      updated_at: producto.updated_at
     };
   };
 
-  // Cargar productos y categorías  
-  const fetchData = useCallback(async () => {
-    if (loading) return; // Prevenir llamadas múltiples
+  // Cargar datos
+  const fetchData = async () => {
+    if (loading) return;
     
+    setLoading(true);
     try {
-      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
       if (!user) {
         setProductos([]);
         setCategorias([]);
-        setLoading(false);
         return;
-      }
-
-      if (userError) {
-        throw userError;
       }
       
       const [productosRes, categoriasRes] = await Promise.all([
@@ -122,7 +93,6 @@ export const useProductosUnificado = () => {
 
       setProductos(productosTransformados);
       setCategorias(categoriasData);
-      setInitialized(true);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       toast({
@@ -133,7 +103,7 @@ export const useProductosUnificado = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, toast]);
+  };
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -171,15 +141,11 @@ export const useProductosUnificado = () => {
   };
 
   // Crear producto
-  const crearProducto = async (productoData: Omit<Producto, 'id' | 'created_at' | 'updated_at' | 'categoria' | 'fechaCreacion' | 'fechaActualizacion'>) => {
+  const crearProducto = async (productoData: Omit<Producto, 'id' | 'created_at' | 'updated_at' | 'categoria'>) => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
 
-      // Limpiar datos para Supabase
       const dataForSupabase = {
         codigo: productoData.codigo,
         nombre: productoData.nombre,
@@ -203,11 +169,8 @@ export const useProductosUnificado = () => {
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Transformar y agregar a la lista
       const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
       const productoTransformado = transformarProducto(data, categoriasMap);
       setProductos(prev => [...prev, productoTransformado]);
@@ -231,13 +194,9 @@ export const useProductosUnificado = () => {
   // Actualizar producto
   const actualizarProducto = async (productoId: string, productoData: Partial<Producto>) => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
 
-      // Limpiar datos para Supabase
       const dataForSupabase: any = {};
       if (productoData.codigo !== undefined) dataForSupabase.codigo = productoData.codigo;
       if (productoData.nombre !== undefined) dataForSupabase.nombre = productoData.nombre;
@@ -261,11 +220,8 @@ export const useProductosUnificado = () => {
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Transformar y actualizar en la lista
       const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
       const productoTransformado = transformarProducto(data, categoriasMap);
       
@@ -289,74 +245,6 @@ export const useProductosUnificado = () => {
     }
   };
 
-  // Actualizar stock de producto
-  const actualizarStockProducto = async (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => {
-    try {
-      const producto = productos.find(p => p.id === productoId);
-      if (!producto) throw new Error('Producto no encontrado');
-
-      const nuevoStock = tipo === 'entrada' 
-        ? producto.stock_actual + cantidad 
-        : producto.stock_actual - cantidad;
-
-      if (nuevoStock < 0) {
-        throw new Error('Stock insuficiente');
-      }
-
-      const { data, error } = await supabase
-        .from('productos')
-        .update({ stock_actual: nuevoStock })
-        .eq('id', productoId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Actualizar en la lista local
-      const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
-      const productoTransformado = transformarProducto(data, categoriasMap);
-      
-      setProductos(prev => 
-        prev.map(p => p.id === productoId ? productoTransformado : p)
-      );
-
-      // Crear movimiento de inventario
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('movimientos_inventario')
-          .insert([{
-            user_id: user.id,
-            producto_id: productoId,
-            fecha: new Date().toISOString().split('T')[0],
-            tipo,
-            cantidad,
-            stock_anterior: producto.stock_actual,
-            stock_actual: nuevoStock,
-            observaciones: `Movimiento ${tipo} manual`
-          }]);
-      }
-
-      // Verificar stock bajo
-      if (nuevoStock <= producto.stock_minimo && nuevoStock > 0) {
-        toast({
-          title: "Stock bajo",
-          description: `El producto ${producto.nombre} tiene stock bajo (${nuevoStock} unidades)`,
-          variant: "destructive"
-        });
-      }
-
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error al actualizar stock",
-        description: error.message,
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
   // Generar código de producto
   const generarCodigoProducto = () => {
     const ultimoCodigo = productos.reduce((max, prod) => {
@@ -367,40 +255,8 @@ export const useProductosUnificado = () => {
     return `PROD${(ultimoCodigo + 1).toString().padStart(3, '0')}`;
   };
 
-  // Función de compatibilidad para useProductos
-  const obtenerProductos = () => productos;
-
   useEffect(() => {
-    let mounted = true;
-    
-    const loadData = async () => {
-      if (!initialized && mounted && !loading) {
-        await fetchData();
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [initialized]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setInitialized(false);
-      } else if (event === 'SIGNED_OUT') {
-        setProductos([]);
-        setCategorias([]);
-        setLoading(false);
-        setInitialized(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    fetchData();
   }, []);
 
   return {
@@ -410,10 +266,7 @@ export const useProductosUnificado = () => {
     crearCategoria,
     crearProducto,
     actualizarProducto,
-    actualizarStockProducto,
     generarCodigoProducto,
-    refetch: fetchData,
-    // Función de compatibilidad
-    obtenerProductos
+    refetch: fetchData
   };
 };
