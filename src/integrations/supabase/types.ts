@@ -1929,7 +1929,7 @@ export type Database = {
       }
     }
     Views: {
-      financial_security_dashboard: {
+      financial_security_dashboard_secure: {
         Row: {
           access_date: string | null
           average_risk_score: number | null
@@ -1945,6 +1945,20 @@ export type Database = {
       }
     }
     Functions: {
+      get_financial_security_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          access_date: string
+          average_risk_score: number
+          high_risk_accesses: number
+          low_risk_accesses: number
+          medium_risk_accesses: number
+          operations_performed: string
+          tables_accessed: string
+          total_accesses: number
+          unique_users_accessing: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
