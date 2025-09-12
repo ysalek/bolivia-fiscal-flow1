@@ -45,7 +45,7 @@ export interface Producto {
 export const useProductosUnificado = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
@@ -85,67 +85,61 @@ export const useProductosUnificado = () => {
     };
   };
 
-  // Cargar productos y categorías  
-  const fetchData = async () => {
+  // Cargar datos iniciales
+  const cargarDatos = async () => {
     try {
-      console.log('🔄 fetchData iniciado...');
-      setLoading(true);
+      console.log('🔄 Cargando productos y categorías...');
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('👤 Usuario obtenido:', user ? 'Autenticado' : 'No autenticado');
-
+      const { data: { user } } = await supabase.auth.getUser();
+      
       if (!user) {
-        console.log('❌ No hay usuario autenticado');
+        console.log('❌ Usuario no autenticado');
         setProductos([]);
         setCategorias([]);
+        setLoading(false);
         setInitialized(true);
         return;
       }
 
-      if (userError) {
-        console.error('❌ Error de usuario:', userError);
-        throw userError;
-      }
-      
-      console.log('🔄 Obteniendo productos y categorías...');
-      const [productosRes, categoriasRes] = await Promise.all([
+      console.log('✅ Usuario autenticado:', user.id);
+
+      // Obtener datos en paralelo
+      const [productosResult, categoriasResult] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
-      console.log('📦 Productos response:', productosRes);
-      console.log('📁 Categorías response:', categoriasRes);
+      console.log('📦 Productos encontrados:', productosResult.data?.length || 0);
+      console.log('📁 Categorías encontradas:', categoriasResult.data?.length || 0);
 
-      if (productosRes.error) {
-        console.error('❌ Error productos:', productosRes.error);
-        throw productosRes.error;
-      }
-      if (categoriasRes.error) {
-        console.error('❌ Error categorías:', categoriasRes.error);
-        throw categoriasRes.error;
-      }
+      if (productosResult.error) throw productosResult.error;
+      if (categoriasResult.error) throw categoriasResult.error;
 
-      const categoriasData = categoriasRes.data || [];
+      const categoriasData = categoriasResult.data || [];
       const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]));
       
-      const productosTransformados = (productosRes.data || []).map(producto => 
+      const productosData = (productosResult.data || []).map(producto => 
         transformarProducto(producto, categoriasMap)
       );
 
-      setProductos(productosTransformados);
       setCategorias(categoriasData);
-      setInitialized(true);
-      console.log('✅ Datos cargados correctamente:', { productos: productosTransformados.length, categorias: categoriasData.length });
+      setProductos(productosData);
+      
+      console.log('✅ Datos cargados:', {
+        productos: productosData.length,
+        categorias: categoriasData.length
+      });
+
     } catch (error: any) {
-      console.error('❌ Error cargando datos:', error);
+      console.error('❌ Error:', error);
       toast({
-        title: "Error al cargar datos",
+        title: "Error al cargar productos",
         description: error.message,
         variant: "destructive"
       });
-      setInitialized(true);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   };
 
@@ -384,28 +378,28 @@ export const useProductosUnificado = () => {
   // Función de compatibilidad para useProductos
   const obtenerProductos = () => productos;
 
+  // Effect para cargar datos al inicializar
   useEffect(() => {
     if (!initialized) {
-      console.log('🚀 Iniciando carga de datos...');
-      fetchData();
+      cargarDatos();
     }
   }, [initialized]);
 
+  // Effect para manejar cambios de autenticación
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth cambió:', event);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setInitialized(false);
       } else if (event === 'SIGNED_OUT') {
         setProductos([]);
         setCategorias([]);
         setLoading(false);
-        setInitialized(false);
+        setInitialized(true);
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   return {
@@ -417,7 +411,7 @@ export const useProductosUnificado = () => {
     actualizarProducto,
     actualizarStockProducto,
     generarCodigoProducto,
-    refetch: fetchData,
+    refetch: cargarDatos,
     // Función de compatibilidad
     obtenerProductos
   };
