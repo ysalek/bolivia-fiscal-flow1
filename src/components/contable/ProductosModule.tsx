@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProductosUnificado } from "@/hooks/useProductosUnificado";
+import { useProductos } from "@/hooks/useProductos";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 const ProductosModule = () => {
-  const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductosUnificado();
+  const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductos();
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
