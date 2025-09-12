@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Save, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProductosSimple, Producto, CategoriaProducto } from "@/hooks/useProductosSimple";
+import { useProductosUnificado, Producto, CategoriaProducto } from "@/hooks/useProductosUnificado";
 
 interface ProductoFormProps {
   producto?: Producto | null;
@@ -19,7 +19,7 @@ interface ProductoFormProps {
 }
 
 const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: ProductoFormProps) => {
-  const { crearProducto, actualizarProducto, generarCodigoProducto } = useProductosSimple();
+  const { crearProducto, actualizarProducto, generarCodigoProducto } = useProductosUnificado();
   const [formData, setFormData] = useState({
     codigo: "",
     nombre: "",
