@@ -139,7 +139,7 @@ export const useProductosUnificado = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, toast]);
+  }, [toast]); // ← Removido loading de las dependencias
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -392,7 +392,7 @@ export const useProductosUnificado = () => {
     return () => {
       mounted = false;
     };
-  }, [initialized, fetchData]);
+  }, [initialized]); // ← Removido fetchData para evitar loop infinito
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
