@@ -86,9 +86,7 @@ export const useProductosUnificado = () => {
   };
 
   // Cargar productos y categorías  
-  const fetchData = useCallback(async () => {
-    if (loading) return; // Prevenir llamadas múltiples
-    
+  const fetchData = async () => {
     try {
       console.log('🔄 fetchData iniciado...');
       setLoading(true);
@@ -97,26 +95,35 @@ export const useProductosUnificado = () => {
       console.log('👤 Usuario obtenido:', user ? 'Autenticado' : 'No autenticado');
 
       if (!user) {
+        console.log('❌ No hay usuario autenticado');
         setProductos([]);
         setCategorias([]);
-        setLoading(false);
+        setInitialized(true);
         return;
       }
 
       if (userError) {
+        console.error('❌ Error de usuario:', userError);
         throw userError;
       }
       
+      console.log('🔄 Obteniendo productos y categorías...');
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
-      console.log('📦 Productos obtenidos:', productosRes.data?.length || 0);
-      console.log('📁 Categorías obtenidas:', categoriasRes.data?.length || 0);
+      console.log('📦 Productos response:', productosRes);
+      console.log('📁 Categorías response:', categoriasRes);
 
-      if (productosRes.error) throw productosRes.error;
-      if (categoriasRes.error) throw categoriasRes.error;
+      if (productosRes.error) {
+        console.error('❌ Error productos:', productosRes.error);
+        throw productosRes.error;
+      }
+      if (categoriasRes.error) {
+        console.error('❌ Error categorías:', categoriasRes.error);
+        throw categoriasRes.error;
+      }
 
       const categoriasData = categoriasRes.data || [];
       const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]));
@@ -130,16 +137,17 @@ export const useProductosUnificado = () => {
       setInitialized(true);
       console.log('✅ Datos cargados correctamente:', { productos: productosTransformados.length, categorias: categoriasData.length });
     } catch (error: any) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ Error cargando datos:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
         variant: "destructive"
       });
+      setInitialized(true);
     } finally {
       setLoading(false);
     }
-  }, [toast]); // ← Removido loading de las dependencias
+  };
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -377,22 +385,11 @@ export const useProductosUnificado = () => {
   const obtenerProductos = () => productos;
 
   useEffect(() => {
-    let mounted = true;
-    
-    const loadData = async () => {
-      console.log('🚀 useEffect loadData - Estado:', { initialized, mounted, loading });
-      if (!initialized && mounted && !loading) {
-        console.log('🔄 Ejecutando fetchData...');
-        await fetchData();
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [initialized]); // ← Removido fetchData para evitar loop infinito
+    if (!initialized) {
+      console.log('🚀 Iniciando carga de datos...');
+      fetchData();
+    }
+  }, [initialized]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
