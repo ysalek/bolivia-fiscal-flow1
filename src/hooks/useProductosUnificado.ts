@@ -90,9 +90,11 @@ export const useProductosUnificado = () => {
     if (loading) return; // Prevenir llamadas múltiples
     
     try {
+      console.log('🔄 fetchData iniciado...');
       setLoading(true);
       
       const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('👤 Usuario obtenido:', user ? 'Autenticado' : 'No autenticado');
 
       if (!user) {
         setProductos([]);
@@ -110,6 +112,9 @@ export const useProductosUnificado = () => {
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
+      console.log('📦 Productos obtenidos:', productosRes.data?.length || 0);
+      console.log('📁 Categorías obtenidas:', categoriasRes.data?.length || 0);
+
       if (productosRes.error) throw productosRes.error;
       if (categoriasRes.error) throw categoriasRes.error;
 
@@ -123,6 +128,7 @@ export const useProductosUnificado = () => {
       setProductos(productosTransformados);
       setCategorias(categoriasData);
       setInitialized(true);
+      console.log('✅ Datos cargados correctamente:', { productos: productosTransformados.length, categorias: categoriasData.length });
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       toast({
@@ -374,7 +380,9 @@ export const useProductosUnificado = () => {
     let mounted = true;
     
     const loadData = async () => {
+      console.log('🚀 useEffect loadData - Estado:', { initialized, mounted, loading });
       if (!initialized && mounted && !loading) {
+        console.log('🔄 Ejecutando fetchData...');
         await fetchData();
       }
     };
@@ -384,7 +392,7 @@ export const useProductosUnificado = () => {
     return () => {
       mounted = false;
     };
-  }, [initialized]);
+  }, [initialized, fetchData]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
