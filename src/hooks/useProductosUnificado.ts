@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,7 +46,6 @@ export const useProductosUnificado = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
   // Función para transformar producto de Supabase al formato unificado
@@ -89,57 +88,79 @@ export const useProductosUnificado = () => {
   const cargarDatos = async () => {
     try {
       console.log('🔄 Cargando productos y categorías...');
+      setLoading(true);
       
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ Error obteniendo usuario:', userError);
+        throw userError;
+      }
       
       if (!user) {
         console.log('❌ Usuario no autenticado');
         setProductos([]);
         setCategorias([]);
-        setLoading(false);
-        setInitialized(true);
         return;
       }
 
       console.log('✅ Usuario autenticado:', user.id);
 
-      // Obtener datos en paralelo
-      const [productosResult, categoriasResult] = await Promise.all([
-        supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
-        supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
-      ]);
+      // Obtener categorías primero
+      console.log('📁 Obteniendo categorías...');
+      const { data: categoriasData, error: categoriasError } = await supabase
+        .from('categorias_productos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('nombre');
 
-      console.log('📦 Productos encontrados:', productosResult.data?.length || 0);
-      console.log('📁 Categorías encontradas:', categoriasResult.data?.length || 0);
+      if (categoriasError) {
+        console.error('❌ Error categorías:', categoriasError);
+        throw categoriasError;
+      }
 
-      if (productosResult.error) throw productosResult.error;
-      if (categoriasResult.error) throw categoriasResult.error;
+      console.log('📁 Categorías obtenidas:', categoriasData?.length || 0);
+      setCategorias(categoriasData || []);
 
-      const categoriasData = categoriasResult.data || [];
-      const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]));
-      
-      const productosData = (productosResult.data || []).map(producto => 
+      // Obtener productos
+      console.log('📦 Obteniendo productos...');
+      const { data: productosData, error: productosError } = await supabase
+        .from('productos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('codigo');
+
+      if (productosError) {
+        console.error('❌ Error productos:', productosError);
+        throw productosError;
+      }
+
+      console.log('📦 Productos obtenidos:', productosData?.length || 0);
+
+      // Transformar productos
+      const categoriasMap = new Map((categoriasData || []).map(c => [c.id, c.nombre]));
+      const productosTransformados = (productosData || []).map(producto => 
         transformarProducto(producto, categoriasMap)
       );
 
-      setCategorias(categoriasData);
-      setProductos(productosData);
+      setProductos(productosTransformados);
       
-      console.log('✅ Datos cargados:', {
-        productos: productosData.length,
-        categorias: categoriasData.length
+      console.log('✅ Datos cargados exitosamente:', {
+        productos: productosTransformados.length,
+        categorias: categoriasData?.length || 0
       });
 
     } catch (error: any) {
-      console.error('❌ Error:', error);
+      console.error('❌ Error cargando datos:', error);
       toast({
         title: "Error al cargar productos",
         description: error.message,
         variant: "destructive"
       });
+      setProductos([]);
+      setCategorias([]);
     } finally {
       setLoading(false);
-      setInitialized(true);
     }
   };
 
@@ -378,24 +399,21 @@ export const useProductosUnificado = () => {
   // Función de compatibilidad para useProductos
   const obtenerProductos = () => productos;
 
-  // Effect para cargar datos al inicializar
+  // Effect para cargar datos una sola vez
   useEffect(() => {
-    if (!initialized) {
-      cargarDatos();
-    }
-  }, [initialized]);
+    cargarDatos();
+  }, []);
 
   // Effect para manejar cambios de autenticación
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth cambió:', event);
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setInitialized(false);
+      console.log('🔐 Auth state cambió:', event);
+      if (event === 'SIGNED_IN') {
+        await cargarDatos();
       } else if (event === 'SIGNED_OUT') {
         setProductos([]);
         setCategorias([]);
         setLoading(false);
-        setInitialized(true);
       }
     });
 
