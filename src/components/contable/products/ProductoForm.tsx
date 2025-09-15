@@ -131,7 +131,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         unidad_medida: formData.unidad_medida,
         precio_venta: formData.precio_venta,
         precio_compra: formData.precio_compra,
-        costo_unitario: formData.costo_unitario || formData.precio_compra,
+        costo_unitario: formData.costo_unitario,
         stock_actual: formData.stock_actual,
         stock_minimo: formData.stock_minimo,
         codigo_sin: formData.codigo_sin.trim() || "00000000",
@@ -293,6 +293,20 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
                type="number"
                value={formData.precio_compra || ''}
                onChange={(e) => handleInputChange("precio_compra", parseFloat(e.target.value) || 0)}
+               placeholder="0.00"
+               min="0"
+               step="0.01"
+             />
+           </div>
+
+          {/* Costo Unitario */}
+           <div className="space-y-2">
+             <Label htmlFor="costo_unitario">Costo Unitario (Bs.)</Label>
+             <Input
+               id="costo_unitario"
+               type="number"
+               value={formData.costo_unitario || ''}
+               onChange={(e) => handleInputChange("costo_unitario", parseFloat(e.target.value) || 0)}
                placeholder="0.00"
                min="0"
                step="0.01"

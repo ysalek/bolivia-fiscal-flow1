@@ -19,9 +19,15 @@ const ProductosModule = () => {
 
   const handleSaveProducto = async () => {
     try {
-      await refetch();
+      await refetch(); // Refresh data from database
       setShowForm(false);
       setEditingProducto(null);
+      
+      toast({
+        title: "Producto actualizado",
+        description: "Los cambios se han guardado correctamente",
+        variant: "default"
+      });
     } catch (error) {
       console.error('Error en handleSaveProducto:', error);
     }
