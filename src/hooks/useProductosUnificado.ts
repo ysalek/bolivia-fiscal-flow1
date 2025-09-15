@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,10 +46,11 @@ export const useProductosUnificado = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Función para transformar producto de Supabase al formato unificado
-  const transformarProducto = (producto: any, categoriasMap: Map<string, string>): Producto => {
+  const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
     const nombreCategoria = categoriasMap.get(producto.categoria_id) || 'General';
     
     return {
@@ -59,59 +60,41 @@ export const useProductosUnificado = () => {
       descripcion: producto.descripcion || '',
       categoria_id: producto.categoria_id,
       categoria: nombreCategoria,
-      unidad_medida: producto.unidad_medida,
-      precio_venta: producto.precio_venta,
-      precio_compra: producto.precio_compra,
-      costo_unitario: producto.costo_unitario,
-      stock_actual: producto.stock_actual,
-      stock_minimo: producto.stock_minimo,
+      unidad_medida: producto.unidad_medida || 'PZA',
+      precio_venta: Number(producto.precio_venta) || 0,
+      precio_compra: Number(producto.precio_compra) || 0,
+      costo_unitario: Number(producto.costo_unitario) || 0,
+      stock_actual: Number(producto.stock_actual) || 0,
+      stock_minimo: Number(producto.stock_minimo) || 0,
       codigo_sin: producto.codigo_sin || '00000000',
-      activo: producto.activo,
+      activo: Boolean(producto.activo),
       imagen_url: producto.imagen_url,
       created_at: producto.created_at,
       updated_at: producto.updated_at,
       fechaCreacion: producto.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
       fechaActualizacion: producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
       // Alias para compatibilidad
-      unidadMedida: producto.unidad_medida,
-      precioVenta: producto.precio_venta,
-      precioCompra: producto.precio_compra,
-      costoUnitario: producto.costo_unitario,
-      stockActual: producto.stock_actual,
-      stockMinimo: producto.stock_minimo,
+      unidadMedida: producto.unidad_medida || 'PZA',
+      precioVenta: Number(producto.precio_venta) || 0,
+      precioCompra: Number(producto.precio_compra) || 0,
+      costoUnitario: Number(producto.costo_unitario) || 0,
+      stockActual: Number(producto.stock_actual) || 0,
+      stockMinimo: Number(producto.stock_minimo) || 0,
       codigoSIN: producto.codigo_sin || '00000000',
       imagenUrl: producto.imagen_url
     };
-  };
+  }, []);
 
-  // Cargar datos iniciales
-  const cargarDatos = async () => {
+  // Función principal de carga de datos
+  const loadData = useCallback(async (userId: string) => {
     try {
-      console.log('🔄 Cargando productos y categorías...');
-      setLoading(true);
+      console.log('🔄 Cargando datos para usuario:', userId);
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('❌ Error obteniendo usuario:', userError);
-        throw userError;
-      }
-      
-      if (!user) {
-        console.log('❌ Usuario no autenticado');
-        setProductos([]);
-        setCategorias([]);
-        return;
-      }
-
-      console.log('✅ Usuario autenticado:', user.id);
-
-      // Obtener categorías primero
-      console.log('📁 Obteniendo categorías...');
+      // Cargar categorías
       const { data: categoriasData, error: categoriasError } = await supabase
         .from('categorias_productos')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('nombre');
 
       if (categoriasError) {
@@ -119,15 +102,15 @@ export const useProductosUnificado = () => {
         throw categoriasError;
       }
 
-      console.log('📁 Categorías obtenidas:', categoriasData?.length || 0);
-      setCategorias(categoriasData || []);
+      console.log('📁 Categorías encontradas:', categoriasData?.length || 0);
+      const categorias = categoriasData || [];
+      setCategorias(categorias);
 
-      // Obtener productos
-      console.log('📦 Obteniendo productos...');
+      // Cargar productos
       const { data: productosData, error: productosError } = await supabase
         .from('productos')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('codigo');
 
       if (productosError) {
@@ -135,10 +118,10 @@ export const useProductosUnificado = () => {
         throw productosError;
       }
 
-      console.log('📦 Productos obtenidos:', productosData?.length || 0);
+      console.log('📦 Productos encontrados:', productosData?.length || 0);
 
       // Transformar productos
-      const categoriasMap = new Map((categoriasData || []).map(c => [c.id, c.nombre]));
+      const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
       const productosTransformados = (productosData || []).map(producto => 
         transformarProducto(producto, categoriasMap)
       );
@@ -147,11 +130,45 @@ export const useProductosUnificado = () => {
       
       console.log('✅ Datos cargados exitosamente:', {
         productos: productosTransformados.length,
-        categorias: categoriasData?.length || 0
+        categorias: categorias.length
       });
 
+      return { productos: productosTransformados, categorias };
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
+      throw error;
+    }
+  }, [transformarProducto]);
+
+  // Función de inicialización
+  const initializeData = useCallback(async () => {
+    if (isInitialized) return;
+    
+    try {
+      setLoading(true);
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ Error de autenticación:', userError);
+        return;
+      }
+      
+      if (!user) {
+        console.log('❌ Usuario no autenticado');
+        setProductos([]);
+        setCategorias([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Usuario autenticado:', user.id);
+      
+      await loadData(user.id);
+      setIsInitialized(true);
+      
+    } catch (error: any) {
+      console.error('❌ Error inicializando datos:', error);
       toast({
         title: "Error al cargar productos",
         description: error.message,
@@ -162,7 +179,7 @@ export const useProductosUnificado = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isInitialized, loadData, toast]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -399,26 +416,52 @@ export const useProductosUnificado = () => {
   // Función de compatibilidad para useProductos
   const obtenerProductos = () => productos;
 
-  // Effect para cargar datos una sola vez
+  // Función de refetch
+  const refetch = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await loadData(user.id);
+      }
+    } catch (error) {
+      console.error('Error en refetch:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadData]);
+
+  // Effect para cargar datos inicial
   useEffect(() => {
-    cargarDatos();
-  }, []);
+    initializeData();
+  }, [initializeData]);
 
   // Effect para manejar cambios de autenticación
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state cambió:', event);
-      if (event === 'SIGNED_IN') {
-        await cargarDatos();
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        setIsInitialized(false);
+        setLoading(true);
+        try {
+          await loadData(session.user.id);
+          setIsInitialized(true);
+        } catch (error) {
+          console.error('Error en auth change:', error);
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         setProductos([]);
         setCategorias([]);
+        setIsInitialized(false);
         setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadData]);
 
   return {
     productos,
@@ -429,7 +472,7 @@ export const useProductosUnificado = () => {
     actualizarProducto,
     actualizarStockProducto,
     generarCodigoProducto,
-    refetch: cargarDatos,
+    refetch,
     // Función de compatibilidad
     obtenerProductos
   };
