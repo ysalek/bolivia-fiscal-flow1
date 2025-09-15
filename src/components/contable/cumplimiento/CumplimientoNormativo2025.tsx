@@ -1,295 +1,300 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
   FileText, 
-  Calendar,
-  TrendingUp,
-  BookOpen
+  AlertCircle, 
+  CheckCircle, 
+  Calendar, 
+  Clock, 
+  ExternalLink,
+  Download,
+  Gavel,
+  TrendingUp
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "../dashboard/EnhancedLayout";
 
-interface CumplimientoRecord {
+interface Normativa2025 {
   id: string;
-  norma_rnd: string;
+  rnd_numero: string;
+  fecha_emision: string;
+  titulo: string;
   descripcion: string;
-  estado: 'pendiente' | 'implementado' | 'verificado';
+  contenido: any;
+  estado: string;
   fecha_vigencia: string;
-  fecha_implementacion?: string;
-  observaciones?: string;
+  fecha_vencimiento?: string;
+  categoria: string;
+  created_at: string;
 }
 
 const CumplimientoNormativo2025 = () => {
-  const [registros, setRegistros] = useState<CumplimientoRecord[]>([]);
+  const [normativas, setNormativas] = useState<Normativa2025[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtroCategoria, setFiltroCategoria] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
-    cargarRegistrosIniciales();
+    fetchNormativas();
   }, []);
 
-  const cargarRegistrosIniciales = () => {
-    // Datos iniciales de cumplimiento normativo 2025
-    const registrosIniciales: CumplimientoRecord[] = [
-      {
-        id: '1',
-        norma_rnd: 'RND-102400000021',
-        descripcion: 'Bancarización de pagos superiores a Bs. 15,000',
-        estado: 'implementado',
-        fecha_vigencia: '2025-01-01',
-        fecha_implementacion: '2025-02-15'
-      },
-      {
-        id: '2',
-        norma_rnd: 'RND-102400000018',
-        descripcion: 'RC-IVA para profesionales independientes',
-        estado: 'pendiente',
-        fecha_vigencia: '2025-01-01'
-      },
-      {
-        id: '3',
-        norma_rnd: 'RND-102400000019',
-        descripcion: 'Facilidades de pago actualizadas',
-        estado: 'implementado',
-        fecha_vigencia: '2025-01-01',
-        fecha_implementacion: '2025-03-01'
-      },
-      {
-        id: '4',
-        norma_rnd: 'RND-102400000020',
-        descripcion: 'Arrepentimiento eficaz 2025',
-        estado: 'verificado',
-        fecha_vigencia: '2025-01-01',
-        fecha_implementacion: '2025-02-28'
-      },
-      {
-        id: '5',
-        norma_rnd: 'D.S. N° 5383',
-        descripcion: 'Incremento salarial 5% vigente mayo 2025',
-        estado: 'pendiente',
-        fecha_vigencia: '2025-05-01'
-      }
-    ];
+  const fetchNormativas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('normativas_2025')
+        .select('*')
+        .order('fecha_emision', { ascending: false });
 
-    setRegistros(registrosIniciales);
-    setLoading(false);
+      if (error) throw error;
+      setNormativas(data || []);
+    } catch (error: any) {
+      console.error('Error fetching normativas:', error);
+      toast({
+        title: "Error al cargar normativas",
+        description: "No se pudieron cargar las normativas actuales",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const actualizarEstado = (id: string, nuevoEstado: string) => {
-    setRegistros(prev => prev.map(registro => 
-      registro.id === id 
-        ? { 
-            ...registro, 
-            estado: nuevoEstado as 'pendiente' | 'implementado' | 'verificado',
-            fecha_implementacion: nuevoEstado === 'implementado' ? new Date().toISOString().split('T')[0] : registro.fecha_implementacion
-          }
-        : registro
-    ));
-    
-    toast({
-      title: "Estado actualizado",
-      description: "El estado del cumplimiento normativo ha sido actualizado",
-    });
+  const normativasFiltradas = filtroCategoria === "all" 
+    ? normativas 
+    : normativas.filter(n => n.categoria === filtroCategoria);
+
+  const normativasVigentes = normativas.filter(n => n.estado === 'vigente').length;
+  const normativasIVA = normativas.filter(n => n.categoria === 'iva').length;
+  const normativasActividades = normativas.filter(n => n.categoria === 'actividades').length;
+
+  const getCategoriaColor = (categoria: string) => {
+    const colors: Record<string, string> = {
+      'iva': 'bg-blue-100 text-blue-800 border-blue-200',
+      'actividades': 'bg-green-100 text-green-800 border-green-200',
+      'registro': 'bg-purple-100 text-purple-800 border-purple-200',
+      'general': 'bg-gray-100 text-gray-800 border-gray-200',
+      'facturacion': 'bg-orange-100 text-orange-800 border-orange-200',
+      'bancarizacion': 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    };
+    return colors[categoria] || colors['general'];
   };
 
   const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'implementado': return 'text-green-600';
-      case 'verificado': return 'text-blue-600';
-      case 'pendiente': return 'text-yellow-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getEstadoIcon = (estado: string) => {
-    switch (estado) {
-      case 'implementado': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'verificado': return <Shield className="h-4 w-4 text-blue-600" />;
-      case 'pendiente': return <Clock className="h-4 w-4 text-yellow-600" />;
-      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const normativas2025 = [
-    {
-      categoria: "Tributaria",
-      normas: [
-        "RND-102400000021: Bancarización de pagos superiores a Bs. 15,000",
-        "RND-102400000018: RC-IVA para profesionales independientes", 
-        "RND-102400000019: Facilidades de pago actualizadas",
-        "RND-102400000020: Arrepentimiento eficaz 2025",
-        "RND-102400000022: Régimen sectores especiales biodiesel y energía"
-      ]
-    },
-    {
-      categoria: "Facturación Electrónica",
-      normas: [
-        "Migración obligatoria octavo grupo empresas",
-        "Implementación CUFD diario automático",
-        "Estados financieros digitales con prórroga 21 julio 2025"
-      ]
-    },
-    {
-      categoria: "Laboral",
-      normas: [
-        "D.S. N° 5383: Incremento salarial 5% vigente mayo 2025",
-        "Actualización formularios declaración AFP",
-        "Nuevas tasas aporte patronal CNS"
-      ]
-    }
-  ];
-
-  const resumen = {
-    total: registros.length,
-    implementado: registros.filter(r => r.estado === 'implementado').length,
-    verificado: registros.filter(r => r.estado === 'verificado').length,
-    pendiente: registros.filter(r => r.estado === 'pendiente').length
+    const colors: Record<string, string> = {
+      'vigente': 'bg-green-100 text-green-800 border-green-200',
+      'derogada': 'bg-red-100 text-red-800 border-red-200',
+      'suspendida': 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    };
+    return colors[estado] || colors['vigente'];
   };
 
   if (loading) {
-    return <div className="flex justify-center p-8">Cargando...</div>;
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="text-center py-12">
+          <Gavel className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <h3 className="text-lg font-semibold mb-2">Cargando normativas</h3>
+          <p className="text-muted-foreground">Obteniendo información actualizada...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Shield className="w-6 h-6 text-primary" />
-          <div>
-            <h2 className="text-2xl font-bold">Cumplimiento Normativo 2025</h2>
-            <p className="text-muted-foreground">
-              Gestión integral de cumplimiento normativo boliviano actualizado
-            </p>
+    <div className="space-y-8 animate-fade-in">
+      {/* Enhanced Header */}
+      <EnhancedHeader
+        title="Cumplimiento Normativo 2025"
+        subtitle="Seguimiento integral de normativas tributarias bolivianas vigentes y actualizaciones del SIN"
+        badge={{
+          text: `${normativasVigentes} Normativas Vigentes`,
+          variant: "default"
+        }}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => window.open('https://siatinfo.impuestos.gob.bo', '_blank')}>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Portal SIN
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+              onClick={fetchNormativas}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Actualizar Normativas
+            </Button>
           </div>
+        }
+      />
+
+      {/* Métricas de Cumplimiento */}
+      <Section 
+        title="Resumen de Cumplimiento" 
+        subtitle="Estado actual del cumplimiento normativo"
+      >
+        <MetricGrid columns={4}>
+          <EnhancedMetricCard
+            title="Normativas Vigentes"
+            value={normativasVigentes}
+            subtitle="Total aplicables"
+            icon={Gavel}
+            variant="success"
+            trend="up"
+            trendValue="Actualizadas 2025"
+          />
+          <EnhancedMetricCard
+            title="Normativas IVA"
+            value={normativasIVA}
+            subtitle="Impuesto al Valor Agregado"
+            icon={TrendingUp}
+            variant="default"
+            trend="up"
+            trendValue="Incluye tasa cero"
+          />
+          <EnhancedMetricCard
+            title="Actividades Económicas"
+            value={normativasActividades}
+            subtitle="Clasificador CAEB-SIN"
+            icon={FileText}
+            variant="warning"
+            trend="up"
+            trendValue="Nuevo CAEB 2025"
+          />
+          <EnhancedMetricCard
+            title="Última Actualización"
+            value={normativas.length > 0 ? new Date(normativas[0].fecha_emision).toLocaleDateString() : 'N/A'}
+            subtitle="Última RND emitida"
+            icon={Clock}
+            variant="default"
+            trend="up"
+            trendValue="Sistema actualizado"
+          />
+        </MetricGrid>
+      </Section>
+
+      {/* Alertas Importantes */}
+      <Section title="Alertas Normativas Críticas">
+        <div className="grid gap-4">
+          <Alert className="border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>RND 102500000018:</strong> Nuevo Clasificador de Actividades Económicas (CAEB-SIN) 
+              vigente desde mayo 2025. Verifique que su código de actividad esté actualizado.
+            </AlertDescription>
+          </Alert>
+          
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <strong>RND 102500000002:</strong> Beneficio IVA Tasa Cero disponible para sectores 
+              agropecuario, industrial, construcción y minería durante 2025.
+            </AlertDescription>
+          </Alert>
+
+          <Alert className="border-purple-200 bg-purple-50">
+            <AlertCircle className="h-4 w-4 text-purple-600" />
+            <AlertDescription className="text-purple-800">
+              <strong>RND 102500000017:</strong> Registro Nacional de Contribuyentes (RNC) 
+              sustituye al PBD-11. Migración automática en progreso.
+            </AlertDescription>
+          </Alert>
         </div>
-      </div>
+      </Section>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Normas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{resumen.total}</div>
-          </CardContent>
-        </Card>
+      {/* Listado de Normativas */}
+      <Section title="Normativas Tributarias 2025">
+        <Tabs value={filtroCategoria} onValueChange={setFiltroCategoria} className="w-full">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="all">Todas</TabsTrigger>
+            <TabsTrigger value="iva">IVA</TabsTrigger>
+            <TabsTrigger value="actividades">Actividades</TabsTrigger>
+            <TabsTrigger value="registro">Registro</TabsTrigger>
+            <TabsTrigger value="facturacion">Facturación</TabsTrigger>
+            <TabsTrigger value="bancarizacion">Bancarización</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Implementadas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{resumen.implementado}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Verificadas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{resumen.verificado}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{resumen.pendiente}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="registros" className="w-full">
-        <TabsList>
-          <TabsTrigger value="registros">Registros de Cumplimiento</TabsTrigger>
-          <TabsTrigger value="normativas">Normativas 2025</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="registros">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registros de Cumplimiento</CardTitle>
-              <CardDescription>
-                Estado actual de implementación de normativas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {registros.map((registro) => (
-                  <div key={registro.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-start gap-4">
-                      {getEstadoIcon(registro.estado)}
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{registro.norma_rnd}</h4>
-                        <p className="text-sm text-muted-foreground">{registro.descripcion}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          Vigencia: {new Date(registro.fecha_vigencia).toLocaleDateString()}
-                          {registro.fecha_implementacion && (
-                            <>
-                              <span>•</span>
-                              Implementada: {new Date(registro.fecha_implementacion).toLocaleDateString()}
-                            </>
-                          )}
+          <TabsContent value={filtroCategoria} className="mt-6">
+            <div className="grid gap-4">
+              {normativasFiltradas.map((normativa) => (
+                <Card key={normativa.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="outline" 
+                            className={`${getCategoriaColor(normativa.categoria)} font-semibold`}
+                          >
+                            {normativa.rnd_numero}
+                          </Badge>
+                          <Badge 
+                            variant="outline"
+                            className={getEstadoColor(normativa.estado)}
+                          >
+                            {normativa.estado.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg">{normativa.titulo}</CardTitle>
+                        <CardDescription className="text-sm">
+                          {normativa.descripcion}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Calendar className="w-4 h-4" />
+                          Emitida: {new Date(normativa.fecha_emision).toLocaleDateString()}
+                        </div>
+                        {normativa.fecha_vigencia && (
+                          <div className="flex items-center gap-1">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            Vigente: {new Date(normativa.fecha_vigencia).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {normativa.contenido && (
+                    <CardContent>
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <h4 className="font-semibold text-sm mb-2">Detalles:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          {Object.entries(normativa.contenido).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                              <span className="font-medium capitalize">
+                                {key.replace(/_/g, ' ')}:
+                              </span>
+                              <span className="text-muted-foreground">
+                                {Array.isArray(value) ? value.join(', ') : String(value)}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={getEstadoColor(registro.estado)}>
-                        {registro.estado}
-                      </Badge>
-                      {registro.estado === 'pendiente' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => actualizarEstado(registro.id, 'implementado')}
-                        >
-                          Marcar Implementada
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
 
-        <TabsContent value="normativas">
-          <div className="space-y-6">
-            {normativas2025.map((categoria, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    {categoria.categoria}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {categoria.normas.map((norma, normaIndex) => (
-                      <div key={normaIndex} className="flex items-center gap-2 p-2 border-l-2 border-primary/20 bg-muted/50 rounded-r">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{norma}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+              {normativasFiltradas.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground">
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No hay normativas</h3>
+                  <p className="text-sm">
+                    No se encontraron normativas para la categoría seleccionada.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Section>
     </div>
   );
 };

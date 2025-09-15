@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart, FileText, DollarSign, Users, Package, TrendingUp, Activity, CheckCircle, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Plus, BarChart, FileText, DollarSign, Users, Package, TrendingUp, Activity, CheckCircle, AlertCircle, Shield, Gavel } from "lucide-react";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidacionSIN } from "./billing/BillingData";
@@ -14,6 +16,7 @@ import InvoiceList from "./billing/InvoiceList";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import InvoicePreview from "./billing/InvoicePreview";
 import DeclaracionIVA from "./DeclaracionIVA";
+import { supabase } from "@/integrations/supabase/client";
 
 const FacturacionModule = () => {
   const [facturas, setFacturas] = useState<Factura[]>(facturasIniciales);
@@ -23,6 +26,8 @@ const FacturacionModule = () => {
   const [showDeclaracionIVA, setShowDeclaracionIVA] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Factura | null>(null);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [normativasAlerts, setNormativasAlerts] = useState<any[]>([]);
+  const [configuracionTributaria, setConfiguracionTributaria] = useState<any>(null);
   const { toast } = useToast();
   const { productos } = useSupabaseProductos();
   const { 
@@ -34,7 +39,7 @@ const FacturacionModule = () => {
     actualizarStockProducto
   } = useContabilidadIntegration();
 
-  // Cargar datos desde localStorage
+  // Cargar datos desde localStorage y verificar normativas
   useEffect(() => {
     const facturasGuardadas = localStorage.getItem('facturas');
     if (facturasGuardadas) {
@@ -45,7 +50,43 @@ const FacturacionModule = () => {
     if (clientesGuardados) {
       setClientes(JSON.parse(clientesGuardados));
     }
+
+    // Cargar configuración tributaria y normativas
+    loadConfiguracionTributaria();
+    loadNormativasAlerts();
   }, []);
+
+  const loadConfiguracionTributaria = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('configuracion_tributaria')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      setConfiguracionTributaria(data);
+    } catch (error: any) {
+      console.error('Error loading configuracion tributaria:', error);
+    }
+  };
+
+  const loadNormativasAlerts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('normativas_2025')
+        .select('*')
+        .eq('estado', 'vigente')
+        .in('categoria', ['facturacion', 'iva'])
+        .order('fecha_emision', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setNormativasAlerts(data || []);
+    } catch (error: any) {
+      console.error('Error loading normativas alerts:', error);
+    }
+  };
 
   const handleAddNewClient = (nuevoCliente: Cliente) => {
     const nuevosClientes = [nuevoCliente, ...clientes];

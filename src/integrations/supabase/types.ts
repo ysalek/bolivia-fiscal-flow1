@@ -737,16 +737,21 @@ export type Database = {
       }
       declaraciones_tributarias: {
         Row: {
+          beneficio_iva_cero: boolean | null
+          codigo_actividad_caeb: string | null
           created_at: string
           estado: string | null
           fecha_presentacion: string | null
           fecha_vencimiento: string
+          formulario_tipo: string | null
           gestion: number
           id: string
           mes: number | null
+          modalidad_facturacion: string | null
           monto_base: number | null
           monto_impuesto: number | null
           monto_pagado: number | null
+          normativa_aplicable: string | null
           observaciones: string | null
           periodo: string
           tipo: string
@@ -754,16 +759,21 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          beneficio_iva_cero?: boolean | null
+          codigo_actividad_caeb?: string | null
           created_at?: string
           estado?: string | null
           fecha_presentacion?: string | null
           fecha_vencimiento: string
+          formulario_tipo?: string | null
           gestion: number
           id?: string
           mes?: number | null
+          modalidad_facturacion?: string | null
           monto_base?: number | null
           monto_impuesto?: number | null
           monto_pagado?: number | null
+          normativa_aplicable?: string | null
           observaciones?: string | null
           periodo: string
           tipo: string
@@ -771,16 +781,21 @@ export type Database = {
           user_id: string
         }
         Update: {
+          beneficio_iva_cero?: boolean | null
+          codigo_actividad_caeb?: string | null
           created_at?: string
           estado?: string | null
           fecha_presentacion?: string | null
           fecha_vencimiento?: string
+          formulario_tipo?: string | null
           gestion?: number
           id?: string
           mes?: number | null
+          modalidad_facturacion?: string | null
           monto_base?: number | null
           monto_impuesto?: number | null
           monto_pagado?: number | null
+          normativa_aplicable?: string | null
           observaciones?: string | null
           periodo?: string
           tipo?: string
@@ -954,6 +969,66 @@ export type Database = {
           observaciones?: string | null
           pago_inicial?: number
           tasa_interes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      facilidades_pago_2025: {
+        Row: {
+          created_at: string | null
+          estado: string | null
+          fecha_aprobacion: string | null
+          fecha_solicitud: string
+          fecha_vencimiento: string
+          id: string
+          monto_cuota: number
+          monto_deuda: number
+          monto_inicial: number | null
+          normativa_aplicable: string | null
+          numero_cuotas: number
+          numero_facilidad: string
+          observaciones: string | null
+          tasa_interes: number | null
+          tipo_facilidad: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          estado?: string | null
+          fecha_aprobacion?: string | null
+          fecha_solicitud: string
+          fecha_vencimiento: string
+          id?: string
+          monto_cuota: number
+          monto_deuda: number
+          monto_inicial?: number | null
+          normativa_aplicable?: string | null
+          numero_cuotas: number
+          numero_facilidad: string
+          observaciones?: string | null
+          tasa_interes?: number | null
+          tipo_facilidad: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          estado?: string | null
+          fecha_aprobacion?: string | null
+          fecha_solicitud?: string
+          fecha_vencimiento?: string
+          id?: string
+          monto_cuota?: number
+          monto_deuda?: number
+          monto_inicial?: number | null
+          normativa_aplicable?: string | null
+          numero_cuotas?: number
+          numero_facilidad?: string
+          observaciones?: string | null
+          tasa_interes?: number | null
+          tipo_facilidad?: string
           updated_at?: string | null
           user_id?: string
         }
@@ -1448,6 +1523,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      normativas_2025: {
+        Row: {
+          categoria: string
+          contenido: Json | null
+          created_at: string | null
+          descripcion: string | null
+          estado: string | null
+          fecha_emision: string
+          fecha_vencimiento: string | null
+          fecha_vigencia: string | null
+          id: string
+          rnd_numero: string
+          titulo: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          categoria: string
+          contenido?: Json | null
+          created_at?: string | null
+          descripcion?: string | null
+          estado?: string | null
+          fecha_emision: string
+          fecha_vencimiento?: string | null
+          fecha_vigencia?: string | null
+          id?: string
+          rnd_numero: string
+          titulo: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          contenido?: Json | null
+          created_at?: string | null
+          descripcion?: string | null
+          estado?: string | null
+          fecha_emision?: string
+          fecha_vencimiento?: string | null
+          fecha_vigencia?: string | null
+          id?: string
+          rnd_numero?: string
+          titulo?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       pagos: {
         Row: {
