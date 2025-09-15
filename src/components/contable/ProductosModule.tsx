@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseProductos, ProductoSupabase, CategoriaProductoSupabase } from "@/hooks/useSupabaseProductos";
 import ProductoForm from "./products/ProductoForm";
@@ -84,6 +84,7 @@ const ProductosModule = () => {
   // Transformar productos para tener categoría como nombre
   const productosConCategoria = productos.map(producto => {
     const categoria = categorias.find(c => c.id === producto.categoria_id);
+    console.log('🏷️ Mapping product:', producto.nombre, 'Cost:', producto.costo_unitario, 'Category:', categoria?.nombre);
     return {
       ...producto,
       categoria: categoria?.nombre || 'General',
@@ -140,6 +141,15 @@ const ProductosModule = () => {
         }}
         actions={
           <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                console.log('🔄 Manual refresh clicked');
+                refetch();
+              }}
+            >
+              Actualizar Datos
+            </Button>
             <Button 
               className="bg-gradient-to-r from-primary to-primary/80 shadow-lg hover:shadow-xl"
               onClick={() => {

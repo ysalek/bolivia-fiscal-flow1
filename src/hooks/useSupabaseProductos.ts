@@ -41,10 +41,12 @@ export const useSupabaseProductos = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching productos data...');
       
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (!user) {
+        console.log('❌ No user found');
         setProductos([]);
         setCategorias([]);
         return;
@@ -54,18 +56,34 @@ export const useSupabaseProductos = () => {
         throw userError;
       }
       
+      console.log('👤 User ID:', user.id);
+      
       const [productosRes, categoriasRes] = await Promise.all([
         supabase.from('productos').select('*').eq('user_id', user.id).order('codigo'),
         supabase.from('categorias_productos').select('*').eq('user_id', user.id).order('nombre')
       ]);
 
-      if (productosRes.error) throw productosRes.error;
-      if (categoriasRes.error) throw categoriasRes.error;
+      if (productosRes.error) {
+        console.error('❌ Error productos:', productosRes.error);
+        throw productosRes.error;
+      }
+      if (categoriasRes.error) {
+        console.error('❌ Error categorias:', categoriasRes.error);
+        throw categoriasRes.error;
+      }
+
+      console.log('📦 Productos loaded:', productosRes.data?.length || 0);
+      console.log('🏷️ Categorias loaded:', categoriasRes.data?.length || 0);
+      
+      // Log first product for debugging
+      if (productosRes.data && productosRes.data.length > 0) {
+        console.log('📝 First product data:', productosRes.data[0]);
+      }
 
       setProductos(productosRes.data || []);
       setCategorias(categoriasRes.data || []);
     } catch (error: any) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ Error cargando datos:', error);
       toast({
         title: "Error al cargar datos",
         description: error.message,
@@ -157,6 +175,8 @@ export const useSupabaseProductos = () => {
   // Actualizar producto
   const actualizarProducto = async (productoId: string, productoData: Partial<ProductoSupabase>) => {
     try {
+      console.log('🔄 Updating product:', productoId, productoData);
+      
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (!user) {
@@ -172,16 +192,15 @@ export const useSupabaseProductos = () => {
         .single();
 
       if (error) {
+        console.error('❌ Update error:', error);
         throw error;
       }
       
-      // Force complete data refresh instead of partial update
-      await fetchData();
+      console.log('✅ Product updated in DB:', data);
       
-      // Alternative: Update the specific product in state with all returned data
-      // setProductos(prev => 
-      //   prev.map(p => p.id === productoId ? { ...data } : p)
-      // );
+      // Force complete data refresh instead of partial update
+      console.log('🔄 Forcing data refresh...');
+      await fetchData();
       
       toast({
         title: "Producto actualizado",
@@ -190,6 +209,7 @@ export const useSupabaseProductos = () => {
 
       return data;
     } catch (error: any) {
+      console.error('❌ Error updating product:', error);
       toast({
         title: "Error al actualizar producto",
         description: error.message,
