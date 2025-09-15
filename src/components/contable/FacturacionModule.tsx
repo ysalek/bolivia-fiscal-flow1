@@ -29,7 +29,7 @@ const FacturacionModule = () => {
   const [normativasAlerts, setNormativasAlerts] = useState<any[]>([]);
   const [configuracionTributaria, setConfiguracionTributaria] = useState<any>(null);
   const { toast } = useToast();
-  const { productos } = useSupabaseProductos();
+  const { productos, crearProducto } = useSupabaseProductos();
   const { 
     generarAsientoVenta, 
     generarAsientoInventario, 
@@ -55,6 +55,14 @@ const FacturacionModule = () => {
     loadConfiguracionTributaria();
     loadNormativasAlerts();
   }, []);
+
+  // CRÍTICO: Inicializar productos de ejemplo cuando sea necesario
+  useEffect(() => {
+    if (productos.length === 0 && crearProducto) {
+      console.log('📦 No hay productos, inicializando ejemplos...');
+      initializeExampleProducts();
+    }
+  }, [productos.length, crearProducto]);
 
   const loadConfiguracionTributaria = async () => {
     try {
@@ -85,6 +93,72 @@ const FacturacionModule = () => {
       setNormativasAlerts(data || []);
     } catch (error: any) {
       console.error('Error loading normativas alerts:', error);
+    }
+  };
+
+  // CRÍTICO: Inicializar productos de ejemplo si no hay productos en la base de datos
+  const initializeExampleProducts = async () => {
+    if (productos.length === 0 && crearProducto) {
+      try {
+        console.log('📦 Inicializando productos de ejemplo...');
+        
+        // Crear productos de ejemplo para el usuario actual
+        const productosEjemplo = [
+          {
+            codigo: 'PROD001',
+            nombre: 'Laptop Dell Inspiron 15',
+            descripcion: 'Laptop Dell Inspiron 15 con procesador Intel i5',
+            categoria_id: null,
+            unidad_medida: 'PZA',
+            precio_venta: 4200,
+            precio_compra: 3500,
+            costo_unitario: 3500,
+            stock_actual: 15,
+            stock_minimo: 10,
+            codigo_sin: '86173000',
+            activo: true,
+          },
+          {
+            codigo: 'PROD002',
+            nombre: 'Mouse Inalámbrico',
+            descripcion: 'Mouse inalámbrico óptico con sensor de alta precisión',
+            categoria_id: null,
+            unidad_medida: 'PZA',
+            precio_venta: 65,
+            precio_compra: 45,
+            costo_unitario: 45,
+            stock_actual: 25,
+            stock_minimo: 10,
+            codigo_sin: '84716070',
+            activo: true,
+          },
+          {
+            codigo: 'SERV001',
+            nombre: 'Consultoría IT',
+            descripcion: 'Servicios de consultoría en tecnologías de información',
+            categoria_id: null,
+            unidad_medida: 'HR',
+            precio_venta: 150,
+            precio_compra: 0,
+            costo_unitario: 0,
+            stock_actual: 0,
+            stock_minimo: 0,
+            codigo_sin: '83111100',
+            activo: true,
+          }
+        ];
+
+        for (const producto of productosEjemplo) {
+          await crearProducto(producto);
+        }
+        
+        toast({
+          title: "Productos inicializados",
+          description: "Se han creado productos de ejemplo para comenzar.",
+        });
+      } catch (error) {
+        console.error('Error inicializando productos:', error);
+      }
     }
   };
 
@@ -238,6 +312,29 @@ const FacturacionModule = () => {
   };
 
   if (showNewInvoice) {
+    // Verificar que hay productos disponibles antes de mostrar el formulario
+    if (productos.length === 0) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-yellow-100 flex items-center justify-center">
+              <Package className="w-8 h-8 text-yellow-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">No hay productos disponibles</h3>
+              <p className="text-gray-600 max-w-sm mx-auto">
+                Necesitas tener productos registrados en el sistema antes de crear facturas. 
+                Por favor, dirígete al módulo de Productos para agregar productos.
+              </p>
+            </div>
+            <Button onClick={() => setShowNewInvoice(false)} variant="outline">
+              Volver a Facturación
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <InvoiceForm
         clientes={clientes}
@@ -390,8 +487,11 @@ const FacturacionModule = () => {
       
       {selectedInvoice && (
         <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
-          <DialogContent className="max-w-4xl p-0">
+          <DialogContent className="max-w-4xl p-0" aria-describedby="invoice-preview-description">
             <div className="p-6">
+              <div className="sr-only" id="invoice-preview-description">
+                Vista previa de la factura seleccionada
+              </div>
               <InvoicePreview invoice={selectedInvoice} />
             </div>
           </DialogContent>
