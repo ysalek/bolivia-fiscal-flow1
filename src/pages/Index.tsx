@@ -57,7 +57,7 @@ const SystemIntegrator = lazy(() => import('@/components/contable/integration/Sy
 const AdvancedReportsModule = lazy(() => import('@/components/contable/advanced/AdvancedReportsModule'));
 const ComprehensiveSystemTests = lazy(() => import('@/components/contable/testing/ComprehensiveSystemTests'));
 const SystemOptimizer = lazy(() => import('@/components/contable/optimization/SystemOptimizer'));
-const AutoBackupManager = lazy(() => import('@/components/contable/backup/AutoBackupManager'));
+
 
 const Index = () => {
   const { hasPermission, user, logout } = useAuth();
@@ -243,8 +243,6 @@ const Index = () => {
         return <ComprehensiveSystemTests />;
       case 'optimizador':
         return <SystemOptimizer />;
-      case 'backup-manager':
-        return <AutoBackupManager />;
       default:
         return <Dashboard />;
     }
