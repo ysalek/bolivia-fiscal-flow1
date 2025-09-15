@@ -242,19 +242,19 @@ const FacturacionModule = () => {
       <InvoiceForm
         clientes={clientes}
         productos={productos.map(p => ({
-          id: p.id,
-          codigo: p.codigo,
-          nombre: p.nombre,
-          descripcion: p.descripcion || '',
-          categoria: p.categoria_id || 'General',
-          unidadMedida: p.unidad_medida,
-          precioVenta: p.precio_venta,
-          precioCompra: p.precio_compra,
-          costoUnitario: p.costo_unitario,
-          stockActual: p.stock_actual,
-          stockMinimo: p.stock_minimo,
-          codigoSIN: p.codigo_sin || '00000000',
-          activo: p.activo,
+          id: String(p.id),
+          codigo: String(p.codigo || ''),
+          nombre: String(p.nombre || ''),
+          descripcion: String(p.descripcion || ''),
+          categoria: String(p.categoria_id || 'General'),
+          unidadMedida: String(p.unidad_medida || 'PZA'),
+          precioVenta: Number(p.precio_venta || 0),
+          precioCompra: Number(p.precio_compra || 0),
+          costoUnitario: Number(p.costo_unitario || 0),
+          stockActual: Number(p.stock_actual || 0),
+          stockMinimo: Number(p.stock_minimo || 0),
+          codigoSIN: String(p.codigo_sin || '00000000'),
+          activo: Boolean(p.activo),
           fechaCreacion: p.created_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
           fechaActualizacion: p.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10)
         }))}
