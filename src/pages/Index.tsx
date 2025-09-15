@@ -141,10 +141,10 @@ const Index = () => {
     return () => window.removeEventListener('navigate-to-module', handler as EventListener);
   }, []);
 
-  // Inicializar sistema al cargar
-  useEffect(() => {
-    inicializarSistemaCompleto();
-  }, []);
+  // Sistema ya utiliza Supabase, no necesita inicialización localStorage
+  // useEffect(() => {
+  //   inicializarSistemaCompleto();
+  // }, []);
 
   // Renderizar componente basado en el view actual
   const renderCurrentView = () => {

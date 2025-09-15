@@ -93,6 +93,7 @@ export const useProductosUnificado = () => {
     
     try {
       console.log('🔄 Iniciando carga de productos...');
+      console.log('🔍 Estado actual - dataLoaded:', dataLoaded, 'loading:', loading);
       
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
@@ -105,6 +106,7 @@ export const useProductosUnificado = () => {
       }
 
       console.log('✅ Usuario autenticado:', user.id);
+      console.log('🔄 Ejecutando consultas a Supabase...');
       
       // Cargar categorías y productos en paralelo
       const [categoriasResult, productosResult] = await Promise.all([
@@ -135,6 +137,7 @@ export const useProductosUnificado = () => {
       
       console.log('📁 Categorías cargadas:', categoriasData.length);
       console.log('📦 Productos encontrados:', productosData.length);
+      console.log('🔍 Primeros 3 productos:', productosData.slice(0, 3).map(p => ({ id: p.id, codigo: p.codigo, nombre: p.nombre })));
 
       // Transformar productos
       const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]));
