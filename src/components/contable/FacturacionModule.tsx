@@ -191,17 +191,35 @@ const FacturacionModule = () => {
       if (facturaValidada.estadoSIN === 'aceptado') {
         // La factura fue aceptada, proceder con la contabilidad
         
-        // 1. Procesar inventario según normativa boliviana
+        // 1. Validar y procesar inventario según normativa boliviana
+        console.log('📦 Procesando inventario para factura:', facturaValidada.numero);
         for (const item of facturaValidada.items) {
           const producto = productos.find(p => p.id === item.productoId);
-          if (producto && producto.costo_unitario > 0) {
+          console.log(`🔍 Producto encontrado:`, { 
+            id: producto?.id, 
+            stock_actual: producto?.stock_actual, 
+            cantidad_solicitada: item.cantidad 
+          });
+          
+          if (producto && Number(producto.costo_unitario || 0) > 0) {
+            // CRÍTICO: Verificar stock antes de procesar
+            const stockDisponible = Number(producto.stock_actual || 0);
+            if (stockDisponible < item.cantidad) {
+              toast({
+                title: "Error de Stock - Normativa Boliviana",
+                description: `Stock insuficiente para ${item.descripcion}. Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`,
+                variant: "destructive"
+              });
+              return; // Detener el proceso si no hay stock suficiente
+            }
+            
             // CRÍTICO: Actualizar stock del producto en Supabase
             const stockActualizado = await actualizarStockProducto(item.productoId, item.cantidad, 'salida');
             
             if (!stockActualizado) {
               toast({
                 title: "Error de Stock - Normativa Boliviana",
-                description: `Stock insuficiente para ${item.descripcion}. No se puede procesar la factura.`,
+                description: `No se pudo actualizar el stock para ${item.descripcion}. Factura cancelada.`,
                 variant: "destructive"
               });
               return; // Detener el proceso si falla la actualización de stock

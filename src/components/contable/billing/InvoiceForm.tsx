@@ -61,8 +61,11 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
     for (const item of items) {
       if (item.productoId) {
         const producto = productos.find(p => p.id === item.productoId);
-        if (producto && producto.stockActual < item.cantidad) {
-          newErrors.stock = `Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockActual}, Solicitado: ${item.cantidad}`;
+        // Los productos ya están convertidos correctamente por FacturacionModule
+        const stockDisponible = Number(producto?.stockActual || 0);
+        console.log(`🔍 Validando stock para ${producto?.nombre}: Stock disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`);
+        if (producto && stockDisponible < item.cantidad) {
+          newErrors.stock = `Stock insuficiente para ${producto.nombre}. Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`;
           break;
         }
       }
@@ -169,7 +172,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       id: Date.now().toString(),
       numero: numeroFactura,
       cliente: selectedCliente!,
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: new Date().toLocaleDateString('en-CA'), // Formato YYYY-MM-DD en hora local
       fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       items: items.filter(item => item.descripcion.trim()),
       subtotal,
@@ -183,7 +186,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       puntoVenta: selectedPuntoVenta.codigo,
       codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
       observaciones,
-      fechaCreacion: new Date().toISOString().slice(0, 10)
+      fechaCreacion: new Date().toLocaleDateString('en-CA') // Formato YYYY-MM-DD en hora local
     };
   }
 
