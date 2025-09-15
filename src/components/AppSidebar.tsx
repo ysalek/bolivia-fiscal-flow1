@@ -41,7 +41,9 @@ import {
   Home,
   GitBranch,
   CheckCircle,
-  Download
+  Download,
+  Cpu,
+  Database
 } from 'lucide-react';
 import {
   Sidebar,
@@ -129,6 +131,9 @@ const menuItems = [
       { title: 'Workflows', url: '/?view=workflows', icon: GitBranch, badge: 'Pro' },
       { title: 'Validador Sistema', url: '/?view=system-validator', icon: CheckCircle, badge: 'Pro' },
       { title: 'Integrador Sistema', url: '/?view=system-integrator', icon: Shield, badge: 'Pro' },
+      { title: 'Pruebas del Sistema', url: '/?view=pruebas-sistema', icon: TestTube, badge: 'Nuevo' },
+      { title: 'Optimizador', url: '/?view=optimizador', icon: Cpu, badge: 'Nuevo' },
+      { title: 'Gestor de Respaldos', url: '/?view=backup-manager', icon: Database, badge: 'Pro' },
     ]
   },
   {
