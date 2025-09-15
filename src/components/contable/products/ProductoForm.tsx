@@ -298,25 +298,41 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
                id="precio_compra"
                type="number"
                value={formData.precio_compra || ''}
-               onChange={(e) => handleInputChange("precio_compra", parseFloat(e.target.value) || 0)}
+               onChange={(e) => {
+                 const value = parseFloat(e.target.value) || 0;
+                 handleInputChange("precio_compra", value);
+                 // Auto-sync costo_unitario with precio_compra
+                 handleInputChange("costo_unitario", value);
+               }}
                placeholder="0.00"
                min="0"
                step="0.01"
              />
+             <p className="text-xs text-muted-foreground">
+               Se sincroniza automáticamente con el costo unitario
+             </p>
            </div>
 
-          {/* Costo Unitario */}
+           {/* Costo Unitario */}
            <div className="space-y-2">
-             <Label htmlFor="costo_unitario">Costo Unitario (Bs.)</Label>
+             <Label htmlFor="costo_unitario">Costo Unitario (Bs.) *</Label>
              <Input
                id="costo_unitario"
                type="number"
                value={formData.costo_unitario || ''}
-               onChange={(e) => handleInputChange("costo_unitario", parseFloat(e.target.value) || 0)}
+               onChange={(e) => {
+                 const value = parseFloat(e.target.value) || 0;
+                 handleInputChange("costo_unitario", value);
+                 // Sync precio_compra with costo_unitario
+                 handleInputChange("precio_compra", value);
+               }}
                placeholder="0.00"
                min="0"
                step="0.01"
              />
+             <p className="text-xs text-muted-foreground">
+               Este es el costo que se mostrará en la tabla de productos
+             </p>
            </div>
 
           {/* Stock Actual */}
