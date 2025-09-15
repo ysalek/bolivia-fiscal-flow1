@@ -33,37 +33,6 @@ const LoginForm = () => {
     }
   };
 
-  const credencialesProduccion = [
-    { 
-      role: 'Administrador (Con productos importados)', 
-      email: 'ysalek@gmail.com', 
-      usuario: 'ysalek',
-      password: '123456' 
-    }
-  ];
-
-  // Auto login para acceso rápido
-  const autoLogin = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      console.log('🚀 Iniciando acceso directo con ysalek@gmail.com...');
-      // Intentar login con credenciales conocidas
-      const success = await login('ysalek@gmail.com', '123456');
-      if (!success) {
-        setError('Error de autenticación. Contacte al administrador.');
-        console.error('❌ Login falló');
-      } else {
-        console.log('✅ Login exitoso');
-      }
-    } catch (error) {
-      console.error('❌ Error durante el login:', error);
-      setError('Error al conectar. Verifique su conexión.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -79,17 +48,8 @@ const LoginForm = () => {
             Sistema Contable
           </h1>
           <p className="text-slate-600">
-            Inicie sesión para acceder a sus 1000 productos importados
+            Sistema de contabilidad integral para Bolivia
           </p>
-          
-          {/* Información importante */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-left">
-            <div className="font-medium text-yellow-800 mb-1">ℹ️ Para acceder a los productos:</div>
-            <div className="text-yellow-700">
-              Los productos importados están vinculados al usuario <strong>ysalek@gmail.com</strong>. 
-              Use el botón de "Acceso Directo" abajo para conectarse automáticamente.
-            </div>
-          </div>
         </div>
 
         {/* Login Form */}
@@ -159,63 +119,40 @@ const LoginForm = () => {
           </CardContent>
         </Card>
 
-        {/* Production Credentials */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Credenciales del Sistema</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {credencialesProduccion.map((cred, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium text-sm">{cred.role}</div>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div>Email: {cred.email}</div>
-                  <div>Usuario: {cred.usuario}</div>
-                  <div>Contraseña: {cred.password}</div>
+        {/* Features Info */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-600 text-sm">📊</span>
                 </div>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs flex-1"
-                    onClick={() => {
-                      setEmailOrUsuario(cred.email);
-                      setPassword(cred.password);
-                    }}
-                  >
-                    Usar Email
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs flex-1"
-                    onClick={() => {
-                      setEmailOrUsuario(cred.usuario);
-                      setPassword(cred.password);
-                    }}
-                  >
-                    Usar Usuario
-                  </Button>
+                <div>
+                  <div className="font-medium text-blue-900">Contabilidad Integral</div>
+                  <div className="text-sm text-blue-700">Plan de cuentas boliviano actualizado 2025</div>
                 </div>
-                 
-                {/* Auto Login Button */}
-                <Button
-                  size="sm"
-                  className="w-full mt-2 h-8 text-xs"
-                  onClick={autoLogin}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Conectando...
-                    </>
-                  ) : (
-                    "🚀 Acceso Directo (Desarrollo)"
-                  )}
-                </Button>
               </div>
-            ))}
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-green-600 text-sm">🧾</span>
+                </div>
+                <div>
+                  <div className="font-medium text-green-900">Facturación Electrónica</div>
+                  <div className="text-sm text-green-700">Compatible con normativas SIN Bolivia</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span className="text-purple-600 text-sm">📈</span>
+                </div>
+                <div>
+                  <div className="font-medium text-purple-900">Reportes Avanzados</div>
+                  <div className="text-sm text-purple-700">Estados financieros automáticos</div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
