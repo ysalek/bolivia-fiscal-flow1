@@ -19,9 +19,14 @@ const ProductosModule = () => {
 
   const handleSaveProducto = async () => {
     try {
-      await refetch(); // Refresh data from database
-      setShowForm(false);
-      setEditingProducto(null);
+      // Force refresh to get latest data from database
+      await refetch();
+      
+      // Wait a moment to ensure data is fully loaded
+      setTimeout(() => {
+        setShowForm(false);
+        setEditingProducto(null);
+      }, 100);
       
       toast({
         title: "Producto actualizado",

@@ -145,6 +145,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         await crearProducto(productoData);
       }
       
+      // Force refresh of data after successful update
       await onSave();
       
     } catch (error: any) {

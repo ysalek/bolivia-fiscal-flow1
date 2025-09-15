@@ -175,9 +175,13 @@ export const useSupabaseProductos = () => {
         throw error;
       }
       
-      setProductos(prev => 
-        prev.map(p => p.id === productoId ? { ...p, ...data } : p)
-      );
+      // Force complete data refresh instead of partial update
+      await fetchData();
+      
+      // Alternative: Update the specific product in state with all returned data
+      // setProductos(prev => 
+      //   prev.map(p => p.id === productoId ? { ...data } : p)
+      // );
       
       toast({
         title: "Producto actualizado",
