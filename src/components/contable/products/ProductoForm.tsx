@@ -69,7 +69,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
       }));
       console.log('🔧 ProductoForm - Código generado:', codigo);
     }
-  }, [producto, generarCodigoProducto, categorias.length]);
+  }, [producto?.id]); // Solo cuando cambie el ID del producto, no las categorías
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
