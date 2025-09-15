@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Check, DollarSign, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProductos } from "@/hooks/useProductos";
+import { useSupabaseProductos, ProductoSupabase, CategoriaProductoSupabase } from "@/hooks/useSupabaseProductos";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
 
 
 const ProductosModule = () => {
   console.log('🏭 ProductosModule renderizando...');
-  const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductos();
+  const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useSupabaseProductos();
   console.log('📊 Productos desde hook:', productos.length, 'loading:', loading);
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
@@ -73,15 +73,25 @@ const ProductosModule = () => {
     }
   };
 
-  const productosFiltrados = productos.filter(producto =>
+  // Transformar productos para tener categoría como nombre
+  const productosConCategoria = productos.map(producto => {
+    const categoria = categorias.find(c => c.id === producto.categoria_id);
+    return {
+      ...producto,
+      categoria: categoria?.nombre || 'General',
+      descripcion: producto.descripcion || ''
+    };
+  });
+
+  const productosFiltrados = productosConCategoria.filter(producto =>
     producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     producto.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    producto.categoria.toLowerCase().includes(searchTerm.toLowerCase())
+    (producto.categoria?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const productosActivos = productos.filter(p => p.activo).length;
-  const productosStockBajo = productos.filter(p => p.stock_actual <= p.stock_minimo && p.activo).length;
-  const valorInventario = productos.reduce((sum, p) => sum + ((p.stock_actual || 0) * (p.costo_unitario || 0)), 0);
+  const productosActivos = productosConCategoria.filter(p => p.activo).length;
+  const productosStockBajo = productosConCategoria.filter(p => p.stock_actual <= p.stock_minimo && p.activo).length;
+  const valorInventario = productosConCategoria.reduce((sum, p) => sum + ((p.stock_actual || 0) * (p.costo_unitario || 0)), 0);
 
   if (loading) {
     return (
@@ -98,7 +108,7 @@ const ProductosModule = () => {
     return (
       <ProductoForm
         producto={editingProducto}
-        productos={productos}
+        productos={productosConCategoria as any}
         categorias={categorias}
         onSave={handleSaveProducto}
         onCancel={() => {
@@ -170,7 +180,7 @@ const ProductosModule = () => {
           />
           <EnhancedMetricCard
             title="Total Productos"
-            value={productos.length}
+            value={productosConCategoria.length}
             subtitle="Incluye inactivos"
             icon={BarChart3}
             variant="default"
@@ -236,7 +246,7 @@ const ProductosModule = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                             <span className="font-medium text-foreground">Categoría:</span>
-                            <p className="text-muted-foreground">{producto.categoria}</p>
+                            <p className="text-muted-foreground">{producto.categoria || 'General'}</p>
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Stock Actual:</span>
