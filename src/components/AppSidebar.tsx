@@ -90,11 +90,12 @@ const menuItems = [
     ]
   },
   {
-    group: 'Inventario',
+    group: 'Inventario y Activos',
     items: [
       { title: 'Productos', url: '/?view=productos', icon: Package, badge: null },
       { title: 'Inventario', url: '/?view=inventario', icon: Archive, badge: null },
       { title: 'Kardex', url: '/?view=kardex', icon: ClipboardList, badge: null },
+      { title: 'Activos Fijos', url: '/?view=activos-fijos', icon: Building2, badge: null },
     ]
   },
   {
@@ -104,9 +105,18 @@ const menuItems = [
       { title: 'Flujo de Caja', url: '/?view=flujo-caja', icon: PiggyBank, badge: null },
       { title: 'Cuentas por Cobrar/Pagar', url: '/?view=cuentas-cobrar-pagar', icon: CreditCard, badge: null },
       { title: 'Declaraciones IVA', url: '/?view=declaraciones-tributarias', icon: FileText, badge: null },
-      { title: 'Cumplimiento Normativo', url: '/?view=compliance', icon: Shield, badge: 'Nuevo' },
+      { title: 'Cumplimiento Normativo', url: '/?view=cumplimiento-normativo', icon: Shield, badge: 'Nuevo' },
       { title: 'Auditoría Avanzada', url: '/?view=auditoria-avanzada', icon: TestTube, badge: 'Nuevo' },
       { title: 'Plan Cuentas 2025', url: '/?view=plan-cuentas-2025', icon: BookOpen, badge: 'Actualizado' },
+      { title: 'Retenciones', url: '/?view=retenciones', icon: Receipt, badge: null },
+      { title: 'Facturación Electrónica', url: '/?view=facturacion-electronica', icon: Zap, badge: 'Pro' },
+    ]
+  },
+  {
+    group: 'Planificación',
+    items: [
+      { title: 'Presupuestos', url: '/?view=presupuestos', icon: Target, badge: 'Nuevo' },
+      { title: 'Centros de Costo', url: '/?view=centros-costo', icon: Factory, badge: 'Nuevo' },
     ]
   },
   {
@@ -114,15 +124,7 @@ const menuItems = [
     items: [
       { title: 'Nómina', url: '/?view=nomina', icon: UserCheck, badge: null },
       { title: 'Empleados', url: '/?view=empleados', icon: Users, badge: null },
-    ]
-  },
-  {
-    group: 'Reportes',
-    items: [
-      { title: 'Reportes', url: '/?view=reportes', icon: BarChart3, badge: null },
-      { title: 'Análisis Financiero', url: '/?view=analisis-financiero', icon: TrendingUp, badge: null },
-      { title: 'Análisis de Rentabilidad', url: '/?view=rentabilidad', icon: Target, badge: null },
-    ]
+     ]
   },
   {
     group: 'Enterprise',
@@ -133,14 +135,6 @@ const menuItems = [
       { title: 'Integrador Sistema', url: '/?view=system-integrator', icon: Shield, badge: 'Pro' },
       { title: 'Pruebas del Sistema', url: '/?view=pruebas-sistema', icon: TestTube, badge: 'Nuevo' },
       { title: 'Optimizador', url: '/?view=optimizador', icon: Cpu, badge: 'Nuevo' },
-    ]
-  },
-  {
-    group: 'Reportes y Análisis',
-    items: [
-      { title: 'Reportes Avanzados', url: '/?view=advanced-reports', icon: FileText, badge: 'Nuevo' },
-      { title: 'Análisis Financiero', url: '/?view=analisis-financiero', icon: TrendingUp, badge: null },
-      { title: 'Análisis Rentabilidad', url: '/?view=rentabilidad', icon: BarChart3, badge: null },
     ]
   },
   {
