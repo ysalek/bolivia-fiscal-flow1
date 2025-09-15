@@ -30,6 +30,8 @@ const ProductosModule = () => {
   };
 
   const handleEditProducto = (producto: any) => {
+    console.log('🔧 ProductosModule - Editando producto:', producto);
+    console.log('🔧 ProductosModule - Estructura del producto:', Object.keys(producto));
     // El producto ya viene en el formato correcto del hook unificado
     setEditingProducto(producto);
     setShowForm(true);
