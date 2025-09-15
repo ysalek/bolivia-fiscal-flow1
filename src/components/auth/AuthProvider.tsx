@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -18,6 +19,7 @@ interface User {
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: {
     nombre: string;
@@ -45,9 +47,10 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   // Mapear perfil + roles de Supabase a nuestro User
-  const buildUserFromSupabase = async (sessionUser: any): Promise<User> => {
+  const buildUserFromSupabase = async (sessionUser: SupabaseUser): Promise<User> => {
     const email = sessionUser.email as string | undefined;
     const baseUsuario = email ? email.split('@')[0] : sessionUser.id;
 
@@ -80,21 +83,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Inicialización segura: listener primero, luego getSession
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 AuthProvider - Auth state change:', event, !!session);
-      console.log('🔐 AuthProvider - Session user:', session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('🔐 AuthProvider - Auth state change:', event, !!newSession);
+      console.log('🔐 AuthProvider - Session user:', newSession?.user?.id);
       
-      setIsAuthenticated(!!session);
+      setSession(newSession);
+      setIsAuthenticated(!!newSession);
       
-      if (session?.user) {
-        try {
-          const mapped = await buildUserFromSupabase(session.user);
-          setUser(mapped);
-          console.log('✅ AuthProvider - Usuario mapeado:', mapped.email, mapped.id);
-        } catch (e) {
-          console.error('❌ AuthProvider - Error construyendo usuario:', e);
-          setUser(null);
-        }
+      if (newSession?.user) {
+        // Usar setTimeout para evitar deadlocks
+        setTimeout(async () => {
+          try {
+            const mapped = await buildUserFromSupabase(newSession.user);
+            setUser(mapped);
+            console.log('✅ AuthProvider - Usuario mapeado:', mapped.email, mapped.id);
+          } catch (e) {
+            console.error('❌ AuthProvider - Error construyendo usuario:', e);
+            setUser(null);
+          }
+        }, 0);
       } else {
         console.log('🚪 AuthProvider - No hay sesión, limpiando usuario');
         setUser(null);
@@ -102,22 +109,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Verificar sesión inicial
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      console.log('🔐 AuthProvider - Sesión inicial:', !!session, error);
-      if (session?.user) {
-        console.log('🔐 AuthProvider - Usuario en sesión inicial:', session.user.id);
+    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      console.log('🔐 AuthProvider - Sesión inicial:', !!initialSession, error);
+      if (initialSession?.user) {
+        console.log('🔐 AuthProvider - Usuario en sesión inicial:', initialSession.user.id);
       }
       
-      setIsAuthenticated(!!session);
-      if (session?.user) {
-        try {
-          const mapped = await buildUserFromSupabase(session.user);
-          setUser(mapped);
-          console.log('✅ AuthProvider - Usuario inicial mapeado:', mapped.email);
-        } catch (e) {
-          console.error('❌ AuthProvider - Error inicializando usuario:', e);
-          setUser(null);
-        }
+      setSession(initialSession);
+      setIsAuthenticated(!!initialSession);
+      
+      if (initialSession?.user) {
+        setTimeout(async () => {
+          try {
+            const mapped = await buildUserFromSupabase(initialSession.user);
+            setUser(mapped);
+            console.log('✅ AuthProvider - Usuario inicial mapeado:', mapped.email);
+          } catch (e) {
+            console.error('❌ AuthProvider - Error inicializando usuario:', e);
+            setUser(null);
+          }
+        }, 0);
       }
     });
 
@@ -197,6 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         isAuthenticated,
         user,
+        session,
         login,
         register,
         logout,

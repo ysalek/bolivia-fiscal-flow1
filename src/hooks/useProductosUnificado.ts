@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export interface CategoriaProducto {
   id: string;
@@ -47,6 +48,7 @@ export const useProductosUnificado = () => {
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { isAuthenticated, session } = useAuth();
   const loadingRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -173,7 +175,7 @@ export const useProductosUnificado = () => {
       }
       loadingRef.current = false;
     }
-  }, [toast, transformarProducto]);
+  }, [toast, transformarProducto, isAuthenticated, session]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -419,27 +421,21 @@ export const useProductosUnificado = () => {
   useEffect(() => {
     mountedRef.current = true;
 
-    // Cargar datos inmediatamente
-    loadData();
-
-    // Manejar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state cambió:', event);
-      
-      if (event === 'SIGNED_IN' && session?.user && mountedRef.current) {
-        await loadData();
-      } else if (event === 'SIGNED_OUT' && mountedRef.current) {
-        setProductos([]);
-        setCategorias([]);
-        setLoading(false);
-      }
-    });
+    // Solo cargar si está autenticado
+    if (isAuthenticated && session) {
+      console.log('🔄 Usuario autenticado detectado, cargando productos...');
+      loadData();
+    } else {
+      console.log('🔄 Usuario no autenticado, limpiando datos...');
+      setProductos([]);
+      setCategorias([]);
+      setLoading(false);
+    }
 
     return () => {
       mountedRef.current = false;
-      subscription.unsubscribe();
     };
-  }, [loadData]);
+  }, [loadData, isAuthenticated, session]);
 
   return {
     productos,
