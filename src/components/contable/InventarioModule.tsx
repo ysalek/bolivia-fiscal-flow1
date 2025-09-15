@@ -44,21 +44,26 @@ const InventarioModule = () => {
   const movimientos = getMovimientosInventario();
 
   // Convertir productos de Supabase a formato de inventario
-  const productosInventario: ProductoInventario[] = productos.map(producto => ({
-    id: producto.id,
-    codigo: producto.codigo,
-    nombre: producto.nombre,
-    categoria: producto.categoria_id || 'General',
-    stockActual: producto.stock_actual || 0,
-    stockMinimo: producto.stock_minimo || 5,
-    stockMaximo: (producto.stock_minimo || 5) * 10,
-    costoUnitario: producto.costo_unitario || 0,
-    costoPromedioPonderado: producto.costo_unitario || 0,
-    precioVenta: producto.precio_venta || 0,
-    ubicacion: 'Almacén Principal',
-    fechaUltimoMovimiento: producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
-    valorTotalInventario: (producto.stock_actual || 0) * (producto.costo_unitario || 0)
-  }));
+  const productosInventario: ProductoInventario[] = productos.map(producto => {
+    // Buscar el nombre de la categoría por su ID
+    const categoria = categorias.find(c => c.id === producto.categoria_id);
+    
+    return {
+      id: producto.id,
+      codigo: producto.codigo,
+      nombre: producto.nombre,
+      categoria: categoria?.nombre || 'General',
+      stockActual: producto.stock_actual || 0,
+      stockMinimo: producto.stock_minimo || 5,
+      stockMaximo: (producto.stock_minimo || 5) * 10,
+      costoUnitario: producto.costo_unitario || 0,
+      costoPromedioPonderado: producto.costo_unitario || 0,
+      precioVenta: producto.precio_venta || 0,
+      ubicacion: 'Almacén Principal',
+      fechaUltimoMovimiento: producto.updated_at?.split('T')[0] || new Date().toISOString().slice(0, 10),
+      valorTotalInventario: (producto.stock_actual || 0) * (producto.costo_unitario || 0)
+    };
+  });
 
   const handleMovimiento = async (nuevoMovimiento: MovimientoInventario, productoOriginal: ProductoInventario) => {
     try {
