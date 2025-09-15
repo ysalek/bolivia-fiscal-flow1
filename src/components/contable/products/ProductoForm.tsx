@@ -40,10 +40,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🔧 ProductoForm - useEffect ejecutado:', { producto: !!producto, categorias: categorias.length });
-    
     if (producto) {
-      console.log('🔧 ProductoForm - Cargando producto para editar:', producto);
       setFormData({
         codigo: producto.codigo,
         nombre: producto.nombre,
@@ -59,32 +56,53 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         imagen_url: producto.imagen_url || "",
         activo: producto.activo
       });
-      console.log('🔧 ProductoForm - FormData configurado para edición');
     } else {
-      console.log('🔧 ProductoForm - Configurando para nuevo producto');
       const codigo = generarCodigoProducto();
       setFormData(prev => ({
         ...prev,
         codigo: codigo
       }));
-      console.log('🔧 ProductoForm - Código generado:', codigo);
     }
-  }, [producto?.id]); // Solo cuando cambie el ID del producto, no las categorías
+  }, [producto?.id]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     
-    if (!formData.codigo.trim()) newErrors.codigo = "El código es requerido";
-    if (!formData.nombre.trim()) newErrors.nombre = "El nombre es requerido";
-    if (!formData.categoria_id.trim()) newErrors.categoria_id = "La categoría es requerida";
-    if (formData.precio_venta <= 0) newErrors.precio_venta = "El precio de venta debe ser mayor a 0";
-    if (formData.stock_minimo < 0) newErrors.stock_minimo = "El stock mínimo no puede ser negativo";
+    if (!formData.codigo.trim()) {
+      newErrors.codigo = "El código es requerido";
+    } else if (formData.codigo.length < 3) {
+      newErrors.codigo = "El código debe tener al menos 3 caracteres";
+    }
+    
+    if (!formData.nombre.trim()) {
+      newErrors.nombre = "El nombre es requerido";
+    } else if (formData.nombre.length < 2) {
+      newErrors.nombre = "El nombre debe tener al menos 2 caracteres";
+    }
+    
+    if (!formData.categoria_id.trim()) {
+      newErrors.categoria_id = "La categoría es requerida";
+    }
+    
+    if (formData.precio_venta <= 0) {
+      newErrors.precio_venta = "El precio de venta debe ser mayor a 0";
+    } else if (formData.precio_venta > 999999) {
+      newErrors.precio_venta = "El precio no puede ser mayor a 999,999";
+    }
+    
+    if (formData.stock_minimo < 0) {
+      newErrors.stock_minimo = "El stock mínimo no puede ser negativo";
+    }
+    
+    if (formData.stock_actual < 0) {
+      newErrors.stock_actual = "El stock actual no puede ser negativo";
+    }
     
     // Verificar código único (solo para nuevos productos)
     if (!producto) {
-      const codigoExiste = productos.some(p => p.codigo === formData.codigo);
+      const codigoExiste = productos.some(p => p.codigo.toLowerCase() === formData.codigo.toLowerCase().trim());
       if (codigoExiste) {
-        newErrors.codigo = "Este código ya existe";
+        newErrors.codigo = "Este código ya existe en otro producto";
       }
     }
     
@@ -93,10 +111,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
   };
 
   const handleSubmit = async () => {
-    console.log('🔧 ProductoForm - Iniciando handleSubmit', { producto: !!producto, formData });
-    
     if (!validateForm()) {
-      console.log('❌ ProductoForm - Error en validación', errors);
       toast({
         title: "Error en la validación",
         description: "Por favor corrija los errores en el formulario.",
@@ -124,24 +139,15 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         activo: formData.activo
       };
 
-      console.log('📊 ProductoForm - Datos a enviar:', productoData);
-
       if (producto) {
-        console.log('✏️ ProductoForm - Actualizando producto:', producto.id);
         await actualizarProducto(producto.id, productoData);
-        console.log('✅ ProductoForm - Producto actualizado exitosamente');
       } else {
-        console.log('➕ ProductoForm - Creando producto nuevo');
         await crearProducto(productoData);
-        console.log('✅ ProductoForm - Producto creado exitosamente');
       }
       
-      console.log('🔄 ProductoForm - Llamando onSave...');
       await onSave();
-      console.log('✅ ProductoForm - onSave completado');
       
     } catch (error: any) {
-      console.error('❌ ProductoForm - Error al guardar:', error);
       toast({
         title: "Error al guardar",
         description: error.message || "Ocurrió un error inesperado",
@@ -149,7 +155,6 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
       });
     } finally {
       setSaving(false);
-      console.log('🏁 ProductoForm - handleSubmit finalizado');
     }
   };
 
@@ -242,56 +247,57 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
           </div>
 
           {/* Unidad de Medida */}
-          <div className="space-y-2">
-            <Label>Unidad de Medida</Label>
-            <Select value={formData.unidad_medida} onValueChange={(value) => handleInputChange("unidad_medida", value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PZA">Pieza</SelectItem>
-                <SelectItem value="KG">Kilogramo</SelectItem>
-                <SelectItem value="LT">Litro</SelectItem>
-                <SelectItem value="HR">Hora</SelectItem>
-                <SelectItem value="SRV">Servicio</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+           <div className="space-y-2">
+             <Label>Unidad de Medida</Label>
+             <Select value={formData.unidad_medida} onValueChange={(value) => handleInputChange("unidad_medida", value)}>
+               <SelectTrigger>
+                 <SelectValue placeholder="Seleccionar unidad" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="PZA">Pieza (PZA)</SelectItem>
+                 <SelectItem value="KG">Kilogramo (KG)</SelectItem>
+                 <SelectItem value="LT">Litro (LT)</SelectItem>
+                 <SelectItem value="MT">Metro (MT)</SelectItem>
+                 <SelectItem value="HR">Hora (HR)</SelectItem>
+                 <SelectItem value="SRV">Servicio (SRV)</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
 
           {/* Precio de Venta */}
-          <div className="space-y-2">
-            <Label htmlFor="precio_venta">Precio de Venta *</Label>
-            <Input
-              id="precio_venta"
-              type="number"
-              value={formData.precio_venta || ''}
-              onChange={(e) => handleInputChange("precio_venta", parseFloat(e.target.value) || '')}
-              placeholder="Precio de venta"
-              min="0"
-              step="0.01"
-              className={errors.precio_venta ? "border-destructive" : ""}
-            />
-            {errors.precio_venta && (
-               <p className="text-sm text-destructive flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.precio_venta}
-              </p>
-            )}
-          </div>
+           <div className="space-y-2">
+             <Label htmlFor="precio_venta">Precio de Venta (Bs.) *</Label>
+             <Input
+               id="precio_venta"
+               type="number"
+               value={formData.precio_venta || ''}
+               onChange={(e) => handleInputChange("precio_venta", parseFloat(e.target.value) || 0)}
+               placeholder="0.00"
+               min="0"
+               step="0.01"
+               className={errors.precio_venta ? "border-destructive" : ""}
+             />
+             {errors.precio_venta && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                 <AlertCircle className="w-4 h-4" />
+                 {errors.precio_venta}
+               </p>
+             )}
+           </div>
 
           {/* Precio de Compra */}
-          <div className="space-y-2">
-            <Label htmlFor="precio_compra">Precio de Compra</Label>
-            <Input
-              id="precio_compra"
-              type="number"
-              value={formData.precio_compra || ''}
-              onChange={(e) => handleInputChange("precio_compra", parseFloat(e.target.value) || '')}
-              placeholder="Precio de compra"
-              min="0"
-              step="0.01"
-            />
-          </div>
+           <div className="space-y-2">
+             <Label htmlFor="precio_compra">Precio de Compra (Bs.)</Label>
+             <Input
+               id="precio_compra"
+               type="number"
+               value={formData.precio_compra || ''}
+               onChange={(e) => handleInputChange("precio_compra", parseFloat(e.target.value) || 0)}
+               placeholder="0.00"
+               min="0"
+               step="0.01"
+             />
+           </div>
 
           {/* Stock Actual */}
           <div className="space-y-2">
@@ -382,13 +388,13 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         </div>
 
         {/* Botones de acción */}
-        <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={onCancel}>
+        <div className="flex justify-end gap-4 pt-6 border-t">
+          <Button variant="outline" onClick={onCancel} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button onClick={handleSubmit} disabled={saving} className="min-w-32">
             <Save className="w-4 h-4 mr-2" />
-            {saving ? "Guardando..." : (producto ? "Actualizar" : "Guardar")} Producto
+            {saving ? "Guardando..." : (producto ? "Actualizar" : "Crear")} Producto
           </Button>
         </div>
       </CardContent>

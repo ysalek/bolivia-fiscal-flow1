@@ -11,9 +11,7 @@ import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashb
 
 
 const ProductosModule = () => {
-  console.log('🏭 ProductosModule renderizando...');
   const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useSupabaseProductos();
-  console.log('📊 Productos desde hook:', productos.length, 'loading:', loading);
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,9 +28,6 @@ const ProductosModule = () => {
   };
 
   const handleEditProducto = (producto: any) => {
-    console.log('🔧 ProductosModule - Editando producto:', producto);
-    console.log('🔧 ProductosModule - Estructura del producto:', Object.keys(producto));
-    // El producto ya viene en el formato correcto del hook unificado
     setEditingProducto(producto);
     setShowForm(true);
   };
@@ -98,9 +93,10 @@ const ProductosModule = () => {
   if (loading) {
     return (
       <div className="space-y-8 animate-fade-in">
-        <div className="text-center py-8">
-          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>Cargando productos...</p>
+        <div className="text-center py-12">
+          <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <h3 className="text-lg font-semibold mb-2">Cargando catálogo de productos</h3>
+          <p className="text-muted-foreground">Obteniendo información actualizada...</p>
         </div>
       </div>
     );
@@ -303,11 +299,22 @@ const ProductosModule = () => {
                 </div>
                 ))}
                 
-                {productosFiltrados.length === 0 && (
+                {productosFiltrados.length === 0 && !loading && (
                 <div className="text-center py-16 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="font-semibold">No se encontraron productos</p>
-                    <p className="text-sm">Intenta con otro término de búsqueda.</p>
+                    <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-semibold mb-2">No se encontraron productos</h3>
+                    <p className="text-sm mb-4">
+                      {searchTerm 
+                        ? `No hay productos que coincidan con "${searchTerm}"`
+                        : "Aún no tienes productos registrados en tu catálogo"
+                      }
+                    </p>
+                    {!searchTerm && (
+                      <Button onClick={() => { setEditingProducto(null); setShowForm(true); }}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Crear primer producto
+                      </Button>
+                    )}
                 </div>
                 )}
             </div>

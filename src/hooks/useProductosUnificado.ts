@@ -43,14 +43,11 @@ export interface Producto {
 }
 
 export const useProductosUnificado = () => {
-  console.log('🔧 useProductosUnificado inicializado');
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const { toast } = useToast();
-  
-  console.log('📊 Estado actual:', { productos: productos.length, loading, dataLoaded });
 
   // Función para transformar producto de Supabase al formato unificado
   const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
