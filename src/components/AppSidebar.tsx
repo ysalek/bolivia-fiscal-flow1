@@ -39,7 +39,9 @@ import {
   Sparkles,
   ChevronDown,
   Home,
-  GitBranch
+  GitBranch,
+  CheckCircle,
+  Download
 } from 'lucide-react';
 import {
   Sidebar,
@@ -125,13 +127,23 @@ const menuItems = [
     items: [
       { title: 'Integraciones', url: '/?view=integrations', icon: Zap, badge: 'Pro' },
       { title: 'Workflows', url: '/?view=workflows', icon: GitBranch, badge: 'Pro' },
+      { title: 'Validador Sistema', url: '/?view=system-validator', icon: CheckCircle, badge: 'Pro' },
+      { title: 'Integrador Sistema', url: '/?view=system-integrator', icon: Shield, badge: 'Pro' },
+    ]
+  },
+  {
+    group: 'Reportes y Análisis',
+    items: [
+      { title: 'Reportes Avanzados', url: '/?view=advanced-reports', icon: FileText, badge: 'Nuevo' },
+      { title: 'Análisis Financiero', url: '/?view=analisis-financiero', icon: TrendingUp, badge: null },
+      { title: 'Análisis Rentabilidad', url: '/?view=rentabilidad', icon: BarChart3, badge: null },
     ]
   },
   {
     group: 'Configuración',
     items: [
       { title: 'Configuración', url: '/?view=configuracion', icon: Settings, badge: null },
-      { title: 'Backup', url: '/?view=backup', icon: HardDrive, badge: null },
+      { title: 'Backup', url: '/?view=backup', icon: Download, badge: null },
       { title: 'Tutorial', url: '/?view=tutorial', icon: HelpCircle, badge: null },
     ]
   }

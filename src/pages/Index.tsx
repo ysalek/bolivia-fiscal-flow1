@@ -52,6 +52,9 @@ const FacturacionElectronicaModule = lazy(() => import('@/components/contable/fa
 const RetencionesModule = lazy(() => import('@/components/contable/retenciones/RetencionesModule'));
 const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
 const EmpleadosModule = lazy(() => import('@/components/contable/empleados/EmpleadosModule'));
+const SystemValidator = lazy(() => import('@/components/contable/system/SystemValidator'));
+const SystemIntegrator = lazy(() => import('@/components/contable/integration/SystemIntegrator'));
+const AdvancedReportsModule = lazy(() => import('@/components/contable/advanced/AdvancedReportsModule'));
 
 const Index = () => {
   const { hasPermission, user, logout } = useAuth();
@@ -227,6 +230,12 @@ const Index = () => {
         return <IntegrationHub />;
       case 'workflows':
         return <WorkflowManager />;
+      case 'system-validator':
+        return <SystemValidator />;
+      case 'system-integrator':
+        return <SystemIntegrator />;
+      case 'advanced-reports':
+        return <AdvancedReportsModule />;
       default:
         return <Dashboard />;
     }
