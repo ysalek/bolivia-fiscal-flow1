@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -47,9 +47,11 @@ export const useProductosUnificado = () => {
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const loadingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   // Función para transformar producto de Supabase al formato unificado
-  const transformarProducto = (producto: any, categoriasMap: Map<string, string>): Producto => {
+  const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
     const nombreCategoria = categoriasMap.get(producto.categoria_id) || 'General';
     
     return {
@@ -82,10 +84,15 @@ export const useProductosUnificado = () => {
       codigoSIN: producto.codigo_sin || '00000000',
       imagenUrl: producto.imagen_url
     };
-  };
+  }, []);
 
   // Función principal de carga de datos
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (loadingRef.current || !mountedRef.current) return;
+    
+    loadingRef.current = true;
+    if (mountedRef.current) setLoading(true);
+    
     try {
       console.log('🔄 Iniciando carga de productos...');
       
@@ -93,72 +100,80 @@ export const useProductosUnificado = () => {
       
       if (userError || !user) {
         console.log('❌ Usuario no autenticado');
-        setProductos([]);
-        setCategorias([]);
-        setLoading(false);
+        if (mountedRef.current) {
+          setProductos([]);
+          setCategorias([]);
+          setLoading(false);
+        }
         return;
       }
 
       console.log('✅ Usuario autenticado:', user.id);
       
-      // Cargar categorías primero
-      console.log('📁 Cargando categorías...');
-      const { data: categoriasData, error: categoriasError } = await supabase
-        .from('categorias_productos')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('nombre');
+      // Cargar categorías y productos en paralelo para mejor rendimiento
+      const [categoriasResult, productosResult] = await Promise.all([
+        supabase
+          .from('categorias_productos')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('nombre'),
+        supabase
+          .from('productos')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('codigo')
+      ]);
 
-      if (categoriasError) {
-        console.error('❌ Error categorías:', categoriasError);
-        throw categoriasError;
+      if (categoriasResult.error) {
+        console.error('❌ Error categorías:', categoriasResult.error);
+        throw categoriasResult.error;
       }
 
-      const categorias = categoriasData || [];
-      setCategorias(categorias);
-      console.log('📁 Categorías cargadas:', categorias.length);
-
-      // Cargar productos
-      console.log('📦 Cargando productos...');
-      const { data: productosData, error: productosError } = await supabase
-        .from('productos')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('codigo');
-
-      if (productosError) {
-        console.error('❌ Error productos:', productosError);
-        throw productosError;
+      if (productosResult.error) {
+        console.error('❌ Error productos:', productosResult.error);
+        throw productosResult.error;
       }
 
-      console.log('📦 Productos encontrados:', productosData?.length || 0);
+      const categoriasData = categoriasResult.data || [];
+      const productosData = productosResult.data || [];
+      
+      console.log('📁 Categorías cargadas:', categoriasData.length);
+      console.log('📦 Productos encontrados:', productosData.length);
 
       // Transformar productos
-      const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
-      const productosTransformados = (productosData || []).map(producto => 
+      const categoriasMap = new Map(categoriasData.map(c => [c.id, c.nombre]));
+      const productosTransformados = productosData.map(producto => 
         transformarProducto(producto, categoriasMap)
       );
 
-      setProductos(productosTransformados);
-      
-      console.log('✅ Carga completa:', {
-        productos: productosTransformados.length,
-        categorias: categorias.length
-      });
+      if (mountedRef.current) {
+        setCategorias(categoriasData);
+        setProductos(productosTransformados);
+        
+        console.log('✅ Carga completa:', {
+          productos: productosTransformados.length,
+          categorias: categoriasData.length
+        });
+      }
 
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
-      toast({
-        title: "Error al cargar productos",
-        description: error.message,
-        variant: "destructive"
-      });
-      setProductos([]);
-      setCategorias([]);
+      if (mountedRef.current) {
+        toast({
+          title: "Error al cargar productos",
+          description: error.message,
+          variant: "destructive"
+        });
+        setProductos([]);
+        setCategorias([]);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+      loadingRef.current = false;
     }
-  };
+  }, [toast, transformarProducto]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -396,29 +411,24 @@ export const useProductosUnificado = () => {
   const obtenerProductos = () => productos;
 
   // Función de refetch
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     await loadData();
-  };
+  }, [loadData]);
 
   // Effect para cargar datos inicial y manejar cambios de autenticación
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
-    const inicializar = async () => {
-      if (mounted) {
-        await loadData();
-      }
-    };
-
-    inicializar();
+    // Cargar datos inmediatamente
+    loadData();
 
     // Manejar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state cambió:', event);
       
-      if (event === 'SIGNED_IN' && session?.user && mounted) {
+      if (event === 'SIGNED_IN' && session?.user && mountedRef.current) {
         await loadData();
-      } else if (event === 'SIGNED_OUT' && mounted) {
+      } else if (event === 'SIGNED_OUT' && mountedRef.current) {
         setProductos([]);
         setCategorias([]);
         setLoading(false);
@@ -426,10 +436,10 @@ export const useProductosUnificado = () => {
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadData]);
 
   return {
     productos,
