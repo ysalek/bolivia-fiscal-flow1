@@ -75,6 +75,14 @@ const OnboardingTour = ({ isOpen, onClose, onNavigateToModule }: OnboardingTourP
       position: "sidebar"
     },
     {
+      id: "cumplimiento",
+      title: "Cumplimiento Normativo 2025",
+      description: "Mantén tu empresa al día con todas las normativas tributarias bolivianas. Validación automática y seguimiento de cumplimiento.",
+      icon: CheckCircle,
+      targetModule: "cumplimiento-normativo",
+      position: "sidebar"
+    },
+    {
       id: "contabilidad",
       title: "Módulos Contables",
       description: "Accede al Libro Diario, Mayor, Balance de Comprobación y todos los reportes contables necesarios para cumplir con las normativas bolivianas.",
