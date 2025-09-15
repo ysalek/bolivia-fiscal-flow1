@@ -129,17 +129,21 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         descripcion: formData.descripcion.trim(),
         categoria_id: formData.categoria_id || null,
         unidad_medida: formData.unidad_medida,
-        precio_venta: formData.precio_venta,
-        precio_compra: formData.precio_compra,
-        costo_unitario: formData.costo_unitario,
-        stock_actual: formData.stock_actual,
-        stock_minimo: formData.stock_minimo,
+        precio_venta: Number(formData.precio_venta),
+        precio_compra: Number(formData.precio_compra),
+        costo_unitario: Number(formData.costo_unitario),
+        stock_actual: Number(formData.stock_actual),
+        stock_minimo: Number(formData.stock_minimo),
         codigo_sin: formData.codigo_sin.trim() || "00000000",
         imagen_url: formData.imagen_url || undefined,
         activo: formData.activo
       };
 
+      console.log('📝 Form data being sent:', productoData);
+      console.log('💰 Specifically cost_unitario:', productoData.costo_unitario, typeof productoData.costo_unitario);
+
       if (producto) {
+        console.log('🔄 Updating product ID:', producto.id);
         await actualizarProducto(producto.id, productoData);
       } else {
         await crearProducto(productoData);
@@ -147,6 +151,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
       
       // Force refresh of data after successful update
       await onSave();
+      
       
     } catch (error: any) {
       toast({

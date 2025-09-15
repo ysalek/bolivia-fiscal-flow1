@@ -183,6 +183,8 @@ export const useSupabaseProductos = () => {
         throw new Error('Usuario no autenticado');
       }
       
+      console.log('🔍 Before update - sending to DB:', productoData);
+      
       const { data, error } = await supabase
         .from('productos')
         .update(productoData)
@@ -190,6 +192,8 @@ export const useSupabaseProductos = () => {
         .eq('user_id', user.id)
         .select()
         .single();
+
+      console.log('📊 Update response from DB:', { data, error });
 
       if (error) {
         console.error('❌ Update error:', error);
