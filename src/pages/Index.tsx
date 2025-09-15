@@ -38,9 +38,28 @@ const CumplimientoNormativoModule = lazy(() => import('@/components/contable/cum
 const ActivosFijosModule = lazy(() => import('@/components/contable/ActivosFijosModule'));
 const CentrosCostoModule = lazy(() => import('@/components/contable/costos/CentrosCostoModule'));
 const PresupuestosEmpresariales = lazy(() => import('@/components/contable/presupuestos/PresupuestosEmpresariales'));
-
-const Index = () => {
-
+const GlobalSearch = lazy(() => import('@/components/contable/search/GlobalSearch'));
+const CuentasPorCobrarPagar = lazy(() => import('@/components/contable/CuentasPorCobrarPagar'));
+const AuditoriaContableAvanzada = lazy(() => import('@/components/contable/auditoria/AuditoriaContableAvanzada'));
+const PlanCuentasBoliviano2025Module = lazy(() => import('@/components/contable/PlanCuentasBoliviano2025Module'));
+const NominaModule = lazy(() => import('@/components/contable/nomina/NominaModule'));
+const EmpleadosModule = lazy(() => import('@/components/contable/empleados/EmpleadosModule'));
+const ReportesModule = lazy(() => import('@/components/contable/ReportesModule'));
+const AnalisisFinanciero = lazy(() => import('@/components/contable/analisis/AnalisisFinanciero'));
+const AnalisisRentabilidad = lazy(() => import('@/components/contable/rentabilidad/AnalisisRentabilidad'));
+const ConfiguracionModule = lazy(() => import('@/components/contable/ConfiguracionModule'));
+const UserManagement = lazy(() => import('@/components/contable/users/UserManagement'));
+const BackupModule = lazy(() => import('@/components/contable/BackupModule'));
+const TutorialModule = lazy(() => import('@/components/contable/TutorialModule'));
+const PuntoVentaModule = lazy(() => import('@/components/contable/PuntoVentaModule'));
+const CreditSalesModule = lazy(() => import('@/components/contable/billing/CreditSalesModule'));
+const FacturacionElectronicaModule = lazy(() => import('@/components/contable/facturacion/FacturacionElectronicaModule'));
+const RetencionesModule = lazy(() => import('@/components/contable/retenciones/RetencionesModule'));
+const SystemValidator = lazy(() => import('@/components/contable/system/SystemValidator'));
+const SystemIntegrator = lazy(() => import('@/components/contable/integration/SystemIntegrator'));
+const AdvancedReportsModule = lazy(() => import('@/components/contable/advanced/AdvancedReportsModule'));
+const ComprehensiveSystemTests = lazy(() => import('@/components/contable/testing/ComprehensiveSystemTests'));
+const SystemOptimizer = lazy(() => import('@/components/contable/optimization/SystemOptimizer'));
 
 const Index = () => {
   const { hasPermission, user, logout } = useAuth();
