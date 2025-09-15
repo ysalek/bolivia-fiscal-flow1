@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,11 +46,10 @@ export const useProductosUnificado = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Función para transformar producto de Supabase al formato unificado
-  const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
+  const transformarProducto = (producto: any, categoriasMap: Map<string, string>): Producto => {
     const nombreCategoria = categoriasMap.get(producto.categoria_id) || 'General';
     
     return {
@@ -83,18 +82,31 @@ export const useProductosUnificado = () => {
       codigoSIN: producto.codigo_sin || '00000000',
       imagenUrl: producto.imagen_url
     };
-  }, []);
+  };
 
   // Función principal de carga de datos
-  const loadData = useCallback(async (userId: string) => {
+  const loadData = async () => {
     try {
-      console.log('🔄 Cargando datos para usuario:', userId);
+      console.log('🔄 Iniciando carga de productos...');
       
-      // Cargar categorías
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.log('❌ Usuario no autenticado');
+        setProductos([]);
+        setCategorias([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Usuario autenticado:', user.id);
+      
+      // Cargar categorías primero
+      console.log('📁 Cargando categorías...');
       const { data: categoriasData, error: categoriasError } = await supabase
         .from('categorias_productos')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('nombre');
 
       if (categoriasError) {
@@ -102,15 +114,16 @@ export const useProductosUnificado = () => {
         throw categoriasError;
       }
 
-      console.log('📁 Categorías encontradas:', categoriasData?.length || 0);
       const categorias = categoriasData || [];
       setCategorias(categorias);
+      console.log('📁 Categorías cargadas:', categorias.length);
 
       // Cargar productos
+      console.log('📦 Cargando productos...');
       const { data: productosData, error: productosError } = await supabase
         .from('productos')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('codigo');
 
       if (productosError) {
@@ -128,47 +141,13 @@ export const useProductosUnificado = () => {
 
       setProductos(productosTransformados);
       
-      console.log('✅ Datos cargados exitosamente:', {
+      console.log('✅ Carga completa:', {
         productos: productosTransformados.length,
         categorias: categorias.length
       });
 
-      return { productos: productosTransformados, categorias };
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
-      throw error;
-    }
-  }, [transformarProducto]);
-
-  // Función de inicialización
-  const initializeData = useCallback(async () => {
-    if (isInitialized) return;
-    
-    try {
-      setLoading(true);
-      
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('❌ Error de autenticación:', userError);
-        return;
-      }
-      
-      if (!user) {
-        console.log('❌ Usuario no autenticado');
-        setProductos([]);
-        setCategorias([]);
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ Usuario autenticado:', user.id);
-      
-      await loadData(user.id);
-      setIsInitialized(true);
-      
-    } catch (error: any) {
-      console.error('❌ Error inicializando datos:', error);
       toast({
         title: "Error al cargar productos",
         description: error.message,
@@ -179,7 +158,7 @@ export const useProductosUnificado = () => {
     } finally {
       setLoading(false);
     }
-  }, [isInitialized, loadData, toast]);
+  };
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -417,51 +396,40 @@ export const useProductosUnificado = () => {
   const obtenerProductos = () => productos;
 
   // Función de refetch
-  const refetch = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await loadData(user.id);
+  const refetch = async () => {
+    await loadData();
+  };
+
+  // Effect para cargar datos inicial y manejar cambios de autenticación
+  useEffect(() => {
+    let mounted = true;
+
+    const inicializar = async () => {
+      if (mounted) {
+        await loadData();
       }
-    } catch (error) {
-      console.error('Error en refetch:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [loadData]);
+    };
 
-  // Effect para cargar datos inicial
-  useEffect(() => {
-    initializeData();
-  }, [initializeData]);
+    inicializar();
 
-  // Effect para manejar cambios de autenticación
-  useEffect(() => {
+    // Manejar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state cambió:', event);
       
-      if (event === 'SIGNED_IN' && session?.user) {
-        setIsInitialized(false);
-        setLoading(true);
-        try {
-          await loadData(session.user.id);
-          setIsInitialized(true);
-        } catch (error) {
-          console.error('Error en auth change:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_IN' && session?.user && mounted) {
+        await loadData();
+      } else if (event === 'SIGNED_OUT' && mounted) {
         setProductos([]);
         setCategorias([]);
-        setIsInitialized(false);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [loadData]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return {
     productos,
