@@ -87,7 +87,10 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
   };
 
   const handleSubmit = async () => {
+    console.log('🔧 ProductoForm - Iniciando handleSubmit', { producto: !!producto, formData });
+    
     if (!validateForm()) {
+      console.log('❌ ProductoForm - Error en validación', errors);
       toast({
         title: "Error en la validación",
         description: "Por favor corrija los errores en el formulario.",
@@ -115,15 +118,24 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
         activo: formData.activo
       };
 
+      console.log('📊 ProductoForm - Datos a enviar:', productoData);
+
       if (producto) {
+        console.log('✏️ ProductoForm - Actualizando producto:', producto.id);
         await actualizarProducto(producto.id, productoData);
+        console.log('✅ ProductoForm - Producto actualizado exitosamente');
       } else {
+        console.log('➕ ProductoForm - Creando producto nuevo');
         await crearProducto(productoData);
+        console.log('✅ ProductoForm - Producto creado exitosamente');
       }
       
+      console.log('🔄 ProductoForm - Llamando onSave...');
       await onSave();
+      console.log('✅ ProductoForm - onSave completado');
       
     } catch (error: any) {
+      console.error('❌ ProductoForm - Error al guardar:', error);
       toast({
         title: "Error al guardar",
         description: error.message || "Ocurrió un error inesperado",
@@ -131,6 +143,7 @@ const ProductoForm = ({ producto, productos, categorias, onSave, onCancel }: Pro
       });
     } finally {
       setSaving(false);
+      console.log('🏁 ProductoForm - handleSubmit finalizado');
     }
   };
 
