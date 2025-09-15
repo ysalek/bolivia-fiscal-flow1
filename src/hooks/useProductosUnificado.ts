@@ -43,11 +43,14 @@ export interface Producto {
 }
 
 export const useProductosUnificado = () => {
+  console.log('🔧 useProductosUnificado inicializado');
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const { toast } = useToast();
+  
+  console.log('📊 Estado actual:', { productos: productos.length, loading, dataLoaded });
 
   // Función para transformar producto de Supabase al formato unificado
   const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
@@ -87,7 +90,11 @@ export const useProductosUnificado = () => {
 
   // Función principal de carga de datos
   const loadData = useCallback(async () => {
-    if (dataLoaded || loading) return;
+    console.log('🔍 loadData llamado - dataLoaded:', dataLoaded, 'loading:', loading);
+    if (dataLoaded || loading) {
+      console.log('🛑 Saliendo temprano - dataLoaded:', dataLoaded, 'loading:', loading);
+      return;
+    }
     
     setLoading(true);
     
@@ -411,7 +418,9 @@ export const useProductosUnificado = () => {
 
   // Effect para cargar datos inicial
   useEffect(() => {
+    console.log('🎯 useEffect ejecutándose - dataLoaded:', dataLoaded);
     if (!dataLoaded) {
+      console.log('🚀 Llamando loadData desde useEffect');
       loadData();
     }
   }, [loadData, dataLoaded]);

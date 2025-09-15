@@ -11,7 +11,9 @@ import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashb
 
 
 const ProductosModule = () => {
+  console.log('🏭 ProductosModule renderizando...');
   const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductos();
+  console.log('📊 Productos desde hook:', productos.length, 'loading:', loading);
   const [showForm, setShowForm] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
