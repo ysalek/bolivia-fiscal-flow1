@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProductos } from "@/hooks/useProductos";
 import ProductoForm from "./products/ProductoForm";
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from "./dashboard/EnhancedLayout";
-import AuthDebugInfo from "../debug/AuthDebugInfo";
+
 
 const ProductosModule = () => {
   const { productos, categorias, loading, refetch, crearProducto, actualizarProducto } = useProductos();
@@ -109,9 +109,6 @@ const ProductosModule = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Debug Info - Solo para desarrollo */}
-      <AuthDebugInfo />
-      
       {/* Enhanced Header */}
       <EnhancedHeader
         title="Catálogo de Productos Avanzado"

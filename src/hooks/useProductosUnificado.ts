@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/components/auth/AuthProvider';
 
 export interface CategoriaProducto {
   id: string;
@@ -47,10 +46,8 @@ export const useProductosUnificado = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const { toast } = useToast();
-  const { isAuthenticated, session } = useAuth();
-  const loadingRef = useRef(false);
-  const mountedRef = useRef(true);
 
   // Función para transformar producto de Supabase al formato unificado
   const transformarProducto = useCallback((producto: any, categoriasMap: Map<string, string>): Producto => {
@@ -90,10 +87,9 @@ export const useProductosUnificado = () => {
 
   // Función principal de carga de datos
   const loadData = useCallback(async () => {
-    if (loadingRef.current || !mountedRef.current) return;
+    if (dataLoaded || loading) return;
     
-    loadingRef.current = true;
-    if (mountedRef.current) setLoading(true);
+    setLoading(true);
     
     try {
       console.log('🔄 Iniciando carga de productos...');
@@ -102,17 +98,15 @@ export const useProductosUnificado = () => {
       
       if (userError || !user) {
         console.log('❌ Usuario no autenticado');
-        if (mountedRef.current) {
-          setProductos([]);
-          setCategorias([]);
-          setLoading(false);
-        }
+        setProductos([]);
+        setCategorias([]);
+        setLoading(false);
         return;
       }
 
       console.log('✅ Usuario autenticado:', user.id);
       
-      // Cargar categorías y productos en paralelo para mejor rendimiento
+      // Cargar categorías y productos en paralelo
       const [categoriasResult, productosResult] = await Promise.all([
         supabase
           .from('categorias_productos')
@@ -148,34 +142,28 @@ export const useProductosUnificado = () => {
         transformarProducto(producto, categoriasMap)
       );
 
-      if (mountedRef.current) {
-        setCategorias(categoriasData);
-        setProductos(productosTransformados);
-        
-        console.log('✅ Carga completa:', {
-          productos: productosTransformados.length,
-          categorias: categoriasData.length
-        });
-      }
+      setCategorias(categoriasData);
+      setProductos(productosTransformados);
+      setDataLoaded(true);
+      
+      console.log('✅ Carga completa:', {
+        productos: productosTransformados.length,
+        categorias: categoriasData.length
+      });
 
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
-      if (mountedRef.current) {
-        toast({
-          title: "Error al cargar productos",
-          description: error.message,
-          variant: "destructive"
-        });
-        setProductos([]);
-        setCategorias([]);
-      }
+      toast({
+        title: "Error al cargar productos",
+        description: error.message,
+        variant: "destructive"
+      });
+      setProductos([]);
+      setCategorias([]);
     } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-      loadingRef.current = false;
+      setLoading(false);
     }
-  }, [toast, transformarProducto, isAuthenticated, session]);
+  }, [dataLoaded, loading, toast, transformarProducto]);
 
   // Crear categoría
   const crearCategoria = async (categoriaData: Omit<CategoriaProducto, 'id' | 'created_at' | 'updated_at'>) => {
@@ -414,28 +402,16 @@ export const useProductosUnificado = () => {
 
   // Función de refetch
   const refetch = useCallback(async () => {
+    setDataLoaded(false);
     await loadData();
   }, [loadData]);
 
-  // Effect para cargar datos inicial y manejar cambios de autenticación
+  // Effect para cargar datos inicial
   useEffect(() => {
-    mountedRef.current = true;
-
-    // Solo cargar si está autenticado
-    if (isAuthenticated && session) {
-      console.log('🔄 Usuario autenticado detectado, cargando productos...');
+    if (!dataLoaded) {
       loadData();
-    } else {
-      console.log('🔄 Usuario no autenticado, limpiando datos...');
-      setProductos([]);
-      setCategorias([]);
-      setLoading(false);
     }
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [loadData, isAuthenticated, session]);
+  }, [loadData, dataLoaded]);
 
   return {
     productos,
