@@ -28,6 +28,8 @@ const FacturacionModule = () => {
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const [normativasAlerts, setNormativasAlerts] = useState<any[]>([]);
   const [configuracionTributaria, setConfiguracionTributaria] = useState<any>(null);
+  const [isInitializingProducts, setIsInitializingProducts] = useState(false);
+  const [productsInitialized, setProductsInitialized] = useState(false);
   const { toast } = useToast();
   const { productos, crearProducto } = useSupabaseProductos();
   const { 
@@ -58,11 +60,11 @@ const FacturacionModule = () => {
 
   // CRÍTICO: Inicializar productos de ejemplo cuando sea necesario
   useEffect(() => {
-    if (productos.length === 0 && crearProducto) {
+    if (productos.length === 0 && crearProducto && !isInitializingProducts && !productsInitialized) {
       console.log('📦 No hay productos, inicializando ejemplos...');
       initializeExampleProducts();
     }
-  }, [productos.length, crearProducto]);
+  }, [productos.length, crearProducto, isInitializingProducts, productsInitialized]);
 
   const loadConfiguracionTributaria = async () => {
     try {
@@ -98,11 +100,28 @@ const FacturacionModule = () => {
 
   // CRÍTICO: Inicializar productos de ejemplo si no hay productos en la base de datos
   const initializeExampleProducts = async () => {
-    if (productos.length === 0 && crearProducto) {
+    if (productos.length === 0 && crearProducto && !isInitializingProducts) {
+      setIsInitializingProducts(true);
+      
       try {
         console.log('📦 Inicializando productos de ejemplo...');
         
-        // Crear productos de ejemplo para el usuario actual
+        // Verificar si ya existen productos con estos códigos
+        const { data: existingProducts, error } = await supabase
+          .from('productos')
+          .select('codigo')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .in('codigo', ['PROD001', 'PROD002', 'SERV001']);
+
+        if (error) {
+          console.error('Error verificando productos existentes:', error);
+          return;
+        }
+
+        const existingCodes = existingProducts?.map(p => p.codigo) || [];
+        console.log('📋 Códigos existentes:', existingCodes);
+
+        // Solo crear productos que no existan
         const productosEjemplo = [
           {
             codigo: 'PROD001',
@@ -146,18 +165,40 @@ const FacturacionModule = () => {
             codigo_sin: '83111100',
             activo: true,
           }
-        ];
+        ].filter(producto => !existingCodes.includes(producto.codigo));
+
+        console.log(`📦 Creando ${productosEjemplo.length} productos nuevos...`);
 
         for (const producto of productosEjemplo) {
-          await crearProducto(producto);
+          try {
+            await crearProducto(producto);
+            console.log(`✅ Producto creado: ${producto.codigo}`);
+          } catch (error: any) {
+            console.error(`❌ Error creando producto ${producto.codigo}:`, error);
+            // Si es error de duplicado, continúa con el siguiente
+            if (error.code !== '23505') {
+              throw error;
+            }
+          }
         }
         
-        toast({
-          title: "Productos inicializados",
-          description: "Se han creado productos de ejemplo para comenzar.",
-        });
+        if (productosEjemplo.length > 0) {
+          toast({
+            title: "Productos inicializados",
+            description: `Se han creado ${productosEjemplo.length} productos de ejemplo para comenzar.`,
+          });
+        }
+        
+        setProductsInitialized(true);
       } catch (error) {
         console.error('Error inicializando productos:', error);
+        toast({
+          title: "Error al inicializar productos",
+          description: "No se pudieron crear algunos productos de ejemplo.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsInitializingProducts(false);
       }
     }
   };
