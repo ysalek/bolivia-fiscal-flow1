@@ -329,38 +329,76 @@ export const useProductosUnificado = () => {
   // Actualizar stock de producto
   const actualizarStockProducto = async (productoId: string, cantidad: number, tipo: 'entrada' | 'salida') => {
     try {
+      console.log('🔄 Iniciando actualización de stock:', { productoId, cantidad, tipo });
+      
       const producto = productos.find(p => p.id === productoId);
-      if (!producto) throw new Error('Producto no encontrado');
+      if (!producto) {
+        console.error('❌ Producto no encontrado:', productoId);
+        throw new Error('Producto no encontrado');
+      }
+
+      console.log('📦 Producto encontrado:', { 
+        id: producto.id, 
+        nombre: producto.nombre, 
+        stockActual: producto.stock_actual 
+      });
 
       const nuevoStock = tipo === 'entrada' 
         ? producto.stock_actual + cantidad 
         : producto.stock_actual - cantidad;
 
+      console.log('📊 Cálculo de stock:', { 
+        stockAnterior: producto.stock_actual, 
+        cantidad, 
+        tipo, 
+        nuevoStock 
+      });
+
       if (nuevoStock < 0) {
+        console.error('❌ Stock insuficiente:', { nuevoStock });
         throw new Error('Stock insuficiente');
       }
+
+      // Verificar autenticación
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('❌ Error de autenticación:', authError);
+        throw new Error('Usuario no autenticado');
+      }
+
+      console.log('🔐 Usuario autenticado:', user.id);
 
       const { data, error } = await supabase
         .from('productos')
         .update({ stock_actual: nuevoStock })
         .eq('id', productoId)
+        .eq('user_id', user.id) // Agregar verificación de usuario
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('📊 Respuesta de actualización:', { data, error });
+
+      if (error) {
+        console.error('❌ Error en actualización de Supabase:', error);
+        throw error;
+      }
+
+      console.log('✅ Stock actualizado en Supabase:', data);
 
       // Actualizar en la lista local
       const categoriasMap = new Map(categorias.map(c => [c.id, c.nombre]));
       const productoTransformado = transformarProducto(data, categoriasMap);
+      
+      console.log('🔄 Actualizando producto en lista local:', productoTransformado);
       
       setProductos(prev => 
         prev.map(p => p.id === productoId ? productoTransformado : p)
       );
 
       // Crear movimiento de inventario
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
+        console.log('📝 Creando movimiento de inventario...');
+        const { error: movError } = await supabase
           .from('movimientos_inventario')
           .insert([{
             user_id: user.id,
@@ -370,8 +408,15 @@ export const useProductosUnificado = () => {
             cantidad,
             stock_anterior: producto.stock_actual,
             stock_actual: nuevoStock,
-            observaciones: `Movimiento ${tipo} manual`
+            observaciones: `Movimiento ${tipo} por facturación`
           }]);
+
+        if (movError) {
+          console.error('⚠️ Error creando movimiento de inventario:', movError);
+          // No lanzar error aquí para no cancelar la facturación
+        } else {
+          console.log('✅ Movimiento de inventario creado');
+        }
       }
 
       // Verificar stock bajo
@@ -385,9 +430,10 @@ export const useProductosUnificado = () => {
 
       return true;
     } catch (error: any) {
+      console.error('❌ Error completo en actualizarStockProducto:', error);
       toast({
         title: "Error al actualizar stock",
-        description: error.message,
+        description: `${error.message} - Verificar conectividad y permisos`,
         variant: "destructive"
       });
       return false;

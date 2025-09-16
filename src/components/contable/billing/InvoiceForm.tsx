@@ -140,6 +140,15 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
     return items.reduce((total, item) => total + item.descuento, 0);
   };
 
+  // Función para obtener fecha local exacta (YYYY-MM-DD)
+  const obtenerFechaLocal = () => {
+    const hoy = new Date();
+    const año = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    return `${año}-${mes}-${dia}`;
+  };
+
   const createInvoiceObject = (): Factura => {
     const subtotal = calculateSubtotal();
     const descuentoTotal = calculateDiscountTotal();
@@ -172,7 +181,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       id: Date.now().toString(),
       numero: numeroFactura,
       cliente: selectedCliente!,
-      fecha: new Date().toLocaleDateString('en-CA'), // Formato YYYY-MM-DD en hora local
+      fecha: obtenerFechaLocal(), // Fecha actual precisa
       fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       items: items.filter(item => item.descripcion.trim()),
       subtotal,
@@ -186,7 +195,7 @@ const InvoiceForm = ({ clientes, productos, facturas, onSave, onCancel, onAddNew
       puntoVenta: selectedPuntoVenta.codigo,
       codigoControl: `${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
       observaciones,
-      fechaCreacion: new Date().toLocaleDateString('en-CA') // Formato YYYY-MM-DD en hora local
+      fechaCreacion: obtenerFechaLocal() // Fecha actual precisa
     };
   }
 

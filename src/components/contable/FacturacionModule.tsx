@@ -245,7 +245,10 @@ const FacturacionModule = () => {
           if (producto && Number(producto.costo_unitario || 0) > 0) {
             // CRÍTICO: Verificar stock antes de procesar
             const stockDisponible = Number(producto.stock_actual || 0);
+            console.log('🔍 Validando stock para', item.descripcion + ':', 'Stock disponible:', stockDisponible, 'Solicitado:', item.cantidad);
+            
             if (stockDisponible < item.cantidad) {
+              console.error('❌ Stock insuficiente:', { producto: item.descripcion, disponible: stockDisponible, solicitado: item.cantidad });
               toast({
                 title: "Error de Stock - Normativa Boliviana",
                 description: `Stock insuficiente para ${item.descripcion}. Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`,
@@ -254,10 +257,14 @@ const FacturacionModule = () => {
               return; // Detener el proceso si no hay stock suficiente
             }
             
+            console.log('✅ Stock suficiente para', item.descripcion);
+            
             // CRÍTICO: Actualizar stock del producto en Supabase
+            console.log('🔄 Actualizando stock del producto:', item.descripcion);
             const stockActualizado = await actualizarStockProducto(item.productoId, item.cantidad, 'salida');
             
             if (!stockActualizado) {
+              console.error('❌ Error actualizando stock para:', item.descripcion);
               toast({
                 title: "Error de Stock - Normativa Boliviana",
                 description: `No se pudo actualizar el stock para ${item.descripcion}. Factura cancelada.`,
@@ -265,6 +272,8 @@ const FacturacionModule = () => {
               });
               return; // Detener el proceso si falla la actualización de stock
             }
+            
+            console.log('✅ Stock actualizado exitosamente para:', item.descripcion);
 
             // Generar movimiento de inventario con motivo específico para contabilidad
             const movimientoInventario: MovimientoInventario = {
