@@ -11,7 +11,6 @@ import InvoiceForm from "./billing/InvoiceForm";
 import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
 import { useProductosValidated } from '@/hooks/useProductosValidated';
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { useProductosUnificado } from "@/hooks/useProductosUnificado";
 import InvoiceSummary from "./billing/InvoiceSummary";
 import InvoiceList from "./billing/InvoiceList";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
