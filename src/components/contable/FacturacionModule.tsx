@@ -9,6 +9,7 @@ import { Factura, Cliente, facturasIniciales, clientesIniciales, simularValidaci
 import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
 import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
+import { useProductosValidated } from '@/hooks/useProductosValidated';
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { useProductosUnificado } from "@/hooks/useProductosUnificado";
 import InvoiceSummary from "./billing/InvoiceSummary";
@@ -31,7 +32,7 @@ const FacturacionModule = () => {
   const [isInitializingProducts, setIsInitializingProducts] = useState(false);
   const [productsInitialized, setProductsInitialized] = useState(false);
   const { toast } = useToast();
-  const { productos, loading: productosLoading, crearProducto, actualizarStockProducto } = useProductosUnificado();
+  const { productos, loading: productosLoading, error: productosError, connectivity, crearProducto, actualizarStockProducto } = useProductosValidated();
   const { 
     generarAsientoVenta, 
     generarAsientoInventario, 
@@ -57,17 +58,35 @@ const FacturacionModule = () => {
     loadNormativasAlerts();
   }, []);
 
-  // Debug: Mostrar estado de productos
+  // Debug y validación de productos
   useEffect(() => {
     if (!productosLoading) {
-      console.log('📦 Productos cargados en facturación:', productos.length);
+      console.log('📦 [Facturación] Estado de productos:', {
+        cantidad: productos.length,
+        conectividad: connectivity.isConnected,
+        autenticado: connectivity.isAuthenticated,
+        error: productosError,
+        ultimaConexion: connectivity.lastCheck
+      });
+      
+  // Debug y validación de productos
+  useEffect(() => {
+    if (!productosLoading) {
+      console.log('📦 [Facturación] Estado de productos:', {
+        cantidad: productos.length,
+        conectividad: connectivity.isConnected,
+        autenticado: connectivity.isAuthenticated,
+        error: productosError,
+        ultimaConexion: connectivity.lastCheck
+      });
+      
       if (productos.length > 0) {
-        console.log('✅ Productos disponibles para facturación');
-      } else {
-        console.log('⚠️ No hay productos disponibles para facturación');
+        console.log('✅ [Facturación] Productos disponibles:', productos.slice(0, 3).map(p => ({ id: p.id, codigo: p.codigo, nombre: p.nombre, stock: p.stock_actual })));
+      } else if (!productosError) {
+        console.log('⚠️ [Facturación] No hay productos - verificando conectividad...');
       }
     }
-  }, [productos.length, productosLoading]);
+  }, [productos.length, productosLoading, connectivity, productosError]);
 
   const loadConfiguracionTributaria = async () => {
     try {
@@ -290,12 +309,46 @@ const FacturacionModule = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Cargando productos...</h3>
               <p className="text-gray-600 max-w-sm mx-auto">
-                Obteniendo la lista de productos disponibles para facturación.
+                Conectividad: {connectivity.isConnected ? '✅' : '❌'} | 
+                Autenticado: {connectivity.isAuthenticated ? '✅' : '❌'}
               </p>
+              {connectivity.error && (
+                <p className="text-red-600 text-sm">Error: {connectivity.error}</p>
+              )}
             </div>
             <Button onClick={() => setShowNewInvoice(false)} variant="outline">
               Cancelar
             </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Verificar errores de conectividad
+    if (productosError || !connectivity.isConnected) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+              <Package className="w-8 h-8 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Error de conectividad</h3>
+              <p className="text-gray-600 max-w-sm mx-auto">
+                {productosError || 'No se puede conectar con la base de datos'}
+              </p>
+              <p className="text-sm text-gray-500">
+                Estado: {connectivity.isConnected ? 'Conectado' : 'Desconectado'}
+              </p>
+            </div>
+            <div className="space-x-2">
+              <Button onClick={() => window.location.reload()} variant="default">
+                Reintentar
+              </Button>
+              <Button onClick={() => setShowNewInvoice(false)} variant="outline">
+                Cancelar
+              </Button>
+            </div>
           </div>
         </div>
       );
