@@ -43,8 +43,23 @@ const PlanCuentasModule = () => {
     createCuenta,
     updateCuenta,
     deleteCuenta,
+    initializePlanCuentasBasico,
     refetch
   } = useSupabasePlanCuentas();
+
+  // Inicializar plan de cuentas básico si no hay cuentas
+  const inicializarPlanBasico = async () => {
+    try {
+      await initializePlanCuentasBasico();
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo inicializar el plan de cuentas",
+        variant: "destructive"
+      });
+    }
+  };
 
   const guardarCuenta = async () => {
     if (!newCuenta.codigo || !newCuenta.nombre) {
@@ -319,80 +334,106 @@ const PlanCuentasModule = () => {
       </div>
 
       {/* Lista de Cuentas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Cuentas Contables</CardTitle>
-          <CardDescription>
-            {cuentasFiltradas.length} cuentas encontradas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {tiposCuenta.map(tipo => {
-              const cuentasTipo = cuentasFiltradas.filter(c => c.tipo === tipo);
-              if (cuentasTipo.length === 0) return null;
+      {cuentas.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plan de Cuentas Vacío</CardTitle>
+            <CardDescription>
+              No hay cuentas configuradas. Puede inicializar un plan de cuentas básico boliviano.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                El plan de cuentas básico incluye las cuentas principales según la normativa boliviana:
+                Activos, Pasivos, Patrimonio, Ingresos y Gastos.
+              </p>
+              <Button onClick={inicializarPlanBasico} className="min-w-[200px]">
+                <FolderTree className="w-4 h-4 mr-2" />
+                Inicializar Plan de Cuentas Básico
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cuentas Contables</CardTitle>
+            <CardDescription>
+              {cuentasFiltradas.length} cuentas encontradas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {tiposCuenta.map(tipo => {
+                const cuentasTipo = cuentasFiltradas.filter(c => c.tipo === tipo);
+                if (cuentasTipo.length === 0) return null;
 
-              return (
-                <div key={tipo} className="space-y-2">
-                  <h3 className="font-semibold text-lg capitalize flex items-center gap-2">
-                    {tipo}
-                    <Badge variant="outline">{cuentasTipo.length}</Badge>
-                  </h3>
-                  <div className="border rounded-lg divide-y">
-                    {cuentasTipo.map(cuenta => (
-                      <div key={cuenta.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono font-semibold text-lg">
-                                {cuenta.codigo}
-                              </span>
-                              <span className="font-medium">{cuenta.nombre}</span>
-                              <Badge variant="outline" className="text-xs">
-                                Nivel {cuenta.nivel}
-                              </Badge>
-                              <Badge 
-                                variant={cuenta.naturaleza === 'deudora' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {cuenta.naturaleza}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>Saldo: Bs. {cuenta.saldo?.toFixed(2) || '0.00'}</span>
-                              {cuenta.cuenta_padre && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Padre: {cuenta.cuenta_padre}
+                return (
+                  <div key={tipo} className="space-y-2">
+                    <h3 className="font-semibold text-lg capitalize flex items-center gap-2">
+                      {tipo}
+                      <Badge variant="outline">{cuentasTipo.length}</Badge>
+                    </h3>
+                    <div className="border rounded-lg divide-y">
+                      {cuentasTipo.map(cuenta => (
+                        <div key={cuenta.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono font-semibold text-lg">
+                                  {cuenta.codigo}
+                                </span>
+                                <span className="font-medium">{cuenta.nombre}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  Nivel {cuenta.nivel}
                                 </Badge>
-                              )}
+                                <Badge 
+                                  variant={cuenta.naturaleza === 'deudora' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {cuenta.naturaleza}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>Saldo: Bs. {cuenta.saldo?.toFixed(2) || '0.00'}</span>
+                                {cuenta.cuenta_padre && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Padre: {cuenta.cuenta_padre}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
+                            <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingCuenta(cuenta)}
+                              onClick={() => {
+                                setEditingCuenta(cuenta);
+                                setShowEditCuenta(true);
+                              }}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => eliminarCuenta(cuenta.codigo)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => eliminarCuenta(cuenta.codigo)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dialog para editar cuenta */}
       <Dialog open={showEditCuenta} onOpenChange={setShowEditCuenta}>
