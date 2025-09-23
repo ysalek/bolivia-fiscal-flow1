@@ -31,7 +31,7 @@ const FacturacionModule = () => {
   const [isInitializingProducts, setIsInitializingProducts] = useState(false);
   const [productsInitialized, setProductsInitialized] = useState(false);
   const { toast } = useToast();
-  const { productos, crearProducto, actualizarStockProducto } = useProductosUnificado();
+  const { productos, loading: productosLoading, crearProducto, actualizarStockProducto } = useProductosUnificado();
   const { 
     generarAsientoVenta, 
     generarAsientoInventario, 
@@ -57,13 +57,17 @@ const FacturacionModule = () => {
     loadNormativasAlerts();
   }, []);
 
-  // CRÍTICO: Inicializar productos de ejemplo cuando sea necesario
+  // Debug: Mostrar estado de productos
   useEffect(() => {
-    if (productos.length === 0 && crearProducto && !isInitializingProducts && !productsInitialized) {
-      console.log('📦 No hay productos, inicializando ejemplos...');
-      initializeExampleProducts();
+    if (!productosLoading) {
+      console.log('📦 Productos cargados en facturación:', productos.length);
+      if (productos.length > 0) {
+        console.log('✅ Productos disponibles para facturación');
+      } else {
+        console.log('⚠️ No hay productos disponibles para facturación');
+      }
     }
-  }, [productos.length, crearProducto, isInitializingProducts, productsInitialized]);
+  }, [productos.length, productosLoading]);
 
   const loadConfiguracionTributaria = async () => {
     try {
@@ -97,11 +101,6 @@ const FacturacionModule = () => {
     }
   };
 
-  // Ya no inicializamos productos de ejemplo automáticamente
-  const initializeExampleProducts = async () => {
-    // Función vacía - los productos se crean manualmente por el usuario
-    setProductsInitialized(true);
-  };
 
   const handleAddNewClient = (nuevoCliente: Cliente) => {
     const nuevosClientes = [nuevoCliente, ...clientes];
@@ -280,6 +279,28 @@ const FacturacionModule = () => {
   };
 
   if (showNewInvoice) {
+    // Verificar el estado de carga y disponibilidad de productos
+    if (productosLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
+              <Package className="w-8 h-8 text-blue-600 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Cargando productos...</h3>
+              <p className="text-gray-600 max-w-sm mx-auto">
+                Obteniendo la lista de productos disponibles para facturación.
+              </p>
+            </div>
+            <Button onClick={() => setShowNewInvoice(false)} variant="outline">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
     // Verificar que hay productos disponibles antes de mostrar el formulario
     if (productos.length === 0) {
       return (
