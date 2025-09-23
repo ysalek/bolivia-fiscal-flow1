@@ -10,7 +10,7 @@ import { MovimientoInventario } from "./inventory/InventoryData";
 import InvoiceForm from "./billing/InvoiceForm";
 import InvoiceAccountingHistory from "./billing/InvoiceAccountingHistory";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
-import { useSupabaseProductos } from "@/hooks/useSupabaseProductos";
+import { useProductosUnificado } from "@/hooks/useProductosUnificado";
 import InvoiceSummary from "./billing/InvoiceSummary";
 import InvoiceList from "./billing/InvoiceList";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -31,14 +31,13 @@ const FacturacionModule = () => {
   const [isInitializingProducts, setIsInitializingProducts] = useState(false);
   const [productsInitialized, setProductsInitialized] = useState(false);
   const { toast } = useToast();
-  const { productos, crearProducto } = useSupabaseProductos();
+  const { productos, crearProducto, actualizarStockProducto } = useProductosUnificado();
   const { 
     generarAsientoVenta, 
     generarAsientoInventario, 
     getAsientos,
     generarAsientoPagoFactura,
-    generarAsientoAnulacionFactura,
-    actualizarStockProducto
+    generarAsientoAnulacionFactura
   } = useContabilidadIntegration();
 
   // Cargar datos desde localStorage y verificar normativas
