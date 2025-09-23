@@ -69,17 +69,6 @@ const FacturacionModule = () => {
         ultimaConexion: connectivity.lastCheck
       });
       
-  // Debug y validación de productos
-  useEffect(() => {
-    if (!productosLoading) {
-      console.log('📦 [Facturación] Estado de productos:', {
-        cantidad: productos.length,
-        conectividad: connectivity.isConnected,
-        autenticado: connectivity.isAuthenticated,
-        error: productosError,
-        ultimaConexion: connectivity.lastCheck
-      });
-      
       if (productos.length > 0) {
         console.log('✅ [Facturación] Productos disponibles:', productos.slice(0, 3).map(p => ({ id: p.id, codigo: p.codigo, nombre: p.nombre, stock: p.stock_actual })));
       } else if (!productosError) {
