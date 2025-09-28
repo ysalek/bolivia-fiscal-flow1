@@ -5,7 +5,7 @@ export const generarAsientosParaComprobantes = () => {
   const comprobantes = JSON.parse(localStorage.getItem('comprobantes_integrados') || '[]');
   const asientosExistentes = JSON.parse(localStorage.getItem('asientosContables') || '[]');
   
-  // Generar asientos para cada comprobante autorizado
+  // Generar asientos para cada comprobante autorizado (excluir anulados)
   const nuevosAsientos = comprobantes
     .filter((comp: any) => comp.estado === 'autorizado' && comp.asientoGenerado)
     .map((comp: any) => ({
@@ -28,7 +28,16 @@ export const generarAsientosParaComprobantes = () => {
     }));
 
   // Combinar con asientos existentes, evitando duplicados
-  const asientosActualizados = [...asientosExistentes];
+  // Remover asientos de comprobantes anulados
+  const asientosLimpios = asientosExistentes.filter((asiento: any) => {
+    if (asiento.comprobanteId && asiento.origen === 'comprobante') {
+      const comprobante = comprobantes.find((c: any) => c.id === asiento.comprobanteId);
+      return comprobante && comprobante.estado !== 'anulado';
+    }
+    return true; // Mantener asientos que no provienen de comprobantes
+  });
+  
+  const asientosActualizados = [...asientosLimpios];
   
   nuevosAsientos.forEach((nuevoAsiento: any) => {
     const existe = asientosActualizados.find(a => a.id === nuevoAsiento.id);
@@ -40,5 +49,6 @@ export const generarAsientosParaComprobantes = () => {
   localStorage.setItem('asientosContables', JSON.stringify(asientosActualizados));
   
   console.log("✅ Asientos contables generados para comprobantes:", nuevosAsientos.length);
+  console.log("🚫 Asientos de comprobantes anulados filtrados");
   return nuevosAsientos.length;
 };

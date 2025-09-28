@@ -15,6 +15,7 @@ import ModuleIntegrationValidator from './integration/ModuleIntegrationValidator
 import SystemValidator from './validation/SystemValidator';
 import SystemValidatorNew from './system/SystemValidator';
 import SystemHealth from './dashboard/SystemHealth';
+import AnnulmentValidator from './system/AnnulmentValidator';
 
 const Dashboard = () => {
   const [fechaActual] = useState(new Date().toLocaleDateString('es-BO', {
@@ -386,6 +387,15 @@ const Dashboard = () => {
             <SystemValidatorNew />
           )}
         </div>
+      </Section>
+
+      {/* Validador de Anulaciones */}
+      <Section 
+        title="Validador de Comprobantes Anulados" 
+        subtitle="Verificar que los comprobantes anulados no aparezcan en los estados financieros"
+        className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200"
+      >
+        <AnnulmentValidator />
       </Section>
     </div>
   );

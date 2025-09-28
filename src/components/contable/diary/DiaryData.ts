@@ -9,6 +9,8 @@ export interface AsientoContable {
   haber: number;
   estado: 'borrador' | 'registrado' | 'anulado';
   cuentas: CuentaAsiento[];
+  comprobanteId?: string; // ID del comprobante que generó este asiento
+  origen?: string; // Origen del asiento ('comprobante', 'anulacion_comprobante', etc.)
 }
 
 export interface CuentaAsiento {
