@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, CheckCircle, AlertTriangle, Sparkles, Zap, Activity, Target, BarChart3, PieChart, Globe, Star, Award, Briefcase } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, CheckCircle, AlertTriangle, Sparkles, Zap, Activity, Target, BarChart3, PieChart, Globe, Star, Award, Briefcase, Shield } from 'lucide-react';
 import { useContabilidadIntegration } from '@/hooks/useContabilidadIntegration';
 import NotificationsIcon from './dashboard/NotificationsIcon';
 import SystemValidation from './dashboard/SystemValidation';
@@ -13,6 +13,7 @@ import { inicializarSistemaCompleto } from '../../utils/inicializarSistema';
 import { useToast } from '@/hooks/use-toast';
 import ModuleIntegrationValidator from './integration/ModuleIntegrationValidator';
 import SystemValidator from './validation/SystemValidator';
+import SystemValidatorNew from './system/SystemValidator';
 import SystemHealth from './dashboard/SystemHealth';
 
 const Dashboard = () => {
@@ -24,6 +25,7 @@ const Dashboard = () => {
   }));
 
   const [sistemaInicializado, setSistemaInicializado] = useState(false);
+  const [showSystemValidator, setShowSystemValidator] = useState(false);
   const { toast } = useToast();
 
   const { obtenerBalanceGeneral } = useContabilidadIntegration();
@@ -357,6 +359,33 @@ const Dashboard = () => {
         subtitle="Métricas en tiempo real del rendimiento y estado operacional"
       >
         <SystemHealth />
+      </Section>
+
+      {/* Validador de Integridad del Sistema */}
+      <Section 
+        title="Integridad del Sistema" 
+        subtitle="Validar que todas las transacciones se reflejen correctamente en los estados financieros"
+        className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200"
+      >
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-red-600">
+              Verifica que las facturas generen asientos contables y se reflejen en el Balance General y Estado de Resultados
+            </p>
+            <Button 
+              onClick={() => setShowSystemValidator(!showSystemValidator)}
+              variant="outline"
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              {showSystemValidator ? 'Ocultar Validador' : 'Ejecutar Validación'}
+            </Button>
+          </div>
+          
+          {showSystemValidator && (
+            <SystemValidatorNew />
+          )}
+        </div>
       </Section>
     </div>
   );

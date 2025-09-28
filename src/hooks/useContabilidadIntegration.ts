@@ -1,10 +1,10 @@
-
 import { AsientoContable } from "@/components/contable/diary/DiaryData";
 import { MovimientoInventario } from "@/components/contable/inventory/InventoryData";
 import { useAsientos } from "./useAsientos";
 import { useReportesContables } from "./useReportesContables";
 import { useProductosUnificado } from "./useProductosUnificado";
 import { useAsientosGenerator } from "./useAsientosGenerator";
+import { useProductosValidated } from "./useProductosValidated";
 import type { 
   TrialBalanceDetail, 
   TrialBalanceTotals, 
@@ -53,7 +53,8 @@ export interface ContabilidadIntegrationHook {
 
 export const useContabilidadIntegration = (): ContabilidadIntegrationHook => {
   const { getAsientos, guardarAsiento, validarTransaccion } = useAsientos();
-  const reportesHook = useReportesContables();
+  const { productos: productosValidated } = useProductosValidated();
+  const reportesHook = useReportesContables(productosValidated);
   const { obtenerProductos, actualizarStockProducto } = useProductosUnificado();
   const {
     generarAsientoInventario,

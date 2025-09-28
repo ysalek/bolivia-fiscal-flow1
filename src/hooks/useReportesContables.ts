@@ -68,7 +68,7 @@ export interface DeclaracionIVAData {
 }
 
 
-export const useReportesContables = () => {
+export const useReportesContables = (productos?: any[]) => {
   const { getAsientos } = useAsientos();
 
   const getLibroMayor = (): { [key: string]: { nombre: string, codigo: string, movimientos: any[], totalDebe: number, totalHaber: number } } => {
@@ -207,14 +207,14 @@ export const useReportesContables = () => {
     const gastos = { total: 0 };
 
     // PRIMERO: Calcular INVENTARIO según normativa boliviana
-    const productos = JSON.parse(localStorage.getItem('productos') || '[]');
+    const productosData = productos || JSON.parse(localStorage.getItem('productos') || '[]');
     let valorInventarioFisico = 0;
     let valorInventarioContable = 0;
     
     // Calcular valor físico del inventario (stock actual * costo unitario)
-    productos.forEach((producto: any) => {
-      const stockActual = producto.stockActual || 0;
-      const costoUnitario = producto.costoUnitario || 0;
+    productosData.forEach((producto: any) => {
+      const stockActual = producto.stock_actual || producto.stockActual || 0;
+      const costoUnitario = producto.costo_unitario || producto.costoUnitario || 0;
       valorInventarioFisico += stockActual * costoUnitario;
     });
     
@@ -232,7 +232,7 @@ export const useReportesContables = () => {
       valorInventarioFisico,
       valorInventarioContable,
       saldoInventarioFinal: saldoInventario,
-      productos: productos.length
+      productos: productosData.length
     });
 
     details.forEach(cuenta => {
