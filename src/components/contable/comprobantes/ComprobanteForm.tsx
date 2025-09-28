@@ -228,12 +228,16 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
           const baseImponible = Number((formData.monto / 1.13).toFixed(2)); // Monto sin IVA (87%)
           const creditoFiscal = Number((formData.monto - baseImponible).toFixed(2)); // 13% de IVA exacto
           
-          // Débito a gastos (sin IVA) - usar cuenta seleccionada o por defecto
+          // Débito a gastos o cuenta por pagar (sin IVA) - usar cuenta seleccionada o por defecto
           const codigoCuentaGasto = formData.cuentaGasto || "5191";
           const cuentaGasto = planCuentas.find(c => c.codigo === codigoCuentaGasto);
+          
+          // Verificar si es una cuenta por pagar (código empieza con "2")
+          const esCuentaPorPagar = codigoCuentaGasto.startsWith('2');
+          
           cuentasGeneradas.push({
             codigo: codigoCuentaGasto,
-            nombre: cuentaGasto?.nombre || "Gastos Varios",
+            nombre: cuentaGasto?.nombre || (esCuentaPorPagar ? "Cuenta por Pagar" : "Gastos Varios"),
             debe: baseImponible,
             haber: 0
           });
@@ -254,17 +258,33 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
             haber: formData.monto
           });
         } else {
-          // Sin factura: asiento simple
-          // Débito a gastos - usar cuenta seleccionada o por defecto
+          // Sin factura: puede ser gasto directo o pago de pasivo
           const codigoCuentaGastoSinIva = formData.cuentaGasto || "5191";
           const cuentaGastoSinIva = planCuentas.find(c => c.codigo === codigoCuentaGastoSinIva);
-          cuentasGeneradas.push({
-            codigo: codigoCuentaGastoSinIva,
-            nombre: cuentaGastoSinIva?.nombre || "Gastos Varios",
-            debe: formData.monto,
-            haber: 0
-          });
-          // Crédito a la cuenta de método de pago
+          
+          // Verificar si es una cuenta por pagar (código empieza con "2")
+          const esCuentaPorPagar = codigoCuentaGastoSinIva.startsWith('2');
+          
+          if (esCuentaPorPagar) {
+            // PAGO DE PASIVO (ej: IT por Pagar, IVA por Pagar, etc.)
+            // Débito a la cuenta por pagar (reduce el pasivo)
+            cuentasGeneradas.push({
+              codigo: codigoCuentaGastoSinIva,
+              nombre: cuentaGastoSinIva?.nombre || "Cuenta por Pagar",
+              debe: formData.monto,
+              haber: 0
+            });
+          } else {
+            // GASTO DIRECTO (cuenta de gastos)
+            cuentasGeneradas.push({
+              codigo: codigoCuentaGastoSinIva,
+              nombre: cuentaGastoSinIva?.nombre || "Gastos Varios",
+              debe: formData.monto,
+              haber: 0
+            });
+          }
+          
+          // Crédito a la cuenta de método de pago (siempre igual)
           cuentasGeneradas.push({
             codigo: formData.metodoPago,
             nombre: metodoPagoSeleccionado?.nombre || 'Cuenta no encontrada',
@@ -370,12 +390,13 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
 
             {tipo === 'egreso' && (
               <div className="space-y-2">
-                <Label htmlFor="cuentaGasto">Cuenta del Gasto</Label>
+                <Label htmlFor="cuentaGasto">Cuenta del Gasto/Pago</Label>
                 <Select value={formData.cuentaGasto || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, cuentaGasto: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cuenta de gasto" />
+                    <SelectValue placeholder="Seleccionar cuenta de gasto o cuenta por pagar" />
                   </SelectTrigger>
                   <SelectContent>
+                    <div className="p-2 text-xs font-semibold text-muted-foreground border-b">CUENTAS DE GASTOS</div>
                     {planCuentas
                       .filter(cuenta => cuenta.activa && (cuenta.tipo === 'gastos' || cuenta.codigo.startsWith('5')))
                       .filter((cuenta, index, arr) => arr.findIndex(c => c.codigo === cuenta.codigo) === index)
@@ -384,8 +405,20 @@ const ComprobanteForm = ({ tipo, onSave, onCancel }: ComprobanteFormProps) => {
                         {cuenta.codigo} - {cuenta.nombre}
                       </SelectItem>
                     ))}
+                    <div className="p-2 text-xs font-semibold text-muted-foreground border-b border-t mt-2">CUENTAS POR PAGAR</div>
+                    {planCuentas
+                      .filter(cuenta => cuenta.activa && (cuenta.tipo === 'pasivo' || cuenta.codigo.startsWith('2')))
+                      .filter((cuenta, index, arr) => arr.findIndex(c => c.codigo === cuenta.codigo) === index)
+                      .map(cuenta => (
+                      <SelectItem key={cuenta.codigo} value={cuenta.codigo}>
+                        {cuenta.codigo} - {cuenta.nombre}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  💡 Para pagar impuestos como IT, selecciona la cuenta por pagar correspondiente (ej: 2141 - IT por Pagar)
+                </p>
               </div>
             )}
           </div>
