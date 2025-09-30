@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Plus, Trash2, AlertCircle } from "lucide-react";
+import { X, Plus, Trash2, AlertCircle, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Proveedor, ItemCompra, Compra } from "./PurchasesData";
@@ -13,6 +13,7 @@ import { Producto } from "../products/ProductsData";
 import ProductSearchCombobox from "../billing/ProductSearchCombobox";
 import ProveedorSearchCombobox from "./ProveedorSearchCombobox";
 import ProveedorForm from "./ProveedorForm";
+import { CostosAdicionalesDialog } from './CostosAdicionalesDialog';
 
 interface CompraFormProps {
   proveedores: Proveedor[];
@@ -38,6 +39,8 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
   const [observaciones, setObservaciones] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showProveedorForm, setShowProveedorForm] = useState(false);
+  const [costosAdicionales, setCostosAdicionales] = useState<any[]>([]);
+  const [showCostosDialog, setShowCostosDialog] = useState(false);
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -94,8 +97,9 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
 
   const calculateSubtotal = () => items.reduce((total, item) => total + item.subtotal, 0);
   const subtotal = calculateSubtotal();
+  const totalCostosAdicionales = costosAdicionales.reduce((sum, c) => sum + (c.monto || 0), 0);
   const iva = subtotal * 0.13; // IVA crédito fiscal - se registra en contabilidad
-  const total = subtotal; // El total facturado es solo el subtotal
+  const total = subtotal + totalCostosAdicionales; // El total incluye costos adicionales
 
   const handleSubmit = () => {
     if (!validateForm()) {
@@ -190,6 +194,38 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
           ))}
           <Button onClick={addItem} size="sm"><Plus className="w-4 h-4 mr-2" />Agregar Item</Button>
         </div>
+
+        <div className="border rounded-lg p-4 bg-amber-50/50">
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h4 className="font-semibold">Costos Adicionales</h4>
+              <p className="text-xs text-muted-foreground">Fletes, almacenaje, nacionalización, etc.</p>
+            </div>
+            <Button 
+              type="button"
+              size="sm" 
+              variant="outline"
+              onClick={() => setShowCostosDialog(true)}
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              {costosAdicionales.length > 0 ? 'Editar Costos' : 'Agregar Costos'}
+            </Button>
+          </div>
+          {costosAdicionales.length > 0 && (
+            <div className="space-y-1 text-sm">
+              {costosAdicionales.map(c => (
+                <div key={c.id} className="flex justify-between">
+                  <span>{c.concepto}:</span>
+                  <span className="font-semibold">Bs. {c.monto.toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-2 border-t font-bold">
+                <span>Total Costos Adicionales:</span>
+                <span className="text-amber-600">Bs. {totalCostosAdicionales.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+        </div>
         
         <div>
           <Label htmlFor="observaciones">Observaciones</Label>
@@ -227,6 +263,13 @@ const CompraForm = ({ proveedores, productos, compras, onSave, onCancel, onAddPr
         open={showProveedorForm}
         onOpenChange={setShowProveedorForm}
         onSave={onAddProveedor}
+      />
+      
+      <CostosAdicionalesDialog
+        open={showCostosDialog}
+        onOpenChange={setShowCostosDialog}
+        onSave={(costos) => setCostosAdicionales(costos)}
+        costosIniciales={costosAdicionales}
       />
     </Card>
   );
