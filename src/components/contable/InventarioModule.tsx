@@ -19,9 +19,10 @@ import ProductListTab from "./inventory/ProductListTab";
 import MovementListTab from "./inventory/MovementListTab";
 import AlertsTab from "./inventory/AlertsTab";
 import MethodologyTab from "./inventory/MethodologyTab";
+import ProveedoresInventarioTab from "./inventory/ProveedoresInventarioTab";
 import { getStockStatus } from "./inventory/inventoryUtils";
 import { Producto } from "./products/ProductsData";
-import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap } from "lucide-react";
+import { FileDown, FileUp, Package, TrendingUp, AlertTriangle, BarChart3, Activity, Zap, Truck } from "lucide-react";
 
 const InventarioModule = () => {
   const [filtroCategoria, setFiltroCategoria] = useState("all");
@@ -474,7 +475,7 @@ const InventarioModule = () => {
           subtitle="Administración integral con análisis y alertas automáticas"
         >
           <Tabs defaultValue="productos" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="productos" className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 Productos
@@ -482,6 +483,10 @@ const InventarioModule = () => {
               <TabsTrigger value="movimientos" className="flex items-center gap-2">
                 <Activity className="w-4 h-4" />
                 Movimientos
+              </TabsTrigger>
+              <TabsTrigger value="proveedores" className="flex items-center gap-2">
+                <Truck className="w-4 h-4" />
+                Proveedores
               </TabsTrigger>
               <TabsTrigger value="alertas" className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
@@ -505,6 +510,13 @@ const InventarioModule = () => {
 
         <TabsContent value="movimientos" className="space-y-4">
           <MovementListTab movimientos={movimientos} />
+        </TabsContent>
+
+        <TabsContent value="proveedores" className="space-y-4">
+          <ProveedoresInventarioTab 
+            productos={productosInventario}
+            onCompraCreada={refetchProductos}
+          />
         </TabsContent>
 
         <TabsContent value="alertas" className="space-y-4">
