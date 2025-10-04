@@ -351,10 +351,13 @@ export type Database = {
           fecha_vencimiento: string | null
           id: string
           iva: number | null
+          monto_pagado: number | null
           numero: string
           observaciones: string | null
           proveedor_id: string | null
+          saldo_pendiente: number | null
           subtotal: number | null
+          tipo_pago: string | null
           total: number | null
           updated_at: string | null
           user_id: string
@@ -367,10 +370,13 @@ export type Database = {
           fecha_vencimiento?: string | null
           id?: string
           iva?: number | null
+          monto_pagado?: number | null
           numero: string
           observaciones?: string | null
           proveedor_id?: string | null
+          saldo_pendiente?: number | null
           subtotal?: number | null
+          tipo_pago?: string | null
           total?: number | null
           updated_at?: string | null
           user_id: string
@@ -383,10 +389,13 @@ export type Database = {
           fecha_vencimiento?: string | null
           id?: string
           iva?: number | null
+          monto_pagado?: number | null
           numero?: string
           observaciones?: string | null
           proveedor_id?: string | null
+          saldo_pendiente?: number | null
           subtotal?: number | null
+          tipo_pago?: string | null
           total?: number | null
           updated_at?: string | null
           user_id?: string
@@ -1876,36 +1885,42 @@ export type Database = {
       proveedores: {
         Row: {
           activo: boolean | null
+          codigo: string | null
           created_at: string | null
           direccion: string | null
           email: string | null
           id: string
           nit: string
           nombre: string
+          saldo_deuda: number | null
           telefono: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           activo?: boolean | null
+          codigo?: string | null
           created_at?: string | null
           direccion?: string | null
           email?: string | null
           id?: string
           nit: string
           nombre: string
+          saldo_deuda?: number | null
           telefono?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           activo?: boolean | null
+          codigo?: string | null
           created_at?: string | null
           direccion?: string | null
           email?: string | null
           id?: string
           nit?: string
           nombre?: string
+          saldo_deuda?: number | null
           telefono?: string | null
           updated_at?: string | null
           user_id?: string | null

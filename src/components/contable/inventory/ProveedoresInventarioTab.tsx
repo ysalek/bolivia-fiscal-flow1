@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,24 +11,12 @@ import { Plus, Truck, CreditCard, Banknote, Search, DollarSign, AlertCircle, Che
 import { ProductoInventario } from "./InventoryData";
 import { useContabilidadIntegration } from "@/hooks/useContabilidadIntegration";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-interface Proveedor {
-  id: string;
-  codigo: string;
-  nombre: string;
-  nit: string;
-  telefono: string;
-  direccion: string;
-  email?: string;
-  activo: boolean;
-  saldoDeuda: number;
-  fechaCreacion: string;
-}
+import { useSupabaseProveedores, ProveedorSupabase } from "@/hooks/useSupabaseProveedores";
 
 interface CompraProveedor {
   id: string;
   proveedorId: string;
-  proveedor: Proveedor;
+  proveedor: ProveedorSupabase;
   numero: string;
   fecha: string;
   items: {
@@ -55,43 +43,69 @@ interface Props {
 }
 
 const ProveedoresInventarioTab = ({ productos, onCompraCreada }: Props) => {
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [compras, setCompras] = useState<CompraProveedor[]>([]);
   const [showProveedorForm, setShowProveedorForm] = useState(false);
   const [showCompraForm, setShowCompraForm] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const { toast } = useToast();
   const { generarAsientoCompra, actualizarStockProducto } = useContabilidadIntegration();
+  
+  // Usar hook de Supabase
+  const { 
+    proveedores, 
+    compras: comprasSupabase,
+    loading,
+    crearProveedor,
+    crearCompra 
+  } = useSupabaseProveedores();
 
-  useEffect(() => {
-    const proveedoresGuardados = localStorage.getItem('proveedores_inventario');
-    if (proveedoresGuardados) setProveedores(JSON.parse(proveedoresGuardados));
+  // Convertir compras de Supabase al formato esperado
+  const compras: CompraProveedor[] = comprasSupabase.map(compra => {
+    const proveedor = proveedores.find(p => p.id === compra.proveedor_id);
+    const estadoMapeado = 
+      compra.estado === 'pagada' ? 'pagada' :
+      compra.estado === 'recibida' ? 'pendiente' :
+      compra.estado === 'anulada' ? 'pendiente' :
+      'parcial';
+    
+    return {
+      id: compra.id,
+      proveedorId: compra.proveedor_id,
+      proveedor: proveedor!,
+      numero: compra.numero,
+      fecha: compra.fecha,
+      fechaVencimiento: compra.fecha_vencimiento,
+      items: [], // Los items se manejan en items_compras
+      subtotal: compra.subtotal,
+      iva: compra.iva,
+      total: compra.total,
+      tipoPago: compra.tipo_pago,
+      estado: estadoMapeado as 'pendiente' | 'pagada' | 'parcial',
+      montoPagado: compra.monto_pagado,
+      saldoPendiente: compra.saldo_pendiente,
+      observaciones: compra.observaciones
+    };
+  }).filter(c => c.proveedor); // Filtrar solo compras con proveedor válido
 
-    const comprasGuardadas = localStorage.getItem('compras_proveedores');
-    if (comprasGuardadas) setCompras(JSON.parse(comprasGuardadas));
-  }, []);
-
-  const guardarProveedor = (nuevoProveedor: Proveedor) => {
-    const proveedoresActualizados = [...proveedores, nuevoProveedor];
-    setProveedores(proveedoresActualizados);
-    localStorage.setItem('proveedores_inventario', JSON.stringify(proveedoresActualizados));
+  const guardarProveedor = async (nuevoProveedor: ProveedorSupabase) => {
+    await crearProveedor(nuevoProveedor);
   };
 
-  const guardarCompra = (nuevaCompra: CompraProveedor) => {
-    const comprasActualizadas = [nuevaCompra, ...compras];
-    setCompras(comprasActualizadas);
-    localStorage.setItem('compras_proveedores', JSON.stringify(comprasActualizadas));
-
-    // Actualizar deuda del proveedor si es a crédito
-    if (nuevaCompra.tipoPago === 'credito') {
-      const proveedoresActualizados = proveedores.map(p =>
-        p.id === nuevaCompra.proveedorId
-          ? { ...p, saldoDeuda: p.saldoDeuda + nuevaCompra.saldoPendiente }
-          : p
-      );
-      setProveedores(proveedoresActualizados);
-      localStorage.setItem('proveedores_inventario', JSON.stringify(proveedoresActualizados));
-    }
+  const guardarCompra = async (nuevaCompra: CompraProveedor) => {
+    await crearCompra({
+      proveedor_id: nuevaCompra.proveedorId,
+      numero: nuevaCompra.numero,
+      fecha: nuevaCompra.fecha,
+      fecha_vencimiento: nuevaCompra.fechaVencimiento,
+      subtotal: nuevaCompra.subtotal,
+      descuento_total: 0,
+      iva: nuevaCompra.iva,
+      total: nuevaCompra.total,
+      estado: nuevaCompra.estado === 'pagada' ? 'pagada' : nuevaCompra.estado === 'parcial' ? 'recibida' : 'pendiente',
+      tipo_pago: nuevaCompra.tipoPago,
+      monto_pagado: nuevaCompra.montoPagado,
+      saldo_pendiente: nuevaCompra.saldoPendiente,
+      observaciones: nuevaCompra.observaciones
+    });
   };
 
   const proveedoresFiltrados = proveedores.filter(p =>
@@ -100,8 +114,19 @@ const ProveedoresInventarioTab = ({ productos, onCompraCreada }: Props) => {
     p.codigo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const totalDeuda = proveedores.reduce((sum, p) => sum + p.saldoDeuda, 0);
+  const totalDeuda = proveedores.reduce((sum, p) => sum + p.saldo_deuda, 0);
   const comprasPendientes = compras.filter(c => c.estado === 'pendiente' || c.estado === 'parcial').length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando proveedores...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -234,11 +259,11 @@ const ProveedoresInventarioTab = ({ productos, onCompraCreada }: Props) => {
                         </div>
                       </div>
                       <div className="text-right">
-                        {proveedor.saldoDeuda > 0 ? (
+                        {proveedor.saldo_deuda > 0 ? (
                           <div>
                             <p className="text-xs text-muted-foreground">Deuda Pendiente</p>
                             <p className="text-xl font-bold text-red-600">
-                              Bs. {proveedor.saldoDeuda.toFixed(2)}
+                              Bs. {proveedor.saldo_deuda.toFixed(2)}
                             </p>
                           </div>
                         ) : (
@@ -351,7 +376,7 @@ const ProveedoresInventarioTab = ({ productos, onCompraCreada }: Props) => {
 interface FormularioProveedorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGuardar: (proveedor: Proveedor) => void;
+  onGuardar: (proveedor: ProveedorSupabase) => void;
   ultimoCodigo: number;
 }
 
@@ -375,8 +400,8 @@ const FormularioProveedor = ({ open, onOpenChange, onGuardar, ultimoCodigo }: Fo
       return;
     }
 
-    const nuevoProveedor: Proveedor = {
-      id: Date.now().toString(),
+    const nuevoProveedor: ProveedorSupabase = {
+      id: '', // Generado por Supabase
       codigo: `PROV-${(ultimoCodigo + 1).toString().padStart(4, '0')}`,
       nombre: formData.nombre,
       nit: formData.nit,
@@ -384,8 +409,7 @@ const FormularioProveedor = ({ open, onOpenChange, onGuardar, ultimoCodigo }: Fo
       direccion: formData.direccion,
       email: formData.email,
       activo: true,
-      saldoDeuda: 0,
-      fechaCreacion: new Date().toISOString().slice(0, 10)
+      saldo_deuda: 0
     };
 
     onGuardar(nuevoProveedor);
@@ -468,7 +492,7 @@ const FormularioProveedor = ({ open, onOpenChange, onGuardar, ultimoCodigo }: Fo
 interface FormularioCompraProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  proveedores: Proveedor[];
+  proveedores: ProveedorSupabase[];
   productos: ProductoInventario[];
   onGuardar: (compra: CompraProveedor) => void;
   onCompraCreada: () => void;
