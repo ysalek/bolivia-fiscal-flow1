@@ -1,4 +1,5 @@
-// Servicio para cumplimiento de normativas contables y tributarias bolivianas 2024-2025
+// Servicio para cumplimiento de normativas contables y tributarias bolivianas
+// Actualizado a octubre 2025 según RND vigentes del SIN
 export interface NormativaVigente {
   codigo: string;
   titulo: string;
@@ -30,9 +31,49 @@ class NormativaService {
     this.inicializarRequisitos();
   }
 
-  // Normativas actualizadas 2024-2025
+  // Normativas actualizadas hasta octubre 2025
   private inicializarNormativas(): void {
     this.normativas = [
+      {
+        codigo: 'RND-102500000018',
+        titulo: 'Nuevo Clasificador de Actividades Económicas (CAEB-SIN)',
+        descripcion: 'Aprueba el nuevo Clasificador de Actividades Económicas del Registro Nacional de Contribuyentes del SIN. Vigente desde mayo 2025.',
+        fechaVigencia: '2025-05-01',
+        fechaActualizacion: '2025-04-22',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'RND-102500000017',
+        titulo: 'Registro Nacional de Contribuyentes (RNC)',
+        descripcion: 'Sustituye el PBD-11 por el nuevo Registro Nacional de Contribuyentes. Migración automática de datos.',
+        fechaVigencia: '2025-04-01',
+        fechaActualizacion: '2025-04-15',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'RND-102500000036',
+        titulo: 'Prórroga Facturación en Línea - Grupos 9º al 12º',
+        descripcion: 'Se amplía hasta el 31 de marzo de 2026 el plazo para que contribuyentes de los Grupos Noveno al Décimo Segundo ajusten sus sistemas a facturación en línea.',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-09-25',
+        categoria: 'facturacion',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'RND-102500000002',
+        titulo: 'Beneficio IVA Tasa Cero 2025',
+        descripcion: 'Aplicación de Tasa Cero de IVA para sectores: agropecuario, industrial, construcción y minería durante la gestión 2025.',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-15',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
       {
         codigo: 'RND-102500000031',
         titulo: 'Prórroga presentación Estados Financieros 2025',
@@ -45,8 +86,8 @@ class NormativaService {
       },
       {
         codigo: 'RND-102400000021',
-        titulo: 'Nueva Normativa de Bancarización 2025',
-        descripcion: 'Requisitos de bancarización para transacciones comerciales y tributarias en gestión 2025',
+        titulo: 'Requisitos de Bancarización 2025',
+        descripcion: 'Requisitos de bancarización para transacciones comerciales y tributarias. Rechazo de gastos y costos no bancarizados.',
         fechaVigencia: '2025-01-01',
         fechaActualizacion: '2024-12-20',
         categoria: 'tributaria',
@@ -74,9 +115,19 @@ class NormativaService {
         organismo: 'SIN'
       },
       {
-        codigo: 'RC-IVA-PROFESIONALES',
-        titulo: 'RC-IVA Profesionales Independientes',
-        descripcion: 'Normativa específica para retenciones de RC-IVA aplicables a profesionales independientes',
+        codigo: 'RC-IVA-2025',
+        titulo: 'RC-IVA Actualizado 2025',
+        descripcion: 'Retenciones de RC-IVA: 13% para profesionales independientes, servicios y alquileres',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-15',
+        categoria: 'tributaria',
+        estado: 'vigente',
+        organismo: 'SIN'
+      },
+      {
+        codigo: 'RC-IT-2025',
+        titulo: 'RC-IT Actualizado 2025',
+        descripcion: 'Retenciones de RC-IT: 3% sobre ingresos de profesionales independientes y alquileres',
         fechaVigencia: '2025-01-01',
         fechaActualizacion: '2025-01-15',
         categoria: 'tributaria',
@@ -94,64 +145,84 @@ class NormativaService {
         organismo: 'SIN'
       },
       {
-        codigo: 'ARREPENTIMIENTO-EFICAZ',
-        titulo: 'Arrepentimiento Eficaz',
-        descripcion: 'Mecanismo para que contribuyentes puedan regularizar voluntariamente sus obligaciones tributarias con beneficios',
+        codigo: 'LEY-1613',
+        titulo: 'Ley Presupuesto General del Estado 2025',
+        descripcion: 'Ley del Presupuesto General del Estado para la gestión 2025',
         fechaVigencia: '2025-01-01',
-        fechaActualizacion: '2025-01-08',
+        fechaActualizacion: '2025-01-01',
+        categoria: 'financiera',
+        estado: 'vigente',
+        organismo: 'Ministerio_Economia'
+      },
+      {
+        codigo: 'IVA-TASA-2025',
+        titulo: 'Tasa IVA 13% - Vigente',
+        descripcion: 'Tasa general del Impuesto al Valor Agregado: 13% aplicable a todas las transacciones gravadas',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-01',
         categoria: 'tributaria',
         estado: 'vigente',
         organismo: 'SIN'
       },
       {
-        codigo: 'LEY-1448',
-        titulo: 'Ley de Fortalecimiento de Ingresos',
-        descripcion: 'Marco legal para el fortalecimiento de los ingresos del Estado y medidas tributarias especiales',
-        fechaVigencia: '2024-01-01',
-        fechaActualizacion: '2024-12-01',
+        codigo: 'IT-TASA-2025',
+        titulo: 'Tasa IT 3% - Vigente',
+        descripcion: 'Tasa del Impuesto a las Transacciones: 3% sobre ingresos brutos',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-01',
         categoria: 'tributaria',
         estado: 'vigente',
         organismo: 'SIN'
       },
       {
-        codigo: 'CAMC-2024-01',
-        titulo: 'Normas de Contabilidad 2024',
-        descripcion: 'Actualización de normas contables para preparación de estados financieros',
-        fechaVigencia: '2024-01-01',
-        fechaActualizacion: '2024-01-15',
-        categoria: 'contable',
+        codigo: 'IUE-TASA-2025',
+        titulo: 'Tasa IUE 25% - Vigente',
+        descripcion: 'Tasa del Impuesto sobre las Utilidades de las Empresas: 25% sobre utilidades netas',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-01-01',
+        categoria: 'tributaria',
         estado: 'vigente',
-        organismo: 'CAMC'
+        organismo: 'SIN'
       },
       {
         codigo: 'LEY-317',
         titulo: 'Código Tributario Boliviano',
         descripcion: 'Normas fundamentales del régimen jurídico del sistema tributario boliviano',
         fechaVigencia: '2012-12-11',
-        fechaActualizacion: '2024-12-01',
-        categoria: 'tributaria',
-        estado: 'vigente',
-        organismo: 'SIN'
-      },
-      {
-        codigo: 'RND-SECTORES-ESPECIALES',
-        titulo: 'Régimen Sectores Especiales',
-        descripcion: 'Normativa para biodiesel, combustibles no subvencionados y energía eléctrica',
-        fechaVigencia: '2024-01-01',
-        fechaActualizacion: '2024-02-15',
+        fechaActualizacion: '2025-01-01',
         categoria: 'tributaria',
         estado: 'vigente',
         organismo: 'SIN'
       },
       {
         codigo: 'SALARIO-MINIMO-2025',
-        titulo: 'Incremento Salarial y SMN 2025',
-        descripcion: 'D.S. N° 5383 - Incremento mínimo del 5% sobre salario básico para sector privado',
+        titulo: 'Salario Mínimo Nacional 2025',
+        descripcion: 'D.S. N° 5383 - Incremento del 5% sobre salario básico para sector privado. SMN: Bs 2,500',
         fechaVigencia: '2025-05-01',
         fechaActualizacion: '2025-05-15',
         categoria: 'laboral',
         estado: 'vigente',
         organismo: 'Ministerio_Trabajo'
+      },
+      {
+        codigo: 'UFV-2025',
+        titulo: 'Unidad de Fomento de Vivienda 2025',
+        descripcion: 'UFV actualizada diariamente por el BCB. Valor aproximado octubre 2025: 2.96 Bs',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-10-04',
+        categoria: 'financiera',
+        estado: 'vigente',
+        organismo: 'Ministerio_Economia'
+      },
+      {
+        codigo: 'TC-USD-2025',
+        titulo: 'Tipo de Cambio USD 2025',
+        descripcion: 'Tipo de cambio oficial USD/BOB: 6.96 Bs por dólar estadounidense',
+        fechaVigencia: '2025-01-01',
+        fechaActualizacion: '2025-10-04',
+        categoria: 'financiera',
+        estado: 'vigente',
+        organismo: 'Ministerio_Economia'
       }
     ];
   }
@@ -362,16 +433,25 @@ class NormativaService {
     };
   }
 
-  // Obtener códigos de actividad económica actualizados
+  // Obtener códigos de actividad económica CAEB-SIN 2025 actualizados
   getActividadesEconomicas(): Array<{ codigo: string; descripcion: string; sector: string }> {
+    // Actualizado según RND 102500000018 - Vigente desde mayo 2025
     return [
-      { codigo: '620100', descripcion: 'Programación informática', sector: 'Servicios tecnológicos' },
-      { codigo: '620200', descripcion: 'Consultoría informática', sector: 'Servicios tecnológicos' },
+      { codigo: '620100', descripcion: 'Programación informática y actividades relacionadas', sector: 'Servicios tecnológicos' },
+      { codigo: '620200', descripcion: 'Consultoría informática y gestión de instalaciones', sector: 'Servicios tecnológicos' },
+      { codigo: '631100', descripcion: 'Procesamiento de datos y hospedaje', sector: 'Servicios tecnológicos' },
       { codigo: '192000', descripcion: 'Fabricación de productos de refinación del petróleo', sector: 'Combustibles' },
       { codigo: '351100', descripcion: 'Generación de energía eléctrica', sector: 'Energía' },
-      { codigo: '461000', descripcion: 'Venta al por mayor de maquinaria y equipo', sector: 'Comercio' },
-      { codigo: '471100', descripcion: 'Venta al por menor en almacenes no especializados', sector: 'Comercio' },
-      { codigo: '682000', descripcion: 'Alquiler de bienes inmuebles propios o arrendados', sector: 'Inmobiliario' }
+      { codigo: '461000', descripcion: 'Venta al por mayor a comisión o por contrata', sector: 'Comercio' },
+      { codigo: '471100', descripcion: 'Venta al por menor en comercios no especializados', sector: 'Comercio' },
+      { codigo: '471900', descripcion: 'Venta al por menor de otros productos en comercios no especializados', sector: 'Comercio' },
+      { codigo: '682000', descripcion: 'Actividades inmobiliarias por retribución o contrata', sector: 'Inmobiliario' },
+      { codigo: '691100', descripcion: 'Actividades jurídicas', sector: 'Servicios profesionales' },
+      { codigo: '692000', descripcion: 'Actividades de contabilidad, auditoría y consultoría fiscal', sector: 'Servicios profesionales' },
+      { codigo: '702000', descripcion: 'Actividades de consultoría de gestión', sector: 'Servicios profesionales' },
+      { codigo: '711000', descripcion: 'Actividades de arquitectura e ingeniería', sector: 'Servicios profesionales' },
+      { codigo: '561010', descripcion: 'Actividades de restaurantes', sector: 'Alimentos y bebidas' },
+      { codigo: '563000', descripcion: 'Actividades de servicio de bebidas', sector: 'Alimentos y bebidas' }
     ];
   }
 }
