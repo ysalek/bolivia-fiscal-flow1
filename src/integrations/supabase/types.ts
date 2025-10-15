@@ -2115,6 +2115,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_employee_safe_data: {
+        Args: {
+          employee_record: Database["public"]["Tables"]["empleados"]["Row"]
+        }
+        Returns: {
+          apellidos: string
+          cargo: string
+          departamento: string
+          estado: string
+          fecha_ingreso: string
+          id: string
+          nombres: string
+          numero_empleado: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
