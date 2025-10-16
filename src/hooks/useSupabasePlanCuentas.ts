@@ -21,20 +21,28 @@ export const useSupabasePlanCuentas = () => {
 
   const fetchPlanCuentas = async () => {
     try {
+      console.log('📊 Fetching plan cuentas...');
       const { data, error } = await supabase
         .from('plan_cuentas')
         .select('*')
         .order('codigo', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error from Supabase:', error);
+        throw error;
+      }
+      
+      console.log('✅ Plan cuentas loaded:', data?.length || 0, 'accounts');
       setPlanCuentas(data || []);
     } catch (error) {
-      console.error('Error fetching plan cuentas:', error);
+      console.error('❌ Error fetching plan cuentas:', error);
       toast({
         title: "Error",
         description: "No se pudo cargar el plan de cuentas",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,13 +206,8 @@ export const useSupabasePlanCuentas = () => {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await fetchPlanCuentas();
-      setLoading(false);
-    };
-
-    loadData();
+    console.log('🚀 useSupabasePlanCuentas mounting...');
+    fetchPlanCuentas();
   }, []);
 
   return {
