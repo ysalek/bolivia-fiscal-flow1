@@ -1895,7 +1895,7 @@ export type Database = {
           saldo_deuda: number | null
           telefono: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           activo?: boolean | null
@@ -1909,7 +1909,7 @@ export type Database = {
           saldo_deuda?: number | null
           telefono?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           activo?: boolean | null
@@ -1923,7 +1923,7 @@ export type Database = {
           saldo_deuda?: number | null
           telefono?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

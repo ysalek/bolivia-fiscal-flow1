@@ -10,6 +10,8 @@ import SystemValidation from './dashboard/SystemValidation';
 import EnhancedFinancialDashboard from './dashboard/EnhancedFinancialDashboard';
 import { EnhancedHeader, MetricGrid, EnhancedMetricCard, Section } from './dashboard/EnhancedLayout';
 import { inicializarSistemaCompleto } from '../../utils/inicializarSistema';
+import { inicializarDatosDemo } from '@/utils/inicializarDatosDemo';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ModuleIntegrationValidator from './integration/ModuleIntegrationValidator';
 import SystemValidator from './validation/SystemValidator';
@@ -41,8 +43,21 @@ const Dashboard = () => {
   const proveedores = JSON.parse(localStorage.getItem('proveedores') || '[]');
 
   useEffect(() => {
-    // Sistema ya inicializado en producción - no agregar datos de ejemplo
-    setSistemaInicializado(true);
+    // Inicializar datos demo y sistema
+    const initSystem = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await inicializarDatosDemo(user.id);
+        }
+        setSistemaInicializado(true);
+      } catch (error) {
+        console.error('Error inicializando sistema:', error);
+        setSistemaInicializado(true);
+      }
+    };
+    
+    initSystem();
   }, []);
 
   // Cálculos avanzados para métricas empresariales
