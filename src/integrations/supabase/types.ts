@@ -212,7 +212,7 @@ export type Database = {
           id: string
           nombre: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           activo?: boolean | null
@@ -221,7 +221,7 @@ export type Database = {
           id?: string
           nombre: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           activo?: boolean | null
@@ -230,7 +230,7 @@ export type Database = {
           id?: string
           nombre?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1120,7 +1120,7 @@ export type Database = {
       financial_access_log: {
         Row: {
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           record_id: string | null
           risk_score: number | null
@@ -1133,7 +1133,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           record_id?: string | null
           risk_score?: number | null
@@ -1146,7 +1146,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           record_id?: string | null
           risk_score?: number | null
@@ -1802,7 +1802,7 @@ export type Database = {
           stock_minimo: number | null
           unidad_medida: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           activo?: boolean | null
@@ -1821,7 +1821,7 @@ export type Database = {
           stock_minimo?: number | null
           unidad_medida?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           activo?: boolean | null
@@ -1840,7 +1840,7 @@ export type Database = {
           stock_minimo?: number | null
           unidad_medida?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2141,10 +2141,7 @@ export type Database = {
         Args: { data: string; mask_type?: string }
         Returns: string
       }
-      update_financial_security_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_financial_security_summary: { Args: never; Returns: undefined }
       validate_financial_access: {
         Args: {
           data_owner_id: string
