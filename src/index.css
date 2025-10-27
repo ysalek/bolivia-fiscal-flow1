@@ -7,85 +7,83 @@
 
 @layer base {
   :root {
-    /* Paleta de colores boliviana corporativa mejorada */
-    --background: 215 25% 97%;
-    --foreground: 220 15% 15%;
+    /* Paleta de colores moderna y profesional */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card-foreground: 220 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 220 20% 10%;
 
-    /* #0D47A1 - Azul institucional boliviano mejorado */
-    --primary: 212 92% 35%;
-    --primary-foreground: 0 0% 98%;
-    --primary-muted: 212 50% 85%;
+    /* Azul principal moderno */
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 221 83% 65%;
+    --primary-dark: 221 83% 40%;
 
-    /* #2E7D32 - Verde acento positivo */
-    --success: 145 85% 32%;
-    --success-foreground: 0 0% 98%;
-    --success-muted: 145 40% 85%;
+    /* Verde éxito */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 50%;
 
-    --secondary: 215 25% 93%;
-    --secondary-foreground: 220 15% 25%;
+    /* Naranja advertencia */
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 32 95% 60%;
 
-    --muted: 215 20% 95%;
-    --muted-foreground: 215 15% 40%;
+    /* Rojo error */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --accent: 212 15% 92%;
-    --accent-foreground: 220 15% 25%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 15%;
 
-    /* #FF8F00 - Warning naranja boliviano */
-    --warning: 35 100% 50%;
-    --warning-foreground: 220 15% 15%;
-    --warning-muted: 35 50% 85%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
 
-    /* #C62828 - Danger rojo */
-    --destructive: 4 85% 47%;
-    --destructive-foreground: 0 0% 98%;
-    --destructive-muted: 4 40% 85%;
+    --accent: 221 83% 95%;
+    --accent-foreground: 221 83% 40%;
 
-    --border: 215 15% 88%;
-    --input: 215 15% 90%;
-    --ring: 212 92% 35%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
-    /* Sidebar con diseño mejorado */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 212 92% 35%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 212 15% 95%;
-    --sidebar-accent-foreground: 220 15% 25%;
-    --sidebar-border: 215 15% 92%;
-    --sidebar-ring: 212 92% 35%;
+    /* Sidebar moderna */
+    --sidebar-background: 220 20% 99%;
+    --sidebar-foreground: 220 20% 15%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 20% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 221 83% 53%;
 
-    /* Gradientes mejorados */
-    --gradient-primary: linear-gradient(135deg, hsl(212 92% 35%), hsl(212 92% 45%));
-    --gradient-success: linear-gradient(135deg, hsl(145 85% 32%), hsl(145 85% 42%));
-    --gradient-warning: linear-gradient(135deg, hsl(35 100% 50%), hsl(35 100% 60%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(215 25% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(212 92% 35%), hsl(212 92% 45%), hsl(145 85% 42%));
+    /* Gradientes modernos */
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(265 89% 62%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(158 64% 52%) 100%);
+    --gradient-warning: linear-gradient(135deg, hsl(32 95% 44%) 0%, hsl(45 93% 47%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(265 89% 62%) 50%, hsl(290 85% 60%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 14% 99%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(220 20% 98%) 0%, hsl(220 14% 99%) 100%);
 
-    /* Sombras corporativas mejoradas */
-    --shadow-sm: 0 1px 3px 0 hsl(212 92% 35% / 0.08);
-    --shadow-card: 0 4px 12px -2px hsl(212 92% 35% / 0.12);
-    --shadow-elevated: 0 12px 32px -4px hsl(212 92% 35% / 0.18);
-    --shadow-kpi: 0 6px 16px -2px hsl(212 92% 35% / 0.15);
-    --shadow-glow: 0 0 24px hsl(212 92% 35% / 0.25);
+    /* Sombras modernas */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-glow: 0 0 20px hsl(221 83% 53% / 0.3);
+    --shadow-glow-lg: 0 0 40px hsl(221 83% 53% / 0.4);
 
     /* Colores de estado financiero */
-    --profit: 145 85% 32%;
-    --loss: 4 85% 47%;
-    --neutral: 215 15% 50%;
-    
-    /* Nuevos colores para KPIs */
-    --kpi-revenue: 145 85% 32%;
-    --kpi-expense: 4 85% 47%;
-    --kpi-profit: 35 100% 50%;
-    --kpi-growth: 212 92% 35%;
+    --profit: 142 76% 36%;
+    --loss: 0 84% 60%;
+    --neutral: 220 10% 46%;
   }
 
   .dark {
@@ -141,69 +139,125 @@
 }
 
 @layer components {
-  /* Componentes corporativos mejorados */
-  .card-gradient {
+  /* Componentes modernos */
+  .card-modern {
     background: var(--gradient-card);
-    border: 1px solid hsl(var(--border) / 0.8);
-    box-shadow: var(--shadow-card);
-    backdrop-filter: blur(8px);
-  }
-
-  .card-kpi {
-    background: var(--gradient-card);
-    border: 1px solid hsl(var(--border) / 0.6);
-    box-shadow: var(--shadow-kpi);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-md);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .card-kpi:hover {
-    box-shadow: var(--shadow-elevated);
+  .card-modern:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+  }
+
+  .card-glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-gradient {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-gradient:hover {
+    box-shadow: var(--shadow-glow-lg), var(--shadow-xl);
     transform: translateY(-2px);
   }
 
-  .btn-primary-gradient {
-    background: var(--gradient-primary);
-    border: none;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+  .btn-gradient:active {
+    transform: translateY(0px);
+    box-shadow: var(--shadow-md);
   }
 
-  .btn-primary-gradient:hover {
-    box-shadow: var(--shadow-card);
-    transform: translateY(-1px);
-  }
-
-  .metric-positive {
+  .metric-success {
     color: hsl(var(--success));
-    background: hsl(var(--success-muted) / 0.5);
+    background: hsl(var(--success) / 0.1);
+    border: 1px solid hsl(var(--success) / 0.2);
   }
 
-  .metric-negative {
+  .metric-error {
     color: hsl(var(--destructive));
-    background: hsl(var(--destructive-muted) / 0.5);
+    background: hsl(var(--destructive) / 0.1);
+    border: 1px solid hsl(var(--destructive) / 0.2);
+  }
+
+  .metric-warning {
+    color: hsl(var(--warning));
+    background: hsl(var(--warning) / 0.1);
+    border: 1px solid hsl(var(--warning) / 0.2);
   }
 
   .metric-neutral {
     color: hsl(var(--neutral));
-    background: hsl(var(--muted) / 0.5);
+    background: hsl(var(--muted));
   }
 
-  .glass-effect {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
-  }
-
-  .nav-gradient {
+  .text-gradient-primary {
     background: var(--gradient-primary);
-    background-size: 200% 200%;
-    animation: gradient-shift 6s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+  .text-gradient-success {
+    background: var(--gradient-success);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animaciones */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .animate-float {
@@ -211,14 +265,50 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-4px); }
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
   }
 
-  .text-gradient {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: var(--shadow-md);
+    }
+    50% {
+      box-shadow: var(--shadow-glow), var(--shadow-xl);
+    }
+  }
+
+  .animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* Transiciones suaves */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-bounce {
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
