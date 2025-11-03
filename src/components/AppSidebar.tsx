@@ -168,24 +168,28 @@ const AppSidebar = () => {
 
   const getNavClasses = (active: boolean) => 
     active 
-      ? "bg-primary/10 text-primary font-medium border-r-2 border-primary" 
-      : "hover:bg-accent/50 hover:text-accent-foreground";
+      ? "bg-primary text-primary-foreground font-medium shadow-sm" 
+      : "hover:bg-accent hover:text-accent-foreground";
 
   return (
-    <Sidebar>
-      <SidebarContent className="p-2">
+    <Sidebar className="border-r border-border">
+      <SidebarContent className="p-3">
         {/* Logo/Brand */}
-        <div className={`p-4 border-b mb-4 ${isCollapsed ? 'text-center' : ''}`}>
+        <div className={`px-4 py-5 mb-4 ${isCollapsed ? 'text-center' : ''}`}>
           {isCollapsed ? (
-            <Calculator className="w-8 h-8 text-primary mx-auto" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center mx-auto">
+              <Calculator className="w-5 h-5 text-white" />
+            </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Calculator className="w-8 h-8 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
+                <Calculator className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h1 className="font-bold text-lg bg-gradient-to-r from-primary to-primary-variant bg-clip-text text-transparent">
+                <h1 className="font-bold text-lg text-foreground">
                   ContaBolivia
                 </h1>
-                <p className="text-xs text-muted-foreground">Sistema Contable</p>
+                <p className="text-xs text-muted-foreground">Sistema Contable Pro</p>
               </div>
             </div>
           )}
@@ -193,53 +197,51 @@ const AppSidebar = () => {
 
         {/* Navigation Groups */}
         {menuItems.map((group, groupIndex) => (
-          <SidebarGroup key={groupIndex} className="mb-4">
+          <div key={groupIndex} className="mb-6">
             {!isCollapsed && (
-              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                {group.group}
-              </SidebarGroupLabel>
+              <div className="px-3 mb-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.group}
+                </span>
+              </div>
             )}
             
-            <SidebarGroupContent>
-              <SidebarMenu className="space-y-1">
-                {group.items.map((item, itemIndex) => (
-                  <SidebarMenuItem key={itemIndex}>
-                    <SidebarMenuButton asChild>
-                      <button
-                        onClick={() => handleNavigation(item.url)}
-                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                          getNavClasses(isActive(item.url))
-                        }`}
-                      >
-                        <item.icon className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} flex-shrink-0`} />
-                        {!isCollapsed && (
-                          <>
-                            <span className="flex-1 truncate">{item.title}</span>
-                            {item.badge && (
-                              <Badge 
-                                variant={item.badge === 'Nuevo' ? 'default' : 'secondary'} 
-                                className="text-xs px-1.5 py-0.5"
-                              >
-                                {item.badge}
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                      </button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            <div className="space-y-1">
+              {group.items.map((item, itemIndex) => (
+                <button
+                  key={itemIndex}
+                  onClick={() => handleNavigation(item.url)}
+                  className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    getNavClasses(isActive(item.url))
+                  }`}
+                  title={isCollapsed ? item.title : undefined}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 truncate text-sm">{item.title}</span>
+                      {item.badge && (
+                        <Badge 
+                          variant={item.badge === 'Nuevo' ? 'default' : 'secondary'} 
+                          className="text-xs px-2 py-0.5"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
 
         {/* Footer */}
         {!isCollapsed && (
-          <div className="mt-auto p-4 border-t">
+          <div className="mt-auto pt-4 px-3 border-t">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Sparkles className="w-3 h-3" />
-              <span>Versión 2.0</span>
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+              <span>Sistema Activo v2.0</span>
             </div>
           </div>
         )}

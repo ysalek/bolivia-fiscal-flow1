@@ -100,297 +100,309 @@ const Dashboard = () => {
   const eficienciaCobranza = facturasPendientes > 0 ? ((facturas.length - facturasPendientes) / facturas.length * 100) : 100;
 
   return (
-    <div className="space-y-8">
-      {/* Header mejorado con gradiente */}
-      <EnhancedHeader
-        title="Centro de Comando Empresarial"
-        subtitle={`Sistema integrado - Balance cuadrado: ${balance.activos.toFixed(2)} = ${(balance.pasivos + balance.patrimonio).toFixed(2)} Bs. - ${fechaActual}`}
-        badge={{
-          text: balance.activos === (balance.pasivos + balance.patrimonio) ? "Balance Cuadrado" : "Verificar Balance",
-          variant: balance.activos === (balance.pasivos + balance.patrimonio) ? "default" : "destructive"
-        }}
-        actions={<NotificationsIcon />}
-      />
+    <div className="min-h-screen bg-gradient-subtle pb-12">
+      {/* Header simplificado y limpio */}
+      <div className="bg-gradient-primary px-8 py-6 mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+              <Activity className="w-8 h-8" />
+              Dashboard Empresarial
+            </h1>
+            <p className="text-white/90 text-sm">
+              {fechaActual}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge 
+              variant={balance.activos === (balance.pasivos + balance.patrimonio) ? "default" : "destructive"}
+              className="text-sm px-4 py-2 bg-white/20 backdrop-blur border-white/30"
+            >
+              {balance.activos === (balance.pasivos + balance.patrimonio) ? (
+                <><CheckCircle className="w-4 h-4 mr-2" /> Balance Cuadrado</>
+              ) : (
+                <><AlertTriangle className="w-4 h-4 mr-2" /> Verificar Balance</>
+              )}
+            </Badge>
+            <NotificationsIcon />
+          </div>
+        </div>
+      </div>
 
-      {/* KPIs Ejecutivos de Alto Nivel */}
-      <Section 
-        title="Métricas Ejecutivas" 
-        subtitle="Indicadores clave de rendimiento empresarial"
-      >
-        <Card className="glass-effect border-l-4 border-l-success nav-gradient">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3">
-              <div className="p-3 rounded-full bg-white/20 backdrop-blur">
-                <Award className="w-7 h-7 text-white" />
+      <div className="px-8 space-y-8">
+        {/* Métricas principales simplificadas */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Métricas Principales</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="card-modern hover:shadow-glow transition-smooth">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-success/10">
+                    <DollarSign className="w-6 h-6 text-success" />
+                  </div>
+                  {crecimientoVentas !== 0 && (
+                    <Badge variant={crecimientoVentas > 0 ? "default" : "destructive"} className="text-xs">
+                      {crecimientoVentas > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                      {Math.abs(crecimientoVentas).toFixed(1)}%
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-2xl font-bold text-foreground mb-1">Bs. {ventasMes.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Ingresos del Mes</p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-modern hover:shadow-glow transition-smooth">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                  </div>
+                  <Badge variant={ebitda > 0 ? "default" : "destructive"} className="text-xs">
+                    {ebitda > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                    {margenBruto.toFixed(1)}%
+                  </Badge>
+                </div>
+                <p className="text-2xl font-bold text-foreground mb-1">Bs. {ebitda.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">EBITDA</p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-modern hover:shadow-glow transition-smooth">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-warning/10">
+                    <Users className="w-6 h-6 text-warning" />
+                  </div>
+                  {clientesNuevosMes > 0 && (
+                    <Badge variant="default" className="text-xs">
+                      +{clientesNuevosMes} nuevos
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-2xl font-bold text-foreground mb-1">{clientesActivosMes}</p>
+                <p className="text-sm text-muted-foreground">Clientes Activos</p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-modern hover:shadow-glow transition-smooth">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-accent/10">
+                    <Package className="w-6 h-6 text-primary" />
+                  </div>
+                  {productosStockBajo > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      {productosStockBajo}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-2xl font-bold text-foreground mb-1">Bs. {valorInventario.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Valor Inventario</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Indicadores Secundarios */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-primary" />
+                Rendimiento Comercial
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Ticket Promedio</span>
+                <span className="text-lg font-bold">Bs. {ticketPromedio.toFixed(0)}</span>
               </div>
-              <div>
-                <span className="text-2xl text-white font-bold">Performance Empresarial</span>
-                <Badge variant="outline" className="ml-3 animate-float bg-white/20 text-white border-white/30">
-                  <Star className="w-3 h-3 mr-1" />
-                  Tiempo Real
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Ventas Hoy</span>
+                <span className="text-lg font-bold text-success">Bs. {ventasHoy.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">ROI Mensual</span>
+                <Badge variant={roiMensual > 15 ? "default" : "destructive"}>
+                  {roiMensual.toFixed(1)}%
                 </Badge>
               </div>
-            </CardTitle>
-            <CardDescription className="text-white/90 text-lg">
-              {comprobantesAutorizados.length} transacciones • {asientos.length} asientos • Balance: A={balance.activos.toFixed(0)} | P+E={(balance.pasivos + balance.patrimonio).toFixed(0)} Bs.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <MetricGrid columns={4}>
-              <EnhancedMetricCard
-                title="Ingresos del Mes"
-                value={`Bs. ${ventasMes.toLocaleString()}`}
-                subtitle={`Crecimiento vs mes anterior`}
-                icon={DollarSign}
-                variant={crecimientoVentas > 0 ? "success" : crecimientoVentas < 0 ? "destructive" : "default"}
-                trend={crecimientoVentas > 0 ? "up" : crecimientoVentas < 0 ? "down" : "neutral"}
-                trendValue={`${crecimientoVentas > 0 ? '+' : ''}${crecimientoVentas.toFixed(1)}%`}
-              />
-              <EnhancedMetricCard
-                title="EBITDA"
-                value={`Bs. ${ebitda.toLocaleString()}`}
-                subtitle={`Margen bruto: ${margenBruto.toFixed(1)}%`}
-                icon={BarChart3}
-                variant={ebitda > 0 ? "success" : "destructive"}
-                trend={ebitda > 0 ? "up" : "down"}
-                trendValue={`${((ebitda / ventasMes) * 100).toFixed(1)}% del revenue`}
-              />
-              <EnhancedMetricCard
-                title="ROI Mensual"
-                value={`${roiMensual.toFixed(1)}%`}
-                subtitle="Retorno sobre inversión"
-                icon={Target}
-                variant={roiMensual > 15 ? "success" : roiMensual > 5 ? "warning" : "destructive"}
-                trend={roiMensual > 10 ? "up" : "down"}
-                trendValue={roiMensual > 15 ? "Excelente" : roiMensual > 5 ? "Bueno" : "Mejorar"}
-              />
-              <EnhancedMetricCard
-                title="Eficiencia de Cobranza"
-                value={`${eficienciaCobranza.toFixed(0)}%`}
-                subtitle={`${facturasPendientes} facturas pendientes`}
-                icon={CheckCircle}
-                variant={eficienciaCobranza > 90 ? "success" : eficienciaCobranza > 70 ? "warning" : "destructive"}
-                trend={eficienciaCobranza > 85 ? "up" : "down"}
-                trendValue={`${tiempoCobranza} días promedio`}
-              />
-            </MetricGrid>
-          </CardContent>
-        </Card>
-      </Section>
+            </CardContent>
+          </Card>
 
-      {/* Análisis de Clientes y Ventas */}
-      <Section
-        title="Inteligencia Comercial"
-        subtitle="Análisis avanzado del comportamiento de clientes y ventas"
-      >
-        <MetricGrid columns={3}>
-          <EnhancedMetricCard
-            title="Clientes Activos"
-            value={clientesActivosMes}
-            subtitle={`+${clientesNuevosMes} nuevos este mes`}
-            icon={Users}
-            variant="default"
-            trend={clientesNuevosMes > 0 ? "up" : "neutral"}
-            trendValue={`${((clientesActivosMes / Math.max(clientes.length, 1)) * 100).toFixed(0)}% del total`}
-          />
-          <EnhancedMetricCard
-            title="Ticket Promedio"
-            value={`Bs. ${ticketPromedio.toFixed(0)}`}
-            subtitle="Valor promedio por venta"
-            icon={ShoppingCart}
-            variant="default"
-            trend="up"
-            trendValue="Optimizando"
-          />
-          <EnhancedMetricCard
-            title="Ventas Hoy"
-            value={`Bs. ${ventasHoy.toLocaleString()}`}
-            subtitle="Ingresos del día actual"
-            icon={Zap}
-            variant={ventasHoy > 0 ? "success" : "warning"}
-            trend={ventasHoy > 0 ? "up" : "neutral"}
-            trendValue={ventasHoy > 0 ? "Activo" : "Esperando"}
-          />
-        </MetricGrid>
-      </Section>
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Control de Inventario
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Rotación Anual</span>
+                <span className="text-lg font-bold">{rotacionInventario.toFixed(1)}x</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Productos Activos</span>
+                <span className="text-lg font-bold">{productos.filter(p => p.stockActual > 0).length}/{productos.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Stock Bajo</span>
+                {productosStockBajo > 0 ? (
+                  <Badge variant="destructive">{productosStockBajo} productos</Badge>
+                ) : (
+                  <Badge variant="default">Óptimo</Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Análisis de Inventario y Operaciones */}
-      <Section
-        title="Operaciones e Inventario"
-        subtitle="Control inteligente de stock y eficiencia operacional"
-      >
-        <MetricGrid columns={4}>
-          <EnhancedMetricCard
-            title="Valor de Inventario"
-            value={`Bs. ${valorInventario.toLocaleString()}`}
-            subtitle="Activo circulante"
-            icon={Package}
-            variant="default"
-            trend="up"
-            trendValue="Estable"
-          />
-          <EnhancedMetricCard
-            title="Rotación de Inventario"
-            value={`${rotacionInventario.toFixed(1)}x`}
-            subtitle="Veces por año"
-            icon={Globe}
-            variant={rotacionInventario > 6 ? "success" : rotacionInventario > 3 ? "warning" : "destructive"}
-            trend={rotacionInventario > 4 ? "up" : "down"}
-            trendValue={rotacionInventario > 6 ? "Excelente" : rotacionInventario > 3 ? "Bueno" : "Lento"}
-          />
-          <EnhancedMetricCard
-            title="Productos Stock Bajo"
-            value={productosStockBajo}
-            subtitle="Requieren reposición"
-            icon={AlertTriangle}
-            variant={productosStockBajo > 0 ? "warning" : "success"}
-            trend={productosStockBajo > 0 ? "down" : "up"}
-            trendValue={productosStockBajo > 0 ? "Atención" : "Óptimo"}
-          />
-          <EnhancedMetricCard
-            title="Productos Activos"
-            value={`${productos.filter(p => p.stockActual > 0).length}/${productos.length}`}
-            subtitle="En stock / Total"
-            icon={Briefcase}
-            variant="default"
-            trend="up"
-            trendValue={`${((productos.filter(p => p.stockActual > 0).length / Math.max(productos.length, 1)) * 100).toFixed(0)}%`}
-          />
-        </MetricGrid>
-      </Section>
-
-      {/* Dashboard financiero mejorado */}
-      <Section
-        title="Análisis Financiero Avanzado"
-        subtitle="Visualización detallada de métricas empresariales y tendencias predictivas"
-      >
-        <EnhancedFinancialDashboard 
-          facturas={facturas}
-          asientos={asientos}
-          productos={productos}
-        />
-      </Section>
-
-      {/* Panel de alertas inteligentes */}
-      <Section
-        title="Centro de Alertas Inteligentes"
-        subtitle="Monitoreo automático de eventos críticos del negocio"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Alerta Balance No Cuadrado */}
-          {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) > 0.01 && (
-            <Card className="border-l-4 border-l-destructive bg-destructive/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="w-5 h-5" />
-                  Balance Descuadrado
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Diferencia: {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)).toFixed(2)} Bs.</p>
-                <p className="text-sm mt-1">Activos: {balance.activos.toFixed(2)} | Pasivo+Patrimonio: {(balance.pasivos + balance.patrimonio).toFixed(2)}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {productosStockBajo > 0 && (
-            <Card className="border-l-4 border-l-warning bg-warning/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-warning">
-                  <AlertTriangle className="w-5 h-5" />
-                  Stock Bajo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{productosStockBajo} productos necesitan reposición urgente</p>
-              </CardContent>
-            </Card>
-          )}
-          
-          {facturasPendientes > 0 && (
-            <Card className="border-l-4 border-l-destructive bg-destructive/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <Package className="w-5 h-5" />
-                  Cuentas por Cobrar
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{facturasPendientes} facturas pendientes de cobro</p>
-              </CardContent>
-            </Card>
-          )}
-          
-          {roiMensual > 20 && (
-            <Card className="border-l-4 border-l-success bg-success/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-success">
-                  <TrendingUp className="w-5 h-5" />
-                  Performance Excepcional
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>ROI del {roiMensual.toFixed(1)}% - ¡Excelente gestión!</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Alerta de Sistema Integrado */}
-          {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) <= 0.01 && (
-            <Card className="border-l-4 border-l-success bg-success/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-success">
-                  <CheckCircle className="w-5 h-5" />
-                  Sistema Integrado
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Todos los módulos funcionando correctamente</p>
-                <p className="text-sm mt-1">Balance cuadrado • Inventario sincronizado</p>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="card-modern">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Eficiencia Operativa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Cobranza</span>
+                <Badge variant={eficienciaCobranza > 90 ? "default" : "destructive"}>
+                  {eficienciaCobranza.toFixed(0)}%
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Pendientes</span>
+                <span className="text-lg font-bold text-warning">{facturasPendientes}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Tiempo Cobro</span>
+                <span className="text-lg font-bold">{tiempoCobranza} días</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </Section>
 
-      {/* Validador de Integración */}
-      <Section
-        title="Estado de Integración del Sistema"
-        subtitle="Verificación automática de la conectividad entre módulos"
-      >
-        <ModuleIntegrationValidator />
-      </Section>
+        {/* Alertas y notificaciones */}
+        {(Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) > 0.01 || 
+          productosStockBajo > 0 || 
+          facturasPendientes > 0 ||
+          roiMensual > 20) && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Alertas y Notificaciones</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) > 0.01 && (
+                <Card className="border-l-4 border-l-destructive bg-destructive/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-destructive mb-1">Balance Descuadrado</p>
+                        <p className="text-sm text-muted-foreground">
+                          Diferencia: {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)).toFixed(2)} Bs.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-      {/* Validador del Sistema */}
-      <Section
-        title="Validación Integral del Sistema"
-        subtitle="Análisis completo de la salud y seguridad del sistema contable"
-      >
-        <SystemValidator />
-      </Section>
+              {productosStockBajo > 0 && (
+                <Card className="border-l-4 border-l-warning bg-warning/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-warning mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-warning mb-1">Stock Bajo</p>
+                        <p className="text-sm text-muted-foreground">
+                          {productosStockBajo} productos necesitan reposición
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-      {/* Salud del Sistema */}
-      <Section
-        title="Monitoreo de Salud del Sistema"
-        subtitle="Métricas en tiempo real del rendimiento y estado operacional"
-      >
-        <SystemHealth />
-      </Section>
+              {facturasPendientes > 0 && (
+                <Card className="border-l-4 border-l-warning bg-warning/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-warning mb-1">Cuentas por Cobrar</p>
+                        <p className="text-sm text-muted-foreground">
+                          {facturasPendientes} facturas pendientes de cobro
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-      {/* Validador de Integridad del Sistema */}
-      <Section 
-        title="Integridad del Sistema" 
-        subtitle="Validar que todas las transacciones se reflejen correctamente en los estados financieros"
-        className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200"
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-red-600">
-              Verifica que las facturas generen asientos contables y se reflejen en el Balance General y Estado de Resultados
-            </p>
+              {roiMensual > 20 && (
+                <Card className="border-l-4 border-l-success bg-success/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <TrendingUp className="w-5 h-5 text-success mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-success mb-1">Rendimiento Excepcional</p>
+                        <p className="text-sm text-muted-foreground">
+                          ROI del {roiMensual.toFixed(1)}% - ¡Excelente gestión!
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {Math.abs(balance.activos - (balance.pasivos + balance.patrimonio)) <= 0.01 && (
+                <Card className="border-l-4 border-l-success bg-success/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-success mb-1">Sistema Integrado</p>
+                        <p className="text-sm text-muted-foreground">
+                          Balance cuadrado • Inventario sincronizado
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Análisis Financiero */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Análisis Financiero</h2>
+          <EnhancedFinancialDashboard 
+            facturas={facturas}
+            asientos={asientos}
+            productos={productos}
+          />
+        </div>
+
+        {/* Monitoreo del Sistema */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Monitoreo del Sistema</h2>
+          <div className="space-y-6">
+            <SystemHealth />
+            <ModuleIntegrationValidator />
+          </div>
+        </div>
+
+        {/* Validadores Avanzados */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Validadores Avanzados</h2>
             <Button 
               onClick={() => setShowSystemValidator(!showSystemValidator)}
               variant="outline"
+              size="sm"
               className="border-red-300 text-red-700 hover:bg-red-50"
             >
               <Shield className="w-4 h-4 mr-2" />
@@ -402,16 +414,13 @@ const Dashboard = () => {
             <SystemValidatorNew />
           )}
         </div>
-      </Section>
 
-      {/* Validador de Anulaciones */}
-      <Section 
-        title="Validador de Comprobantes Anulados" 
-        subtitle="Verificar que los comprobantes anulados no aparezcan en los estados financieros"
-        className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200"
-      >
-        <AnnulmentValidator />
-      </Section>
+        {/* Validador de Anulaciones */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Validador de Anulaciones</h2>
+          <AnnulmentValidator />
+        </div>
+      </div>
     </div>
   );
 };
