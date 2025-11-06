@@ -46,7 +46,7 @@ const ModuleIntegrationValidator = () => {
 
     // 2. Validar inventario
     const productos = obtenerProductos();
-    const inventarioCuenta = balanceData.activos.cuentas.find(c => c.codigo === '1141');
+    const inventarioCuenta = balanceData.activos.cuentas.find(c => c.codigo === '1131');
     
     if (productos.length > 0) {
       const valorInventarioFisico = productos.reduce((sum, p) => sum + (p.stockActual || 0) * (p.costoUnitario || 0), 0);
@@ -56,7 +56,7 @@ const ModuleIntegrationValidator = () => {
           module: 'Inventario',
           issue: 'Inventario físico existe pero no aparece en Balance General',
           severity: 'warning',
-          suggestion: 'La cuenta 1141 debe reflejar el valor del inventario físico'
+          suggestion: 'La cuenta 1131 (Inventarios - Mercaderías) debe reflejar el valor del inventario físico'
         });
       }
       
