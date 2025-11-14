@@ -291,18 +291,14 @@ const FacturacionModule = () => {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
-              <Package className="w-8 h-8 text-blue-600 animate-pulse" />
+            <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Package className="w-8 h-8 text-primary animate-pulse" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Cargando productos...</h3>
-              <p className="text-gray-600 max-w-sm mx-auto">
-                Conectividad: {connectivity.isConnected ? '✅' : '❌'} | 
-                Autenticado: {connectivity.isAuthenticated ? '✅' : '❌'}
+              <h3 className="text-lg font-semibold">Cargando productos...</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Preparando el catálogo de productos
               </p>
-              {connectivity.error && (
-                <p className="text-red-600 text-sm">Error: {connectivity.error}</p>
-              )}
             </div>
             <Button onClick={() => setShowNewInvoice(false)} variant="outline">
               Cancelar
@@ -312,22 +308,24 @@ const FacturacionModule = () => {
       );
     }
 
-    // Verificar errores de conectividad
-    if (productosError || !connectivity.isConnected) {
+    // Verificar errores de conectividad solo si NO está autenticado
+    if (productosError || (!connectivity.isConnected && connectivity.isAuthenticated === false)) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
-              <Package className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Error de conectividad</h3>
-              <p className="text-gray-600 max-w-sm mx-auto">
+              <h3 className="text-lg font-semibold">Error de conectividad</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
                 {productosError || 'No se puede conectar con la base de datos'}
               </p>
-              <p className="text-sm text-gray-500">
-                Estado: {connectivity.isConnected ? 'Conectado' : 'Desconectado'}
-              </p>
+              {!connectivity.isAuthenticated && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Por favor, inicie sesión nuevamente
+                </p>
+              )}
             </div>
             <div className="space-x-2">
               <Button onClick={() => window.location.reload()} variant="default">
