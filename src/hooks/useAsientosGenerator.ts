@@ -20,7 +20,7 @@ export const useAsientosGenerator = () => {
         // ENTRADA DE INVENTARIO según normativa boliviana
         // Las entradas siempre incrementan el activo inventario
         cuentas.push({
-          codigo: "1141",
+          codigo: "1131",
           nombre: "Inventarios",
           debe: movimiento.valorMovimiento,
           haber: 0
@@ -69,7 +69,7 @@ export const useAsientosGenerator = () => {
         
         // SIEMPRE se reduce el inventario en cualquier salida
         cuentas.push({
-          codigo: "1141",
+          codigo: "1131",
           nombre: "Inventarios",
           debe: 0,
           haber: movimiento.valorMovimiento
@@ -215,9 +215,9 @@ export const useAsientosGenerator = () => {
     // IVA Crédito Fiscal (13% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
     const ivaCreditoFiscal = Number((totalCompra - comprasValor).toFixed(2));
 
-    // CAMBIO CRÍTICO: Las compras van a INVENTARIO (1141), no a gastos (5121)
+    // CAMBIO CRÍTICO: Las compras van a INVENTARIO (1131), no a gastos (5121)
     cuentas.push({
-      codigo: "1141", 
+      codigo: "1131", 
       nombre: "Inventarios",
       debe: comprasValor,
       haber: 0
