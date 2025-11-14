@@ -216,7 +216,7 @@ export const useInventarioBolivia = () => {
       asientos.forEach((asiento: any) => {
         if (asiento.estado === 'registrado') {
           asiento.cuentas.forEach((cuenta: any) => {
-            if (cuenta.codigo === '1141') { // Inventarios
+            if (cuenta.codigo === '1131' || cuenta.codigo === '1141') { // Inventarios
               saldoInventarioContable += cuenta.debe - cuenta.haber;
             } else if (cuenta.codigo === '5111') { // Costo de Ventas
               totalCostoVentas += cuenta.debe - cuenta.haber;

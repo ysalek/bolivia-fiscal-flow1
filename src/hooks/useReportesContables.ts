@@ -230,8 +230,8 @@ export const useReportesContables = (productos?: any[]) => {
       valorInventarioFisico += stockActual * costoUnitario;
     });
     
-    // Buscar saldo contable de inventarios (cuenta 1141)
-    const cuentaInventario = details.find(cuenta => cuenta.codigo === '1141');
+    // Buscar saldo contable de inventarios (cuenta 1131)
+    const cuentaInventario = details.find(cuenta => cuenta.codigo === '1131' || cuenta.codigo === '1141');
     if (cuentaInventario) {
       valorInventarioContable = cuentaInventario.saldoDeudor - cuentaInventario.saldoAcreedor;
     }
@@ -335,41 +335,8 @@ export const useReportesContables = (productos?: any[]) => {
       } else if (cuenta.codigo.startsWith('5') || cuenta.codigo.startsWith('6')) { // Gastos
         const saldoDeudor = saldo;
         if (saldoDeudor > 0.01) { // Solo mostrar cuentas con saldo significativo
-          // CORREGIDO: Calcular Costo de Ventas real basado en ventas efectivas
-          if (cuenta.codigo === '5111') {
-            // Calcular el costo real de productos vendidos desde facturas/ventas
-            const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-            const productos = JSON.parse(localStorage.getItem('productos') || '[]');
-            
-            let costoVentasReal = 0;
-            facturas.forEach((factura: any) => {
-              if (factura.estado === 'pagada' || factura.estado === 'pendiente') {
-                factura.items?.forEach((item: any) => {
-                  const producto = productos.find((p: any) => p.id === item.productoId);
-                  const costoUnitario = producto?.costoUnitario || 0;
-                  const cantidadVendida = item.cantidad || 0;
-                  costoVentasReal += cantidadVendida * costoUnitario;
-                });
-              }
-            });
-            
-            // Solo agregar si hay ventas reales registradas
-            if (costoVentasReal > 0) {
-              cuenta.nombre = "Costo de Ventas (Solo productos vendidos)";
-              gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: costoVentasReal });
-              gastos.total += costoVentasReal;
-            }
-          } else if (cuenta.codigo === '5121') {
-            // Las compras NO van al Estado de Resultados, van a inventario
-            // Solo incluir si hay una diferencia contable específica
-            cuenta.nombre = "Compras (Capitalizadas en Inventario)";
-            // No agregar al estado de resultados normal
-            console.log(`⚠️ Cuenta 5121 (Compras) no debe aparecer en Estado de Resultados. Revisar asientos.`);
-          } else {
-            // Otros gastos operativos normales
-            gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
-            gastos.total += saldoDeudor;
-          }
+          gastos.cuentas.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, saldo: saldoDeudor });
+          gastos.total += saldoDeudor;
         }
       }
     });
@@ -495,7 +462,7 @@ export const useReportesContables = (productos?: any[]) => {
         creditoFiscalTotal += ivaCreditoCuenta.debe;
         // La base imponible son los otros débitos (Inventario, Gastos) en la misma transacción
         const baseCompra = asiento.cuentas
-          .filter(c => (c.codigo === '1141' || c.codigo.startsWith('5')) && c.debe > 0)
+          .filter(c => (c.codigo === '1131' || c.codigo === '1141' || c.codigo.startsWith('5')) && c.debe > 0)
           .reduce((sum, c) => sum + c.debe, 0);
         baseImponibleCompras += baseCompra;
       }
