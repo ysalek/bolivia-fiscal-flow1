@@ -59,8 +59,8 @@ export const useProductosValidated = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>({
-    isConnected: false,
-    isAuthenticated: false,
+    isConnected: true,
+    isAuthenticated: true,
     lastCheck: new Date()
   });
   

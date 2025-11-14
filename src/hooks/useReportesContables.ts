@@ -251,7 +251,7 @@ export const useReportesContables = (productos?: any[]) => {
       const saldo = cuenta.saldoDeudor - cuenta.saldoAcreedor;
 
       if (cuenta.codigo.startsWith('1')) { // Activo
-        if (cuenta.codigo === '1141') {
+        if (cuenta.codigo === '1131' || cuenta.codigo === '1141') {
           // Usar el valor físico real calculado arriba
           activos.cuentas.push({ 
             codigo: cuenta.codigo, 
@@ -279,10 +279,10 @@ export const useReportesContables = (productos?: any[]) => {
       }
     });
 
-    // Si no se encontró la cuenta 1141 en el balance de comprobación, agregarla
+    // Si no se encontró la cuenta de inventario en el balance de comprobación, agregarla
     if (!inventarioAgregado && saldoInventario > 0) {
       activos.cuentas.push({
-        codigo: '1141',
+        codigo: '1131',
         nombre: "Inventarios de Productos",
         saldo: saldoInventario
       });
