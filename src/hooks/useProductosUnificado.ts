@@ -86,10 +86,10 @@ export const useProductosUnificado = () => {
   }, []);
 
   // Función principal de carga de datos
-  const loadData = useCallback(async () => {
-    console.log('🔍 loadData llamado - dataLoaded:', dataLoaded, 'loading:', loading);
-    if (dataLoaded || loading) {
-      console.log('🛑 Saliendo temprano - dataLoaded:', dataLoaded, 'loading:', loading);
+  const loadData = useCallback(async (force: boolean = false) => {
+    console.log('🔍 loadData llamado - dataLoaded:', dataLoaded, 'loading:', loading, 'force:', force);
+    if (!force && loading) {
+      console.log('🛑 Carga ya en proceso - loading:', loading);
       return;
     }
     
@@ -151,12 +151,13 @@ export const useProductosUnificado = () => {
 
       setCategorias(categoriasData);
       setProductos(productosTransformados);
-      setDataLoaded(true);
       
       console.log('✅ Carga completa:', {
         productos: productosTransformados.length,
         categorias: categoriasData.length
       });
+      
+      setDataLoaded(true);
 
     } catch (error: any) {
       console.error('❌ Error cargando datos:', error);
@@ -453,12 +454,6 @@ export const useProductosUnificado = () => {
   // Función de compatibilidad para useProductos
   const obtenerProductos = () => productos;
 
-  // Función de refetch
-  const refetch = useCallback(async () => {
-    setDataLoaded(false);
-    await loadData();
-  }, [loadData]);
-
   // Effect para cargar datos inicial
   useEffect(() => {
     console.log('🎯 useEffect ejecutándose - dataLoaded:', dataLoaded);
@@ -466,7 +461,12 @@ export const useProductosUnificado = () => {
       console.log('🚀 Llamando loadData desde useEffect');
       loadData();
     }
-  }, [loadData, dataLoaded]);
+  }, [dataLoaded]);
+
+  const refetch = useCallback(() => {
+    setDataLoaded(false);
+    return loadData(true);
+  }, [loadData]);
 
   return {
     productos,
