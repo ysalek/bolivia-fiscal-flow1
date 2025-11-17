@@ -167,7 +167,7 @@ export const useAsientosGenerator = () => {
     const ivaVenta = Number((totalConIVA - ventaSinIVA).toFixed(2));
 
     cuentas.push({
-      codigo: "1131",
+      codigo: "1121",
       nombre: "Cuentas por Cobrar",
       debe: totalConIVA,
       haber: 0

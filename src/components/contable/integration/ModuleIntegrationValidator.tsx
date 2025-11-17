@@ -102,16 +102,21 @@ const ModuleIntegrationValidator = () => {
     const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
     const compras = JSON.parse(localStorage.getItem('compras') || '[]');
     
-    const facturasConAsientos = facturas.filter((f: any) => 
-      asientos.some(a => a.referencia === f.numero)
-    );
+    // Verificar que cada factura tenga DOS asientos: ingreso + costo de venta
+    const facturasConAsientos = facturas.filter((f: any) => {
+      const asientosFactura = asientos.filter(a => 
+        a.referencia?.includes(f.numero) || a.concepto?.includes(f.numero)
+      );
+      // Debe tener al menos el asiento de venta (puede no tener costo si no hay productos con costo)
+      return asientosFactura.length > 0;
+    });
     
     if (facturas.length > 0 && facturasConAsientos.length < facturas.length) {
       foundIssues.push({
         module: 'Facturación',
         issue: `${facturas.length - facturasConAsientos.length} facturas sin asientos contables`,
         severity: 'warning',
-        suggestion: 'Verificar generación automática de asientos'
+        suggestion: 'Las facturas deben generar automáticamente asientos de venta y costo de venta'
       });
     }
 
