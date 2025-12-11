@@ -129,18 +129,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Verificar si el input parece un email
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsuario);
       if (!isEmail) {
-        // Buscar el email asociado al usuario
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('usuario', emailOrUsuario)
-          .maybeSingle();
+        // Resolver email vía RPC para evitar restricciones RLS en profiles
+        const { data, error } = await supabase.rpc('resolve_username_email', {
+          username: emailOrUsuario,
+        });
 
-        if (error || !data?.email) {
-          console.warn('Usuario no encontrado:', error?.message);
+        if (error || !data) {
+          console.warn('Usuario no encontrado o RPC falló:', error?.message);
           return false;
         }
-        email = data.email;
+        email = data as string;
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
