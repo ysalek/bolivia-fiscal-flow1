@@ -163,16 +163,21 @@ export const useAsientosGenerator = () => {
     // Calcular venta sin IVA (87% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
     const ventaSinIVA = Number((totalConIVA / 1.13).toFixed(2));
     
-    // IVA Débito Fiscal (13% del total) - CÁLCULO EXACTO SEGÚN NORMATIVA BOLIVIANA
+    // IVA Débito Fiscal (13% de la base) - SEGÚN LEY 843 Y DS 21530
     const ivaVenta = Number((totalConIVA - ventaSinIVA).toFixed(2));
+    
+    // IT - Impuesto a las Transacciones (3% sobre base imponible) - SEGÚN LEY 843 ART. 72
+    const itVenta = Number((ventaSinIVA * 0.03).toFixed(2));
 
+    // DÉBITO: Cuentas por Cobrar por el total de la factura
     cuentas.push({
       codigo: "1121",
-      nombre: "Cuentas por Cobrar",
+      nombre: "Cuentas por Cobrar Comerciales",
       debe: totalConIVA,
       haber: 0
     });
 
+    // CRÉDITO: Ventas (base imponible sin IVA)
     cuentas.push({
       codigo: "4111",
       nombre: "Ventas de Productos",
@@ -180,14 +185,15 @@ export const useAsientosGenerator = () => {
       haber: ventaSinIVA
     });
 
+    // CRÉDITO: IVA Débito Fiscal (13%)
     cuentas.push({
-      codigo: "2131",
+      codigo: "2113",
       nombre: "IVA Débito Fiscal",
       debe: 0,
       haber: ivaVenta
     });
 
-    const asiento: AsientoContable = {
+    const asientoVenta: AsientoContable = {
       id: Date.now().toString(),
       numero: `VTA-${Date.now().toString().slice(-6)}`,
       fecha,
@@ -199,7 +205,40 @@ export const useAsientosGenerator = () => {
       cuentas
     };
 
-    return guardarAsiento(asiento) ? asiento : null;
+    if (!guardarAsiento(asientoVenta)) {
+      return null;
+    }
+
+    // ASIENTO SEPARADO PARA IT - Según normativa boliviana, el IT se registra como gasto
+    // y genera un pasivo tributario por pagar
+    const asientoIT: AsientoContable = {
+      id: (Date.now() + 1).toString(),
+      numero: `IT-${Date.now().toString().slice(-6)}`,
+      fecha,
+      concepto: `IT 3% sobre venta factura ${factura.numero}`,
+      referencia: factura.numero,
+      debe: itVenta,
+      haber: itVenta,
+      estado: 'registrado',
+      cuentas: [
+        {
+          codigo: "5401",
+          nombre: "IT Pagado",
+          debe: itVenta,
+          haber: 0
+        },
+        {
+          codigo: "2114",
+          nombre: "IT por Pagar",
+          debe: 0,
+          haber: itVenta
+        }
+      ]
+    };
+
+    guardarAsiento(asientoIT);
+
+    return asientoVenta;
   };
 
   const generarAsientoCompra = (compra: { numero: string, total: number, subtotal: number, iva: number }): AsientoContable | null => {
@@ -286,7 +325,7 @@ export const useAsientosGenerator = () => {
       id: Date.now().toString(),
       numero: `PAG-${factura.numero}`,
       fecha: new Date().toISOString().slice(0, 10),
-      concepto: `Pago de factura N° ${factura.numero}`,
+      concepto: `Cobro de factura N° ${factura.numero}`,
       referencia: factura.numero,
       debe: factura.total,
       haber: factura.total,
@@ -299,7 +338,7 @@ export const useAsientosGenerator = () => {
           haber: 0
         },
         {
-          codigo: "1131",
+          codigo: "1121",
           nombre: "Cuentas por Cobrar",
           debe: 0,
           haber: factura.total
@@ -310,6 +349,10 @@ export const useAsientosGenerator = () => {
   };
 
   const generarAsientoAnulacionFactura = (factura: Factura): AsientoContable[] | null => {
+    const ventaSinIVA = Number((factura.total / 1.13).toFixed(2));
+    const ivaVenta = Number((factura.total - ventaSinIVA).toFixed(2));
+    const itVenta = Number((ventaSinIVA * 0.03).toFixed(2));
+    
     // Reversión del asiento de venta
     const asientoVentaReversion: AsientoContable = {
       id: Date.now().toString(),
@@ -324,18 +367,18 @@ export const useAsientosGenerator = () => {
         {
           codigo: "4111",
           nombre: "Ventas de Productos",
-          debe: factura.total / 1.13, // Venta sin IVA
+          debe: ventaSinIVA,
           haber: 0
         },
         {
-          codigo: "2131",
+          codigo: "2113",
           nombre: "IVA Débito Fiscal",
-          debe: factura.total - (factura.total / 1.13), // IVA incluido
+          debe: ivaVenta,
           haber: 0
         },
         {
-          codigo: "1131",
-          nombre: "Cuentas por Cobrar",
+          codigo: "1121",
+          nombre: "Cuentas por Cobrar Comerciales",
           debe: 0,
           haber: factura.total
         }
@@ -344,8 +387,35 @@ export const useAsientosGenerator = () => {
     if (!guardarAsiento(asientoVentaReversion)) {
       return null;
     }
+    
+    // Reversión del IT
+    const asientoITReversion: AsientoContable = {
+      id: (Date.now() + 1).toString(),
+      numero: `ANV-IT-${factura.numero}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      concepto: `Anulación IT factura N° ${factura.numero}`,
+      referencia: factura.numero,
+      debe: itVenta,
+      haber: itVenta,
+      estado: 'registrado',
+      cuentas: [
+        {
+          codigo: "2114",
+          nombre: "IT por Pagar",
+          debe: itVenta,
+          haber: 0
+        },
+        {
+          codigo: "5401",
+          nombre: "IT Pagado",
+          debe: 0,
+          haber: itVenta
+        }
+      ]
+    };
+    guardarAsiento(asientoITReversion);
 
-    const asientosGenerados: AsientoContable[] = [asientoVentaReversion];
+    const asientosGenerados: AsientoContable[] = [asientoVentaReversion, asientoITReversion];
     let todoOk = true;
 
     factura.items.forEach(item => {
