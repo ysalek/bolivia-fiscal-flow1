@@ -442,7 +442,8 @@ export const useReportesContables = (productos?: any[]) => {
     asientosEnPeriodo.forEach(asiento => {
       // Ventas (Débito Fiscal): Se identifica por un crédito a una cuenta de Ingresos (código 4xxx)
       const ventaCuenta = asiento.cuentas.find(c => c.codigo.startsWith('4') && c.haber > 0);
-      const ivaDebitoCuenta = asiento.cuentas.find(c => c.codigo === '2113' && c.haber > 0);
+      // IVA Débito puede estar en 2113 o 2131 por compatibilidad
+      const ivaDebitoCuenta = asiento.cuentas.find(c => (c.codigo === '2113' || c.codigo === '2131') && c.haber > 0);
       if (ventaCuenta && ivaDebitoCuenta) {
         baseImponibleVentas += ventaCuenta.haber;
         debitoFiscalTotal += ivaDebitoCuenta.haber;
@@ -450,7 +451,7 @@ export const useReportesContables = (productos?: any[]) => {
 
       // Anulación de Ventas (Notas de Crédito): Se identifica por un débito a una cuenta de Ingresos
       const reversionVentaCuenta = asiento.cuentas.find(c => c.codigo.startsWith('4') && c.debe > 0);
-      const reversionIvaDebito = asiento.cuentas.find(c => c.codigo === '2113' && c.debe > 0);
+      const reversionIvaDebito = asiento.cuentas.find(c => (c.codigo === '2113' || c.codigo === '2131') && c.debe > 0);
       if (reversionVentaCuenta && reversionIvaDebito) {
         baseImponibleVentas -= reversionVentaCuenta.debe;
         debitoFiscalTotal -= reversionIvaDebito.debe;
